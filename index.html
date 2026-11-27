@@ -1090,13 +1090,13 @@ input[type=range]::-webkit-slider-thumb{
     makeFluidSprites();
     bubbles.length = 0; sparkles.length = 0;
     var i, u, v, r, guard;
-    for (i = 0; i < 24; i++) {
+    for (i = 0; i < 26; i++) {
       u = rand(-0.3, 0.3); v = rand(-0.4, 0.45); r = rand(0.01, 0.03);
       for (guard = 0; guard < 24; guard++) {
         u = rand(-0.4, 0.4); v = rand(-0.55, 0.55); r = rand(0.008, 0.03);
         if (normSdf(u, v) < -r * 2.4) break;
       }
-      bubbles.push({ u: u, v: v, r: r, sp: rand(0.035, 0.1), wob: rand(0.6, 1.7), ph: rand(0, TAU), a: rand(0.45, 0.9) });
+      bubbles.push({ u: u, v: v, r: r, sp: rand(0.035, 0.1), wob: rand(0.6, 1.7), ph: rand(0, TAU), a: rand(0.5, 0.95) });
     }
     for (i = 0; i < 30; i++) {
       u = rand(-0.4, 0.4); v = rand(-0.5, 0.5);
@@ -1120,7 +1120,7 @@ input[type=range]::-webkit-slider-thumb{
           if (normSdf(b.u, b.v) < -b.r * 2.4) break;
         }
         b.sp = rand(0.035, 0.1);
-        b.a = rand(0.45, 0.9);
+        b.a = rand(0.5, 0.95);
       }
     }
     for (i = 0; i < sparkles.length; i++) {
