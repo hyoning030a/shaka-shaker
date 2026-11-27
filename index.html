@@ -4499,6 +4499,11 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   /* applied on Enter / when the sheet closes, and before every save */
+  function blurShotName() {
+    var el = $('#shotName');
+    if (el) { try { el.blur(); } catch (e) { /* ignore */ } }
+  }
+
   function commitShotName() {
     var el = $('#shotName');
     if (!el) return;
@@ -4513,13 +4518,13 @@ input[type=range]::-webkit-slider-thumb{
     var sh = $('#shot');
     if (!sh) return;
     commitShotName();
-    var nameEl = $('#shotName');
-    if (nameEl) { try { nameEl.blur(); } catch (e) { /* ignore */ } }
+    blurShotName();
     sh.classList.remove('on');
     setTimeout(function () { sh.hidden = true; }, 240);
   }
   function downloadShot() {
     commitShotName();
+    blurShotName();
     if (!shotURL) return;
     try {
       var a = document.createElement('a');
@@ -4535,6 +4540,7 @@ input[type=range]::-webkit-slider-thumb{
   }
   function saveShot() {
     commitShotName();
+    blurShotName();
     if (!shotURL) return;
     var name = shotFileName(), file = null;
     try {
