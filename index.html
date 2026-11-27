@@ -1089,8 +1089,8 @@ input[type=range]::-webkit-slider-thumb{
       var frost = maskLayer(function (g) {
         var rx = VIEW.cx - VIEW.S * 0.3, ry = VIEW.cy - VIEW.S * 0.5;
         var sg = g.createRadialGradient(rx, ry, VIEW.S * 0.04, rx, ry, VIEW.S * 1.2);
-        sg.addColorStop(0, 'rgba(255,255,255,0.32)');
-        sg.addColorStop(0.45, 'rgba(255,255,255,0.11)');
+        sg.addColorStop(0, 'rgba(255,255,255,' + (clearOn ? 0.38 : 0.3) + ')');
+        sg.addColorStop(0.45, 'rgba(255,255,255,' + (clearOn ? 0.13 : 0.1) + ')');
         sg.addColorStop(1, 'rgba(255,255,255,0)');
         g.fillStyle = sg;
         g.fillRect(0, 0, VIEW.w, VIEW.h);
@@ -1120,7 +1120,7 @@ input[type=range]::-webkit-slider-thumb{
         g.globalAlpha = 1;
 
         /* milky veil */
-        g.fillStyle = 'rgba(255,255,255,' + (clearOn ? 0.075 : 0.045) + ')';
+        g.fillStyle = 'rgba(255,255,255,' + (clearOn ? 0.115 : 0.045) + ')';
         g.fillRect(0, 0, VIEW.w, VIEW.h);
 
         var sg2 = g.createLinearGradient(0, VIEW.cy + VIEW.S * 0.12, 0, VIEW.cy + VIEW.S * 0.72);
