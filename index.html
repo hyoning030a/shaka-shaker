@@ -141,7 +141,13 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
   padding:10px 12px 12px;
   box-shadow:0 14px 34px rgba(180,130,165,.16), inset 0 1px 0 #fff;
   display:flex;flex-direction:column;gap:9px;
-  max-height:58vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+/* on a phone the panel keeps a lid on its height, so the shaker above it stays
+   the star of the screen (the panel itself scrolls) */
+@media (max-width:560px){
+  .dock-inner{max-height:46vh;padding:9px 10px 11px;gap:8px;border-radius:24px;}
+  #dock{padding:4px 9px calc(env(safe-area-inset-bottom) + 8px);}
 }
 .row{display:flex;gap:8px;align-items:center;}
 .btn{
@@ -824,6 +830,26 @@ input[type=range]::-webkit-slider-thumb{
   function frameRoom() {
     if (ringKey === 'none') return 0;
     return Math.max(0, (-FRAME_UH / 2) - (ringAnchorV() - RING_H - 0.015));
+  }
+  /* the acrylic case's own outline (plus the keyring's headroom on top) in frame
+     units — the shaker is fitted by this, not by the loose frame box around it,
+     so the case can fill the stage instead of sitting small in the middle.
+     CASE_BLEED covers the pearl rim, which is drawn 0.034 units outside the
+     outline, plus a hair of antialiasing */
+  var CASE_BLEED = 0.046;
+  function caseBox() {
+    var b = shapeBounds(shapeKey);
+    var top = b.v0;
+    if (ringKey !== 'none') top = Math.min(top, ringAnchorV() - RING_H - 0.015);
+    return {
+      u0: b.u0 - CASE_BLEED, u1: b.u1 + CASE_BLEED,
+      v0: top - CASE_BLEED, v1: b.v1 + CASE_BLEED
+    };
+  }
+  function caseFit() {
+    var box = caseBox();
+    return { box: box, w: box.u1 - box.u0, h: box.v1 - box.v0,
+             uMid: (box.u0 + box.u1) / 2, vMid: (box.v0 + box.v1) / 2 };
   }
 
   /* ---------------- themes ---------------- */
@@ -4273,13 +4299,13 @@ input[type=range]::-webkit-slider-thumb{
     var pad = 60;
     /* frame the acrylic case itself, so the picture looks the same on a phone
        and on a wide desktop window; the ring on top gets its own headroom */
-    var room = frameRoom();
-    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * (FRAME_UH + room);
+    var fit = caseFit();
+    var caseW = VIEW.S * fit.w, caseH = VIEW.S * fit.h;
     var s = Math.min((W - pad * 2) / caseW, (H - 400) / caseH);
     var cx0 = W / 2;
     var cy0 = (H - 380) / 2 + 36;
-    var dx = cx0 - VIEW.cx * s;
-    var dy = cy0 + room * VIEW.S * s / 2 - VIEW.cy * s;
+    var dx = cx0 - (VIEW.cx + fit.uMid * VIEW.S) * s;
+    var dy = cy0 - (VIEW.cy + fit.vMid * VIEW.S) * s;
     var dw = caseW * s, dh = caseH * s;
 
     var shg = g.createRadialGradient(0, 0, 10, 0, 0, dw * 0.46);
@@ -5103,10 +5129,12 @@ input[type=range]::-webkit-slider-thumb{
     bg.addColorStop(1, theme.clear ? '#dfeefa' : theme.mid);
     g.fillStyle = bg;
     g.fillRect(0, 0, W, H);
-    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * (FRAME_UH + frameRoom());
-    var s = Math.min(W / caseW, H / caseH) * 0.92;
+    var fit = caseFit();
+    var caseW = VIEW.S * fit.w, caseH = VIEW.S * fit.h;
+    var s = Math.min(W / caseW, H / caseH) * 0.94;
     g.save();
-    g.translate(W / 2 - VIEW.cx * s, H / 2 + frameRoom() * VIEW.S * s / 2 - VIEW.cy * s);
+    g.translate(W / 2 - (VIEW.cx + fit.uMid * VIEW.S) * s,
+                H / 2 - (VIEW.cy + fit.vMid * VIEW.S) * s);
     g.scale(s, s);
     g.drawImage(layerBack, 0, 0, VIEW.w, VIEW.h);
     g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
@@ -5311,14 +5339,19 @@ input[type=range]::-webkit-slider-thumb{
     partsLayer.width = canvasEl.width;
     partsLayer.height = canvasEl.height;
 
-    var padX = 14 * dpr / dpr;
-    var availW = w - 20;
-    var availH = h - 12;
-    var room = frameRoom();
-    var S = Math.min(availW / FRAME_UW, availH / (FRAME_UH + room));
+    /* fit the case itself to the stage: as large as the space allows, with just
+       enough margin for the top bar, the keyring loop and the bottom (where the
+       ⌃ 메뉴 pill floats while the menu is collapsed) */
+    var fit = caseFit();
+    var padX = clamp(w * 0.026, 8, 18);
+    var padTop = clamp(h * 0.014, 9, 16);
+    var padBot = dockCollapsed ? clamp(h * 0.08, 56, 78) : clamp(h * 0.08, 26, 46);
+    var availW = Math.max(24, w - padX * 2);
+    var availH = Math.max(24, h - padTop - padBot);
+    var S = Math.min(availW / fit.w, availH / fit.h);
     VIEW.S = S;
-    VIEW.cx = w / 2;
-    VIEW.cy = h / 2 + 2 + room * S / 2;
+    VIEW.cx = w / 2 - fit.uMid * S;
+    VIEW.cy = padTop + availH / 2 - fit.vMid * S;
 
     maskMain = getMask(shapeKey, 0, 300);
     maskEdge = getMask(shapeKey, -0.034, 300);
