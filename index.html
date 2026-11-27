@@ -3619,12 +3619,21 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   var decoHintBase = '마음에 드는 데코를 고르고 <b>케이스 위를 톡</b>! 붙인 데코는 흔들어도 그대로 있어요';
+
+  /* 받침에 맞는 조사를 골라요 (진주가 / 리본이) */
+  function josa(word, withBatchim, withoutBatchim) {
+    var s = String(word || '');
+    var c = s.charCodeAt(s.length - 1);
+    if (!(c >= 0xAC00 && c <= 0xD7A3)) return withBatchim;
+    return ((c - 0xAC00) % 28 !== 0) ? withBatchim : withoutBatchim;
+  }
+
   function syncDecoUI() {
     syncDecoChips();
     var hint = $('#decoHint');
     if (!hint) return;
     if (Deco.del) hint.innerHTML = '떼고 싶은 데코를 <b>톡</b> 눌러 주세요';
-    else if (Deco.place) hint.innerHTML = '케이스 위를 톡 누르면 <b>' + DECO_BY_ID[Deco.place].name + '</b>이 붙어요 · 끄려면 같은 데코를 한 번 더';
+    else if (Deco.place) hint.innerHTML = '케이스 위를 톡 누르면 <b>' + DECO_BY_ID[Deco.place].name + '</b>' + josa(DECO_BY_ID[Deco.place].name, '이', '가') + ' 붙어요 · 끄려면 같은 데코를 한 번 더';
     else hint.innerHTML = decoHintBase;
   }
 
@@ -3762,7 +3771,7 @@ input[type=range]::-webkit-slider-thumb{
     renderSlotGrid(next);
     Sound.unlock();
     Sound.pop(true);
-    toast('「' + nm + '」을 서랍에 넣었어! 🗂️');
+    toast('「' + nm + '」' + josa(nm, '을', '를') + ' 서랍에 넣었어! 🗂️');
   }
 
   function applyState(st, save) {
@@ -3804,12 +3813,12 @@ input[type=range]::-webkit-slider-thumb{
     closeDrawer();
     Sound.unlock();
     Sound.pop(true);
-    toast('「' + slot.name + '」을 꺼냈어! 🎀');
+    toast('「' + slot.name + '」' + josa(slot.name, '을', '를') + ' 꺼냈어! 🎀');
   }
 
   function delSlot(id, name) {
     var ok = true;
-    try { ok = window.confirm('「' + name + '」을 서랍에서 지울까요?'); } catch (e) { ok = true; }
+    try { ok = window.confirm('「' + name + '」' + josa(name, '을', '를') + ' 서랍에서 지울까요?'); } catch (e) { ok = true; }
     if (!ok) return;
     var list = readSlots(), next = [], i;
     for (i = 0; i < list.length; i++) { if (list[i].id !== id) next.push(list[i]); }
