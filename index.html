@@ -197,6 +197,19 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
   box-shadow:0 2px 8px rgba(160,120,150,.22);position:relative;
 }
 .sw.sel::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid #ff9ec4;}
+.sw.clear{background-color:#fff;}
+.sw.clear::before{
+  content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  box-shadow:inset 0 0 5px rgba(150,185,215,.6), inset 0 -3px 7px rgba(120,160,195,.35), inset 2px 2px 4px rgba(255,255,255,.9);
+}
+
+/* ---------- ✨ 유광 / 🌫️ 무광 ---------- */
+.finrow{display:flex;align-items:center;gap:8px;padding:7px 4px 0;}
+.finlabel{font-size:10.5px;font-weight:800;color:#b59aae;letter-spacing:-.2px;flex:0 0 auto;}
+.finchips{display:flex;gap:6px;}
+.finchips .chip{flex-direction:row;width:auto;min-width:34px;height:29px;padding:0 11px;border-radius:99px;gap:3px;background:rgba(255,255,255,.82);}
+.finchips .chip em{font-style:normal;font-size:12px;line-height:1;}
+.finchips .chip span{font-size:11px;font-weight:800;letter-spacing:-.3px;}
 .mini{display:flex;gap:6px;padding:0;overflow:visible;}
 .mini .chip{width:auto;min-width:40px;height:30px;padding:0 9px;border-radius:10px;font-size:11.5px;font-weight:800;color:#9a7f95;}
 .mini .chip.sel{color:#c05a86;}
@@ -392,8 +405,12 @@ input[type=range]::-webkit-slider-thumb{
       </div>
 
       <div class="sec">
-        <div class="sec-head"><span>아크릴 색</span><span class="hint">✨ 글리터</span></div>
+        <div class="sec-head"><span>아크릴 색</span><span class="hint" id="finHint">✨ 유광</span></div>
         <div class="swatches" id="swatches"></div>
+        <div class="finrow">
+          <span class="finlabel">표면</span>
+          <div class="finchips" id="finChips"></div>
+        </div>
       </div>
 
       <div class="sec">
@@ -758,10 +775,20 @@ input[type=range]::-webkit-slider-thumb{
     { id: 'lemon', name: '레몬', top: '#fffdf2', mid: '#fff7d8', bottom: '#ffedb2', accent: '#ffd166', gold: '#ffd166' },
     { id: 'sky', name: '스카이', top: '#f4fbff', mid: '#dff2ff', bottom: '#c3e7ff', accent: '#8fd0ff', gold: '#ffeeb8' },
     { id: 'peach', name: '피치', top: '#fff8f3', mid: '#ffeade', bottom: '#ffd6c0', accent: '#ffab86', gold: '#ffe3ae' },
-    { id: 'snow', name: '화이트', top: '#ffffff', mid: '#fbf7ff', bottom: '#efe8f7', accent: '#dcc9e8', gold: '#ffe9b5' }
+    { id: 'snow', name: '화이트', top: '#ffffff', mid: '#fbf7ff', bottom: '#efe8f7', accent: '#dcc9e8', gold: '#ffe9b5' },
+    /* 🤍 투명(클리어): almost no tint, so the pattern or photo inside stays crisp */
+    { id: 'clear', name: '투명', top: '#ffffff', mid: '#f7fbff', bottom: '#e7f2fc', accent: '#c9dcef', gold: '#ffeeb8', clear: true }
   ];
   var themeIdx = 0;
   var theme = THEMES[0];
+
+  /* ---------------- ✨ 유광 / 🌫️ 무광(프로스트) ---------------- */
+  var FINISHES = [
+    { id: 'gloss', name: '유광', em: '✨' },
+    { id: 'matte', name: '무광', em: '🌫️' }
+  ];
+  var fin = 'gloss';
+  function isMatte() { return fin === 'matte'; }
 
   /* ---------------- shaker modes: 딸깍(일반) / 오일·워터 ---------------- */
   var MODES = [
@@ -837,7 +864,8 @@ input[type=range]::-webkit-slider-thumb{
     return cv;
   }
 
-  function drawGlitter(g, seed) {
+  function drawGlitter(g, seed, k) {
+    if (k === undefined) k = 1;
     var rnd = mulberry32(seed);
     var i, x, y, r, rot;
     for (i = 0; i < 110; i++) {
@@ -845,7 +873,7 @@ input[type=range]::-webkit-slider-thumb{
       y = VIEW.cy + (rnd() - 0.5) * VIEW.S * 1.22;
       r = 0.9 + rnd() * 2.4;
       rot = rnd() * TAU;
-      g.globalAlpha = 0.22 + rnd() * 0.6;
+      g.globalAlpha = (0.22 + rnd() * 0.6) * k;
       g.fillStyle = rnd() < 0.55 ? '#ffffff' : (rnd() < 0.6 ? theme.accent : theme.gold);
       g.beginPath();
       g.ellipse(x, y, r, r * (0.45 + rnd() * 0.8), rot, 0, TAU);
@@ -855,7 +883,7 @@ input[type=range]::-webkit-slider-thumb{
       x = VIEW.cx + (rnd() - 0.5) * VIEW.S * 0.9;
       y = VIEW.cy + (rnd() - 0.5) * VIEW.S * 1.1;
       r = 3.5 + rnd() * 5;
-      g.globalAlpha = 0.55 + rnd() * 0.4;
+      g.globalAlpha = (0.55 + rnd() * 0.4) * k;
       g.fillStyle = rnd() < 0.5 ? '#ffffff' : theme.gold;
       g.beginPath();
       g.moveTo(x, y - r);
@@ -942,6 +970,9 @@ input[type=range]::-webkit-slider-thumb{
     layerBack.width = W; layerBack.height = H;
     layerFront.width = W; layerFront.height = H;
 
+    var matteOn = isMatte();
+    var clearOn = !!theme.clear;
+
     var b = layerBack.getContext('2d');
     b.setTransform(dpr, 0, 0, dpr, 0, 0);
     b.clearRect(0, 0, VIEW.w, VIEW.h);
@@ -958,13 +989,27 @@ input[type=range]::-webkit-slider-thumb{
     b.shadowOffsetY = 13;
     b.drawImage(sil, 0, 0, VIEW.w, VIEW.h);
     b.restore();
+    if (clearOn) {
+      /* a see-through case lets the light straight through, so its own shadow
+         must not sit inside the body */
+      b.save();
+      b.globalCompositeOperation = 'destination-out';
+      drawMask(b, maskMain);
+      b.restore();
+    }
 
     /* pearl edge bed */
     var bed = maskLayer(function (g) {
       var gr = g.createLinearGradient(0, VIEW.cy - VIEW.S * 0.7, 0, VIEW.cy + VIEW.S * 0.7);
-      gr.addColorStop(0, '#ffffff');
-      gr.addColorStop(0.45, '#fff8fc');
-      gr.addColorStop(1, '#f2e6f2');
+      if (clearOn) {
+        gr.addColorStop(0, 'rgba(255,255,255,0.94)');
+        gr.addColorStop(0.45, 'rgba(247,252,255,0.62)');
+        gr.addColorStop(1, 'rgba(224,237,249,0.78)');
+      } else {
+        gr.addColorStop(0, '#ffffff');
+        gr.addColorStop(0.45, '#fff8fc');
+        gr.addColorStop(1, '#f2e6f2');
+      }
       g.fillStyle = gr;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
     }, maskEdge, null);
@@ -973,34 +1018,48 @@ input[type=range]::-webkit-slider-thumb{
     /* glass interior */
     var inner = maskLayer(function (g) {
       var gr = g.createLinearGradient(0, VIEW.cy - VIEW.S * 0.72, 0, VIEW.cy + VIEW.S * 0.72);
-      gr.addColorStop(0, theme.top);
-      gr.addColorStop(0.52, theme.mid);
-      gr.addColorStop(1, theme.bottom);
+      if (clearOn) {
+        /* 🤍 crystal clear: almost no body colour, just a breath of cool glass
+           so the outline still reads while the inside stays see-through */
+        gr.addColorStop(0, 'rgba(255,255,255,0.32)');
+        gr.addColorStop(0.3, 'rgba(246,252,255,0.11)');
+        gr.addColorStop(0.68, 'rgba(232,244,253,0.13)');
+        gr.addColorStop(1, 'rgba(206,229,247,0.32)');
+      } else {
+        gr.addColorStop(0, theme.top);
+        gr.addColorStop(0.52, theme.mid);
+        gr.addColorStop(1, theme.bottom);
+      }
       g.fillStyle = gr;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
 
       /* 🖼️ the chosen pattern or photo, washed over with the acrylic colour
-         so the parts in front of it still pop */
+         so the parts in front of it still pop; clear acrylic barely tints it */
       if (bgPattern !== 'none') {
         drawInnerBackground(g);
+        var wt = BG_TINT * (clearOn ? 0.15 : 1) * (matteOn ? 0.92 : 1);
         var wash = g.createLinearGradient(0, VIEW.cy - VIEW.S * 0.72, 0, VIEW.cy + VIEW.S * 0.72);
-        wash.addColorStop(0, hexA(theme.top, BG_TINT * 0.62));
-        wash.addColorStop(0.52, hexA(theme.mid, BG_TINT * 0.78));
-        wash.addColorStop(1, hexA(theme.bottom, BG_TINT * 0.88));
+        wash.addColorStop(0, hexA(theme.top, wt * 0.62));
+        wash.addColorStop(0.52, hexA(theme.mid, wt * 0.78));
+        wash.addColorStop(1, hexA(theme.bottom, wt * 0.88));
         g.fillStyle = wash;
         g.fillRect(0, 0, VIEW.w, VIEW.h);
       }
 
+      var hiA;
+      if (clearOn) hiA = matteOn ? 0.15 : 0.26;
+      else if (bgPattern === 'none') hiA = matteOn ? 0.44 : 0.82;
+      else hiA = matteOn ? 0.22 : 0.34;
       var rg = g.createRadialGradient(
         VIEW.cx - VIEW.S * 0.26, VIEW.cy - VIEW.S * 0.44, VIEW.S * 0.02,
         VIEW.cx - VIEW.S * 0.1, VIEW.cy - VIEW.S * 0.2, VIEW.S * 0.95
       );
-      rg.addColorStop(0, bgPattern === 'none' ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.34)');
+      rg.addColorStop(0, 'rgba(255,255,255,' + hiA + ')');
       rg.addColorStop(1, 'rgba(255,255,255,0)');
       g.fillStyle = rg;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
 
-      drawGlitter(g, 9137 + themeIdx * 77);
+      drawGlitter(g, 9137 + themeIdx * 77, clearOn ? (matteOn ? 0.4 : 0.58) : (matteOn ? 0.5 : 1));
     }, maskMain, null);
     b.drawImage(inner, 0, 0, VIEW.w, VIEW.h);
 
@@ -1010,57 +1069,109 @@ input[type=range]::-webkit-slider-thumb{
     f.clearRect(0, 0, VIEW.w, VIEW.h);
 
     /* rim ring, sits above the parts */
+    var rim = matteOn ? [0.76, 0.58, 0.64, 0.8] : [0.98, 0.84, 0.9, 0.96];
     var ring = maskLayer(function (g) {
       var gr = g.createLinearGradient(0, VIEW.cy - VIEW.S * 0.72, 0, VIEW.cy + VIEW.S * 0.72);
-      gr.addColorStop(0, 'rgba(255,255,255,0.98)');
-      gr.addColorStop(0.4, 'rgba(255,255,255,0.84)');
-      gr.addColorStop(0.75, 'rgba(255,255,255,0.9)');
-      gr.addColorStop(1, 'rgba(255,246,252,0.96)');
+      gr.addColorStop(0, 'rgba(255,255,255,' + rim[0] + ')');
+      gr.addColorStop(0.4, 'rgba(255,255,255,' + rim[1] + ')');
+      gr.addColorStop(0.75, 'rgba(255,255,255,' + rim[2] + ')');
+      gr.addColorStop(1, 'rgba(255,246,252,' + rim[3] + ')');
       g.fillStyle = gr;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
     }, maskEdge, maskMain);
     f.drawImage(ring, 0, 0, VIEW.w, VIEW.h);
 
-    /* glossy shine */
-    var gloss = maskLayer(function (g) {
-      var lg = g.createLinearGradient(
-        VIEW.cx - VIEW.S * 0.6, VIEW.cy - VIEW.S * 0.72,
-        VIEW.cx + VIEW.S * 0.2, VIEW.cy + VIEW.S * 0.2
-      );
-      lg.addColorStop(0, 'rgba(255,255,255,0.9)');
-      lg.addColorStop(0.38, 'rgba(255,255,255,0.22)');
-      lg.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = lg;
-      g.beginPath();
-      g.moveTo(VIEW.cx - VIEW.S * 0.56, VIEW.cy - VIEW.S * 0.70);
-      g.lineTo(VIEW.cx - VIEW.S * 0.06, VIEW.cy - VIEW.S * 0.70);
-      g.lineTo(VIEW.cx - VIEW.S * 0.34, VIEW.cy + VIEW.S * 0.34);
-      g.lineTo(VIEW.cx - VIEW.S * 0.62, VIEW.cy + VIEW.S * 0.34);
-      g.closePath();
-      g.fill();
+    if (matteOn) {
+      /* 🌫️ frosted matte: no sharp streaks at all — a broad satin sheen, a soft
+         glow along the rim, a fine sandblasted grain and a milky veil over the
+         whole cover, the way frosted acrylic really looks */
+      var frost = maskLayer(function (g) {
+        var rx = VIEW.cx - VIEW.S * 0.3, ry = VIEW.cy - VIEW.S * 0.5;
+        var sg = g.createRadialGradient(rx, ry, VIEW.S * 0.04, rx, ry, VIEW.S * 1.2);
+        sg.addColorStop(0, 'rgba(255,255,255,0.4)');
+        sg.addColorStop(0.45, 'rgba(255,255,255,0.14)');
+        sg.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = sg;
+        g.fillRect(0, 0, VIEW.w, VIEW.h);
 
-      var lg2 = g.createLinearGradient(
-        VIEW.cx + VIEW.S * 0.16, VIEW.cy - VIEW.S * 0.5,
-        VIEW.cx + VIEW.S * 0.5, VIEW.cy + VIEW.S * 0.3
-      );
-      lg2.addColorStop(0, 'rgba(255,255,255,0.5)');
-      lg2.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = lg2;
-      g.beginPath();
-      g.moveTo(VIEW.cx + VIEW.S * 0.20, VIEW.cy - VIEW.S * 0.66);
-      g.lineTo(VIEW.cx + VIEW.S * 0.40, VIEW.cy - VIEW.S * 0.66);
-      g.lineTo(VIEW.cx + VIEW.S * 0.20, VIEW.cy + VIEW.S * 0.22);
-      g.lineTo(VIEW.cx + VIEW.S * 0.06, VIEW.cy + VIEW.S * 0.22);
-      g.closePath();
-      g.fill();
+        var i, x, y, r, a;
+        /* sandblasted micro-grain, fixed seed so it never crawls */
+        var rnd = mulberry32(20482);
+        var n = Math.round(Math.min(1500, Math.max(520, VIEW.S * VIEW.S * 0.03)));
+        for (i = 0; i < n; i++) {
+          x = VIEW.cx + (rnd() - 0.5) * VIEW.S * 1.12;
+          y = VIEW.cy + (rnd() - 0.5) * VIEW.S * 1.3;
+          r = 0.35 + rnd() * 0.7;
+          a = 0.04 + rnd() * 0.08;
+          g.fillStyle = rnd() < 0.74 ? 'rgba(255,255,255,' + a + ')' : 'rgba(126,108,138,' + (a * 0.45) + ')';
+          g.beginPath();
+          g.arc(x, y, r, 0, TAU);
+          g.fill();
+        }
 
-      var sg = g.createLinearGradient(0, VIEW.cy + VIEW.S * 0.2, 0, VIEW.cy + VIEW.S * 0.72);
-      sg.addColorStop(0, 'rgba(155,105,145,0)');
-      sg.addColorStop(1, 'rgba(150,95,140,0.16)');
-      g.fillStyle = sg;
-      g.fillRect(0, 0, VIEW.w, VIEW.h);
-    }, maskMain, null);
-    f.drawImage(gloss, 0, 0, VIEW.w, VIEW.h);
+        /* satin glow hugging the rim */
+        g.save();
+        g.globalAlpha = 0.3;
+        g.shadowColor = 'rgba(255,255,255,0.75)';
+        g.shadowBlur = VIEW.S * 0.055;
+        drawMask(g, maskEdge);
+        g.restore();
+        g.globalAlpha = 1;
+
+        /* milky veil */
+        g.fillStyle = 'rgba(255,255,255,' + (clearOn ? 0.12 : 0.085) + ')';
+        g.fillRect(0, 0, VIEW.w, VIEW.h);
+
+        var sg2 = g.createLinearGradient(0, VIEW.cy + VIEW.S * 0.12, 0, VIEW.cy + VIEW.S * 0.72);
+        sg2.addColorStop(0, 'rgba(155,125,155,0)');
+        sg2.addColorStop(1, 'rgba(150,110,148,0.1)');
+        g.fillStyle = sg2;
+        g.fillRect(0, 0, VIEW.w, VIEW.h);
+      }, maskMain, null);
+      f.drawImage(frost, 0, 0, VIEW.w, VIEW.h);
+    } else {
+      /* ✨ glossy: crisp specular streaks */
+      var gk = clearOn ? 0.86 : 1;
+      var gloss = maskLayer(function (g) {
+        var lg = g.createLinearGradient(
+          VIEW.cx - VIEW.S * 0.6, VIEW.cy - VIEW.S * 0.72,
+          VIEW.cx + VIEW.S * 0.2, VIEW.cy + VIEW.S * 0.2
+        );
+        lg.addColorStop(0, 'rgba(255,255,255,' + (0.9 * gk) + ')');
+        lg.addColorStop(0.38, 'rgba(255,255,255,' + (0.22 * gk) + ')');
+        lg.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = lg;
+        g.beginPath();
+        g.moveTo(VIEW.cx - VIEW.S * 0.56, VIEW.cy - VIEW.S * 0.70);
+        g.lineTo(VIEW.cx - VIEW.S * 0.06, VIEW.cy - VIEW.S * 0.70);
+        g.lineTo(VIEW.cx - VIEW.S * 0.34, VIEW.cy + VIEW.S * 0.34);
+        g.lineTo(VIEW.cx - VIEW.S * 0.62, VIEW.cy + VIEW.S * 0.34);
+        g.closePath();
+        g.fill();
+
+        var lg2 = g.createLinearGradient(
+          VIEW.cx + VIEW.S * 0.16, VIEW.cy - VIEW.S * 0.5,
+          VIEW.cx + VIEW.S * 0.5, VIEW.cy + VIEW.S * 0.3
+        );
+        lg2.addColorStop(0, 'rgba(255,255,255,' + (0.5 * gk) + ')');
+        lg2.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = lg2;
+        g.beginPath();
+        g.moveTo(VIEW.cx + VIEW.S * 0.20, VIEW.cy - VIEW.S * 0.66);
+        g.lineTo(VIEW.cx + VIEW.S * 0.40, VIEW.cy - VIEW.S * 0.66);
+        g.lineTo(VIEW.cx + VIEW.S * 0.20, VIEW.cy + VIEW.S * 0.22);
+        g.lineTo(VIEW.cx + VIEW.S * 0.06, VIEW.cy + VIEW.S * 0.22);
+        g.closePath();
+        g.fill();
+
+        var sg3 = g.createLinearGradient(0, VIEW.cy + VIEW.S * 0.2, 0, VIEW.cy + VIEW.S * 0.72);
+        sg3.addColorStop(0, 'rgba(155,105,145,0)');
+        sg3.addColorStop(1, 'rgba(150,95,140,0.16)');
+        g.fillStyle = sg3;
+        g.fillRect(0, 0, VIEW.w, VIEW.h);
+      }, maskMain, null);
+      f.drawImage(gloss, 0, 0, VIEW.w, VIEW.h);
+    }
   }
 
   /* ---------------- part sprites ---------------- */
@@ -3389,7 +3500,7 @@ input[type=range]::-webkit-slider-thumb{
       }
       list.push(s);
     }
-    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, pat: bgPattern, bgp: bgURL || '', ring: ringKey, parts: list, photos: photos, deco: decoSnapshot() };
+    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, fin: fin, pat: bgPattern, bgp: bgURL || '', ring: ringKey, parts: list, photos: photos, deco: decoSnapshot() };
   }
 
   function flashSaved() {
@@ -3435,6 +3546,7 @@ input[type=range]::-webkit-slider-thumb{
       if (ti >= 0 && ti < THEMES.length) { themeIdx = ti; theme = THEMES[ti]; }
     }
     if (st.snd !== undefined) setSound(parseInt(st.snd, 10), 'restore');
+    fin = (st.fin === 'matte') ? 'matte' : 'gloss';
     if (st.shape && SHAPES[st.shape]) shapeKey = st.shape;
     /* 🖼️ background pattern & 🔑 keyring, they come with the shaker */
     bgPattern = (st.pat && PAT_BY_ID[st.pat]) ? st.pat : 'none';
@@ -3574,6 +3686,32 @@ input[type=range]::-webkit-slider-thumb{
     }
     var nm = $('#ringName');
     if (nm) nm.textContent = (RING_BY_ID[ringKey] || RING_BY_ID.none).name;
+  }
+
+  /* ✨ 유광 / 🌫️ 무광 */
+  function syncFinUI() {
+    var chips = document.querySelectorAll('#finChips .chip'), i;
+    for (i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle('sel', chips[i].getAttribute('data-fin') === fin);
+    }
+    var h = $('#finHint');
+    if (h) {
+      var F = FINISHES[fin === 'matte' ? 1 : 0];
+      h.textContent = F.em + ' ' + F.name;
+    }
+  }
+
+  function setFinish(id) {
+    if (id !== 'gloss' && id !== 'matte') return;
+    if (fin === id) return;
+    fin = id;
+    buildCaseLayers();
+    draw();
+    syncFinUI();
+    touchState();
+    Sound.unlock();
+    Sound.pop(id === 'gloss');
+    toast(id === 'matte' ? '🌫️ 무광(프로스트) 아크릴로 바꿨어' : '✨ 유광 아크릴로 바꿨어');
   }
 
   function rebuildPatternChips() {
@@ -4615,7 +4753,7 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   function autoSlotName(list) {
-    var base = THEMES[themeIdx].name + ' ' + SHAPES[shapeKey].name;
+    var base = (fin === 'matte' ? '무광 ' : '') + THEMES[themeIdx].name + ' ' + SHAPES[shapeKey].name;
     var used = {}, i, n = 1;
     for (i = 0; i < list.length; i++) used[list[i].name] = 1;
     while (used[base + ' #' + n]) n++;
@@ -4680,6 +4818,7 @@ input[type=range]::-webkit-slider-thumb{
     var mc = document.querySelectorAll('#modeChips .chip');
     for (i = 0; i < mc.length; i++) mc[i].classList.toggle('sel', i === modeIdx);
     syncSoundChips();
+    syncFinUI();
     syncBgUI();
     syncRingUI();
     for (i = 0; i < parts.length; i++) parts[i].bounce = modeCfg().bounce;
@@ -4956,14 +5095,18 @@ input[type=range]::-webkit-slider-thumb{
     var sw = $('#swatches');
     THEMES.forEach(function (t, i) {
       var b = document.createElement('button');
-      b.className = 'sw' + (i === themeIdx ? ' sel' : '');
+      b.className = 'sw' + (i === themeIdx ? ' sel' : '') + (t.clear ? ' clear' : '');
       b.type = 'button';
       b.setAttribute('aria-label', t.name);
-      b.style.background = 'linear-gradient(160deg,' + t.top + ',' + t.mid + ' 55%,' + t.bottom + ')';
+      b.style.background = t.clear
+        ? 'linear-gradient(160deg, rgba(255,255,255,.92), rgba(236,248,255,.4) 52%, rgba(203,228,247,.6)),' +
+          'repeating-conic-gradient(#e6edf6 0% 25%, #ffffff 0% 50%) 50% / 9px 9px'
+        : 'linear-gradient(160deg,' + t.top + ',' + t.mid + ' 55%,' + t.bottom + ')';
       b.addEventListener('click', function () {
         themeIdx = i;
         theme = THEMES[i];
         buildCaseLayers();
+        draw();
         var all = document.querySelectorAll('#swatches .sw');
         for (var q = 0; q < all.length; q++) all[q].classList.toggle('sel', q === i);
         Sound.pop(false);
@@ -4971,6 +5114,26 @@ input[type=range]::-webkit-slider-thumb{
       });
       sw.appendChild(b);
     });
+
+    /* ✨ 유광 / 🌫️ 무광 */
+    var fc = $('#finChips');
+    if (fc) {
+      FINISHES.forEach(function (F) {
+        var fb = document.createElement('button');
+        fb.className = 'chip' + (F.id === fin ? ' sel' : '');
+        fb.type = 'button';
+        fb.setAttribute('data-fin', F.id);
+        fb.setAttribute('aria-label', F.name + ' 마감');
+        var em = document.createElement('em');
+        em.textContent = F.em;
+        fb.appendChild(em);
+        var sp = document.createElement('span');
+        sp.textContent = F.name;
+        fb.appendChild(sp);
+        fb.addEventListener('click', function () { setFinish(F.id); });
+        fc.appendChild(fb);
+      });
+    }
 
     /* 🔔 sound theme chips */
     var sch = $('#soundChips');
