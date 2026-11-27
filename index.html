@@ -214,6 +214,38 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
 .mini .chip{width:auto;min-width:40px;height:30px;padding:0 9px;border-radius:10px;font-size:11.5px;font-weight:800;color:#9a7f95;}
 .mini .chip.sel{color:#c05a86;}
 
+/* ---------- 🌈 오로라(홀로그램) 코팅 ---------- */
+.finchips{flex-wrap:wrap;}
+.chip.holo{background:linear-gradient(120deg,#fff 0%,#ffe6f2 26%,#e6f6ff 50%,#f0ffe8 72%,#f4e9ff 100%);}
+.chip.holo.sel{
+  border-color:#c9a7ef;
+  background:linear-gradient(120deg,#ffd6e9 0%,#ffe9c9 22%,#f6ffd6 44%,#d4f7e4 62%,#d3ecff 80%,#e7dcff 100%);
+  box-shadow:0 0 0 3px rgba(190,160,255,.24),0 3px 10px rgba(160,140,230,.22);
+}
+
+/* ---------- 🔤 글자 비즈 ---------- */
+.lprev-wrap{
+  border-radius:18px;padding:8px;margin:0 0 10px;
+  background:linear-gradient(160deg,#fff,#fdf3fa 55%,#f3edff);
+  border:1px solid rgba(228,214,240,.9);
+}
+#letterPrev{display:block;width:100%;height:auto;border-radius:14px;}
+.lrow{display:flex;gap:8px;align-items:center;margin:2px 0 6px;}
+#letterInput{
+  flex:1;min-width:0;border:1.5px solid #f2e2ef;border-radius:14px;background:#fff;
+  padding:11px 13px;font:inherit;font-size:16px;font-weight:800;color:#6d5570;letter-spacing:.02em;
+  -webkit-appearance:none;appearance:none;
+}
+#letterInput::placeholder{color:#cbb3c6;font-weight:700;letter-spacing:0;}
+#letterInput:focus{outline:none;border-color:#ffb6d3;box-shadow:0 0 0 3px rgba(255,158,196,.18);}
+/* iOS Safari zooms the page under 16px; only a mouse-driven screen gets the tighter look */
+@media (hover:hover) and (pointer:fine) and (min-width:700px){
+  #letterInput{font-size:13.5px;}
+}
+.beadchips .chip{width:60px;height:64px;gap:2px;}
+.beadchips .chip canvas{width:34px;height:34px;}
+.beadchips .chip span{font-size:8.8px;letter-spacing:-.5px;}
+
 /* ---------- 🔔 소리 테마 ---------- */
 .schips{gap:6px;padding:2px 2px 4px;}
 .schips .chip{flex-direction:row;width:auto;height:34px;padding:0 10px;border-radius:12px;gap:4px;}
@@ -434,6 +466,7 @@ input[type=range]::-webkit-slider-thumb{
       <div class="sec">
         <div class="sec-head"><span>파츠 넣기</span><button id="clearBtn" class="link-btn">모두 지우기</button></div>
         <div class="chips pchips" id="partChips"></div>
+        <button id="letterBtn" class="btn photo" type="button">🔤 글자 비즈 만들기</button>
         <button id="photoBtn" class="btn photo">📷 사진으로 누끼 파츠 만들기</button>
       </div>
 
@@ -530,6 +563,32 @@ input[type=range]::-webkit-slider-thumb{
     <div class="sheet-actions">
       <button id="shotDownload" class="btn ghost" type="button">다운로드</button>
       <button id="shotSave" class="btn primary grow" type="button">사진에 저장</button>
+    </div>
+  </div>
+</div>
+
+<div id="letter" class="sheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <div>
+        <b>🔤 글자 비즈</b>
+        <span class="sub">이니셜·이름을 아크릴 비즈로 만들어 넣어요</span>
+      </div>
+      <button id="letterClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div class="lprev-wrap">
+      <canvas id="letterPrev" width="640" height="300"></canvas>
+    </div>
+    <div class="lrow">
+      <input id="letterInput" type="text" maxlength="6" placeholder="HYO, ♥, 2000" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" />
+    </div>
+    <div class="notice" id="letterHint">최대 6글자 · 한글·영문·숫자·♥★ 모두 돼요</div>
+    <div class="srow"><span>비즈 모양</span></div>
+    <div class="chips beadchips" id="letterStyleChips"></div>
+    <div class="srow"><span>넣는 방식</span><div class="mini" id="letterModeChips"></div></div>
+    <div class="sheet-actions">
+      <button id="letterCancel" class="btn ghost" type="button">닫기</button>
+      <button id="letterAdd" class="btn primary grow" type="button">비즈 넣기</button>
     </div>
   </div>
 </div>
@@ -789,6 +848,10 @@ input[type=range]::-webkit-slider-thumb{
   ];
   var fin = 'gloss';
   function isMatte() { return fin === 'matte'; }
+
+  /* 🌈 오로라 코팅: an iridescent film that sits on top of gloss or matte, so it
+     can be worn with either finish instead of replacing one of them */
+  var holoOn = false;
 
   /* ---------------- shaker modes: 딸깍(일반) / 오일·워터 ---------------- */
   var MODES = [
@@ -1453,6 +1516,141 @@ input[type=range]::-webkit-slider-thumb{
     return spriteCache[type.id];
   }
 
+  /* =========================================================
+     🔤 글자 비즈 — letters typed into cute acrylic beads
+     ========================================================= */
+  var FONT_STACK = '"Apple SD Gothic Neo","Pretendard",-apple-system,BlinkMacSystemFont,system-ui,sans-serif';
+  var BEAD_STYLES = [
+    { id: 'white', name: '화이트 사각', art: 62, r: 0.060 },
+    { id: 'pastel', name: '파스텔 하트', art: 64, r: 0.062 },
+    { id: 'clear', name: '투명 별', art: 72, r: 0.066 },
+    { id: 'pink', name: '핑크 원형', art: 62, r: 0.060 }
+  ];
+  var BEAD_BY_ID = {};
+  BEAD_STYLES.forEach(function (b) { BEAD_BY_ID[b.id] = b; });
+  var WORD_ART = 70, WORD_R = 0.078;
+  var beadStyle = 'white', beadWord = false;
+  var letterCache = {}, letterCacheN = 0;
+
+  var BEAD_PAL = {
+    white: {
+      stops: ['#ffffff', '#f5f3fb', '#e2ddec'],
+      rim: 'rgba(158,148,182,0.5)', rim2: 'rgba(255,255,255,0.95)',
+      ink: '#6c5f8d', shadow: 'rgba(126,112,156,0.32)', fs: 74
+    },
+    pastel: {
+      stops: ['#ffeaf4', '#ffc6de', '#ff9dc0'],
+      rim: 'rgba(255,255,255,0.96)', rim2: 'rgba(255,255,255,0.72)',
+      ink: '#b2406c', shadow: 'rgba(220,110,155,0.34)', fs: 56
+    },
+    clear: {
+      stops: ['rgba(242,251,255,0.78)', 'rgba(200,230,252,0.62)', 'rgba(158,204,240,0.7)'],
+      rim: 'rgba(255,255,255,0.96)', rim2: 'rgba(186,218,244,0.7)',
+      ink: '#4e7799', shadow: 'rgba(120,160,200,0.3)', fs: 52
+    },
+    pink: {
+      stops: ['#ffe8f2', '#ffb5d1', '#ff7fac'],
+      rim: 'rgba(255,255,255,0.98)', rim2: 'rgba(255,255,255,0.75)',
+      ink: '#ffffff', shadow: 'rgba(230,110,160,0.34)', fs: 64
+    }
+  };
+
+  /* the outline of one bead, so fill, rim and clip all share the same shape */
+  function beadPath(g, sty, x, y, w, h, pill) {
+    if (pill) { roundRectPath(g, x, y, w, h, Math.min(h / 2, 46)); return; }
+    if (sty === 'pastel') { heartPath(g, x + w / 2, y + h * 0.43, h * 0.47); return; }
+    if (sty === 'clear') { starPath(g, x + w / 2, y + h / 2, w * 0.54, w * 0.25, 5, -Math.PI / 2); return; }
+    if (sty === 'pink') { g.beginPath(); g.arc(x + w / 2, y + h / 2, w / 2, 0, TAU); return; }
+    roundRectPath(g, x, y, w, h, Math.min(w, h) * 0.29);
+  }
+
+  function drawLetterBead(g, txt, sty, word) {
+    g.clearRect(0, 0, SPRITE, SPRITE);
+    var pal = BEAD_PAL[sty] || BEAD_PAL.white;
+    var w, h, x0, y0, fs, ty;
+    var i;
+    if (word) {
+      fs = 62;
+      g.font = '900 ' + fs + 'px ' + FONT_STACK;
+      var tw = g.measureText(txt).width || 44;
+      var maxW = 208;
+      if (tw + 58 > maxW) {
+        fs = Math.max(24, Math.floor(fs * (maxW - 58) / tw));
+        g.font = '900 ' + fs + 'px ' + FONT_STACK;
+        tw = g.measureText(txt).width;
+      }
+      w = Math.min(maxW, Math.round(tw) + 58);
+      h = 96;
+      x0 = (SPRITE - w) / 2; y0 = (SPRITE - h) / 2;
+      ty = y0 + h * 0.53;
+    } else {
+      w = 108; h = 108; x0 = (SPRITE - w) / 2; y0 = (SPRITE - h) / 2;
+      fs = pal.fs;
+      ty = y0 + h * (sty === 'pastel' ? 0.57 : 0.53);
+    }
+
+    /* body */
+    g.save();
+    softShadow(g, pal.shadow, 18, 8);
+    beadPath(g, sty, x0, y0, w, h, word);
+    var gr = g.createLinearGradient(x0, y0, x0 + w * 0.35, y0 + h);
+    for (i = 0; i < 3; i++) gr.addColorStop(i === 0 ? 0 : (i === 1 ? 0.55 : 1), pal.stops[i]);
+    g.fillStyle = gr;
+    g.fill();
+    g.restore();
+
+    /* acrylic rim: a bright inner edge over a faint cool outline */
+    g.save();
+    g.lineJoin = 'round';
+    beadPath(g, sty, x0, y0, w, h, word);
+    g.strokeStyle = pal.rim;
+    g.lineWidth = 6.5;
+    g.stroke();
+    g.restore();
+
+    /* glossy highlight, clipped to the bead */
+    g.save();
+    beadPath(g, sty, x0, y0, w, h, word);
+    g.clip();
+    g.globalAlpha = 0.6;
+    var hg = g.createLinearGradient(x0, y0, x0 + w * 0.7, y0 + h * 0.7);
+    hg.addColorStop(0, 'rgba(255,255,255,0.95)');
+    hg.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = hg;
+    g.beginPath();
+    g.ellipse(x0 + w * 0.35, y0 + h * 0.25, w * 0.32, h * 0.18, -0.5, 0, TAU);
+    g.fill();
+    g.globalAlpha = 0.36;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(x0 + w * 0.72, y0 + h * 0.78, w * 0.18, h * 0.09, 0.5, 0, TAU);
+    g.fill();
+    g.globalAlpha = 1;
+    g.restore();
+
+    /* the letter itself */
+    g.save();
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = '900 ' + fs + 'px ' + FONT_STACK;
+    if (sty === 'pink') { g.shadowColor = 'rgba(178,52,104,0.45)'; g.shadowBlur = 4; g.shadowOffsetY = 2; }
+    else if (sty === 'clear') { g.shadowColor = 'rgba(255,255,255,0.9)'; g.shadowBlur = 5; }
+    g.fillStyle = pal.ink;
+    g.fillText(txt, x0 + w / 2, ty);
+    g.restore();
+  }
+
+  function getLetterSprite(txt, sty, word) {
+    var key = (word ? 'W|' : 'L|') + sty + '|' + txt;
+    if (letterCache[key]) return letterCache[key];
+    if (letterCacheN > 90) { letterCache = {}; letterCacheN = 0; }
+    var cv = newSpriteCanvas();
+    drawLetterBead(cv.getContext('2d'), txt, sty, word);
+    letterCache[key] = cv;
+    letterCacheN++;
+    return cv;
+  }
+
   /* ---------------- oil fluid: rising bubbles + fine drifting glitter ---------------- */
   var bubbles = [], sparkles = [], bubbleSprite = null, sparkSprite = null;
   var fluidT = 0, fluidAcc = 0;
@@ -1573,7 +1771,8 @@ input[type=range]::-webkit-slider-thumb{
       sprite: opts.sprite, art: opts.art || ART_R,
       sc: opts.sc || SPRITE,
       mass: opts.r * opts.r * 400, bounce: M.bounce, kind: opts.kind || 'default',
-      ph: opts.ph || null, ph0: rand(0, TAU)
+      ph: opts.ph || null, ph0: rand(0, TAU),
+      txt: opts.txt || '', sty: opts.sty || ''
     };
     if (typeof opts.x === 'number' && typeof opts.y === 'number') {
       p.x = opts.x;
@@ -1709,6 +1908,7 @@ input[type=range]::-webkit-slider-thumb{
     var dragF = 1 - M.drag * dt;
     var spinF = 1 - (M.swirl ? 2.6 : 1.9) * dt;
     fluidT += dt;
+    if (holoOn) stepHolo(dt);
     for (i = 0; i < n; i++) {
       p = parts[i];
       if (p.drag) continue;
@@ -1965,6 +2165,102 @@ input[type=range]::-webkit-slider-thumb{
     g.restore();
   }
 
+  /* ---------------- 🌈 오로라(홀로그램) 코팅 ---------------- */
+  /* a film of shifting rainbow bands over the acrylic: the band axis turns with
+     the phone's tilt and the hue slowly flows, so every tilt shimmers anew */
+  var holoLayer = null;
+  var holo = { ang: Math.PI * 0.5, t: 0, phase: 0, spark: 0, kick: 0 };
+  var holoGlintCache = {};
+
+  function stepHolo(dt) {
+    holo.t += dt;
+    var target = Math.atan2(grav.y, grav.x) + Math.sin(holo.t * 0.42) * 0.55;
+    var d = target - holo.ang;
+    while (d > Math.PI) d -= TAU;
+    while (d < -Math.PI) d += TAU;
+    holo.ang += d * Math.min(1, dt * 3.2);
+    holo.spark = Math.max(0, holo.spark - dt * 1.5);
+    holo.spark = Math.min(1, holo.spark + Math.abs(d) * 2.6);
+    holo.phase = (holo.phase + dt * (0.055 + holo.spark * 0.5 + holo.kick * 0.7)) % 1;
+    holo.kick *= Math.max(0, 1 - dt * 2.4);
+  }
+
+  function holoGlints() {
+    var key = shapeKey;
+    if (holoGlintCache[key]) return holoGlintCache[key];
+    var rnd = mulberry32(4477), list = [], i, u, v, n = 0;
+    for (i = 0; i < 120 && n < 22; i++) {
+      u = (rnd() - 0.5) * 0.94;
+      v = (rnd() - 0.5) * 1.12;
+      if (normSdf(u, v) < -0.05) {
+        list.push({ u: u, v: v, r: 0.010 + rnd() * 0.025, ph: rnd() * TAU, sp: 1.3 + rnd() * 2.8 });
+        n++;
+      }
+    }
+    holoGlintCache[key] = list;
+    return list;
+  }
+
+  function paintHolo() {
+    if (!holoLayer) holoLayer = document.createElement('canvas');
+    var W = canvasEl.width, H = canvasEl.height;
+    if (holoLayer.width !== W || holoLayer.height !== H) { holoLayer.width = W; holoLayer.height = H; }
+    var g = holoLayer.getContext('2d');
+    g.setTransform(VIEW.dpr, 0, 0, VIEW.dpr, 0, 0);
+    g.clearRect(0, 0, VIEW.w, VIEW.h);
+
+    var R = VIEW.S * 1.25;
+    var ax = Math.cos(holo.ang), ay = Math.sin(holo.ang);
+    var gr = g.createLinearGradient(VIEW.cx - ax * R, VIEW.cy - ay * R, VIEW.cx + ax * R, VIEW.cy + ay * R);
+    var i, t, hue, a, N = 26;
+    for (i = 0; i <= N; i++) {
+      t = i / N;
+      hue = ((t * 2.1 + holo.phase) % 1 + 1) % 1;
+      a = 0.26 * Math.pow(Math.sin(Math.PI * t), 0.55);
+      gr.addColorStop(t, 'hsla(' + (hue * 360).toFixed(1) + ',100%,68%,' + a.toFixed(3) + ')');
+    }
+    g.fillStyle = gr;
+    g.fillRect(0, 0, VIEW.w, VIEW.h);
+
+    /* a soft white sweep sliding across the bands: the film catches the light */
+    var sp = Math.sin(holo.t * 0.75) * 0.55 * VIEW.S;
+    var sg = g.createLinearGradient(
+      VIEW.cx - VIEW.S * 0.75 + sp, VIEW.cy - VIEW.S * 0.95,
+      VIEW.cx + VIEW.S * 0.75 + sp, VIEW.cy + VIEW.S * 0.95
+    );
+    sg.addColorStop(0, 'rgba(255,255,255,0)');
+    sg.addColorStop(0.5, 'rgba(255,255,255,0.16)');
+    sg.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = sg;
+    g.fillRect(0, 0, VIEW.w, VIEW.h);
+
+    /* star glints twinkling over the film, brighter when the phone moves */
+    var gl = holoGlints();
+    var boost = 0.5 + holo.spark * 1.2;
+    for (i = 0; i < gl.length; i++) {
+      var q = gl[i];
+      var tw = Math.pow(Math.max(0, Math.sin(holo.t * q.sp + q.ph)), 3);
+      var rr = q.r * VIEW.S * (0.65 + tw * 0.75);
+      var x = VIEW.cx + q.u * VIEW.S, y = VIEW.cy + q.v * VIEW.S;
+      g.globalAlpha = Math.min(1, (0.1 + tw * 0.72) * boost);
+      g.fillStyle = (i % 3 === 0)
+        ? 'hsl(' + ((holo.t * 70 + i * 53) % 360).toFixed(1) + ',100%,82%)'
+        : '#ffffff';
+      g.beginPath();
+      g.moveTo(x, y - rr);
+      g.quadraticCurveTo(x + rr * 0.18, y - rr * 0.18, x + rr, y);
+      g.quadraticCurveTo(x + rr * 0.18, y + rr * 0.18, x, y + rr);
+      g.quadraticCurveTo(x - rr * 0.18, y + rr * 0.18, x - rr, y);
+      g.quadraticCurveTo(x - rr * 0.18, y - rr * 0.18, x, y - rr);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+
+    g.globalCompositeOperation = 'destination-in';
+    drawMask(g, maskMain);
+    g.globalCompositeOperation = 'source-over';
+  }
+
   /* ---------------- render ---------------- */
   function renderParts(g) {
     var pg = partsLayer.getContext('2d');
@@ -1996,6 +2292,10 @@ input[type=range]::-webkit-slider-thumb{
     renderParts(g);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    if (holoOn) {
+      paintHolo();
+      g.drawImage(holoLayer, 0, 0, VIEW.w, VIEW.h);
+    }
     drawKeyring(g);
     drawDeco(g);
   }
@@ -2569,6 +2869,7 @@ input[type=range]::-webkit-slider-thumb{
     bumpCounter();
     wobble();
     if (ringKey !== 'none') ringVel += rand(-2.8, 2.8) * power;
+    if (holoOn) { holo.kick += 0.8 * power; holo.spark = Math.min(1, holo.spark + 0.5 * power); }
     if (isOil()) Sound.swish(power); else Sound.rattle(power);
   }
 
@@ -3514,9 +3815,10 @@ input[type=range]::-webkit-slider-thumb{
         s.sc = p.sc;
         photos[p.ph] = photoStore[p.ph].url;
       }
+      if (p.kind === 'letter' || p.kind === 'word') { s.tx = p.txt; s.sty = p.sty; }
       list.push(s);
     }
-    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, fin: fin, pat: bgPattern, bgp: bgURL || '', ring: ringKey, parts: list, photos: photos, deco: decoSnapshot() };
+    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, fin: fin, holo: holoOn ? 1 : 0, pat: bgPattern, bgp: bgURL || '', ring: ringKey, parts: list, photos: photos, deco: decoSnapshot() };
   }
 
   function flashSaved() {
@@ -3563,6 +3865,8 @@ input[type=range]::-webkit-slider-thumb{
     }
     if (st.snd !== undefined) setSound(parseInt(st.snd, 10), 'restore');
     fin = (st.fin === 'matte') ? 'matte' : 'gloss';
+    holoOn = !!st.holo;
+    holoGlintCache = {};
     if (st.shape && SHAPES[st.shape]) shapeKey = st.shape;
     /* 🖼️ background pattern & 🔑 keyring, they come with the shaker */
     bgPattern = (st.pat && PAT_BY_ID[st.pat]) ? st.pat : 'none';
@@ -3581,6 +3885,17 @@ input[type=range]::-webkit-slider-thumb{
       r = clamp(parseFloat(s.r) || 0.07, 0.03, 0.16);
       if (s.k === 'photo' && s.p && st.photos && st.photos[s.p]) {
         restorePhoto(s, st.photos[s.p], r);
+      } else if (s.k === 'letter' || s.k === 'word') {
+        var tx = String(s.tx || '').slice(0, 12);
+        if (!tx) continue;
+        var bsty = BEAD_BY_ID[s.sty] ? s.sty : 'white';
+        var bdef = BEAD_BY_ID[bsty];
+        var isWord = s.k === 'word';
+        spawnPart({
+          r: r, sprite: getLetterSprite(tx, bsty, isWord),
+          art: isWord ? WORD_ART : bdef.art, kind: s.k, txt: tx, sty: bsty,
+          x: s.x, y: s.y, rot: s.ro
+        });
       } else if (PART_BY_ID[s.k]) {
         t = PART_BY_ID[s.k];
         spawnPart({ r: t.r, sprite: getSprite(t), art: t.art, kind: t.id, x: s.x, y: s.y, rot: s.ro });
@@ -3704,17 +4019,36 @@ input[type=range]::-webkit-slider-thumb{
     if (nm) nm.textContent = (RING_BY_ID[ringKey] || RING_BY_ID.none).name;
   }
 
-  /* ✨ 유광 / 🌫️ 무광 */
+  /* ✨ 유광 / 🌫️ 무광 / 🌈 오로라 */
   function syncFinUI() {
     var chips = document.querySelectorAll('#finChips .chip'), i;
     for (i = 0; i < chips.length; i++) {
+      if (chips[i].getAttribute('data-holo')) continue;
       chips[i].classList.toggle('sel', chips[i].getAttribute('data-fin') === fin);
+    }
+    var hc = document.querySelector('#finChips .chip.holo');
+    if (hc) {
+      hc.classList.toggle('sel', holoOn);
+      hc.setAttribute('aria-pressed', holoOn ? 'true' : 'false');
     }
     var h = $('#finHint');
     if (h) {
       var F = FINISHES[fin === 'matte' ? 1 : 0];
-      h.textContent = F.em + ' ' + F.name;
+      h.textContent = F.em + ' ' + F.name + (holoOn ? ' + 🌈' : '');
     }
+  }
+
+  function setHolo(on) {
+    on = !!on;
+    if (holoOn === on) return;
+    holoOn = on;
+    if (on) { holo.kick += 1.1; holo.spark = 1; }
+    draw();
+    syncFinUI();
+    touchState();
+    Sound.unlock();
+    Sound.pop(on);
+    toast(on ? '🌈 오로라 코팅을 입혔어! 기울이면 무지갯빛이 흘러' : '오로라 코팅을 뺐어');
   }
 
   function setFinish(id) {
@@ -3951,6 +4285,10 @@ input[type=range]::-webkit-slider-thumb{
     g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    if (holoOn) {
+      paintHolo();
+      g.drawImage(holoLayer, 0, 0, VIEW.w, VIEW.h);
+    }
     drawKeyring(g);
     drawDeco(g);
     g.restore();
@@ -4757,6 +5095,10 @@ input[type=range]::-webkit-slider-thumb{
     g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    if (holoOn) {
+      paintHolo();
+      g.drawImage(holoLayer, 0, 0, VIEW.w, VIEW.h);
+    }
     drawKeyring(g);
     drawDeco(g);
     g.restore();
@@ -5029,6 +5371,178 @@ input[type=range]::-webkit-slider-thumb{
     return cv;
   }
 
+  /* =========================================================
+     🔤 글자 비즈 sheet — type a few letters, pick a bead, drop them in
+     ========================================================= */
+  function letterChars() {
+    var el = $('#letterInput');
+    var s = el ? String(el.value || '') : '';
+    var arr = Array.from(s).filter(function (c) { return c !== ' ' && c !== '\n' && c !== '\t'; });
+    return arr.slice(0, 6);
+  }
+
+  function paintLetterPreview() {
+    var cv = $('#letterPrev');
+    if (!cv) return;
+    var g = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    g.clearRect(0, 0, W, H);
+    var chars = letterChars();
+    var items = [], i;
+    if (!chars.length) {
+      items = ['H', 'Y', 'O'].map(function (c) { return { txt: c, word: false }; });
+    } else if (beadWord) {
+      items = [{ txt: chars.join(''), word: true }];
+    } else {
+      for (i = 0; i < chars.length; i++) items.push({ txt: chars[i], word: false });
+    }
+    var gap = 16, total = 0, sizes = [];
+    for (i = 0; i < items.length; i++) {
+      var sz = items[i].word ? 252 : 150;
+      sizes.push(sz); total += sz;
+    }
+    total += gap * (items.length - 1);
+    var k = Math.min(1, (W - 48) / total);
+    var x = (W - total * k) / 2, y = H / 2;
+    for (i = 0; i < items.length; i++) {
+      var spr = getLetterSprite(items[i].txt, beadStyle, items[i].word);
+      var d = sizes[i] * k;
+      g.save();
+      g.translate(x + d / 2, y);
+      g.rotate((i % 2 ? 1 : -1) * 0.045);
+      if (items[i].word) {
+        var dh = d * 0.4, dw = dh * (224 / 120);
+        g.drawImage(spr, C - 112, C - 60, 224, 120, -dw / 2, -dh / 2, dw, dh);
+      } else {
+        var ds = d * 0.8;
+        g.drawImage(spr, C - 70, C - 70, 140, 140, -ds / 2, -ds / 2, ds, ds);
+      }
+      g.restore();
+      x += d + gap * k;
+    }
+  }
+
+  function openLetterSheet() {
+    var el = $('#letter');
+    if (!el) return;
+    Sound.unlock();
+    el.hidden = false;
+    requestAnimationFrame(function () {
+      el.classList.add('on');
+      paintLetterPreview();
+    });
+  }
+
+  function closeLetterSheet() {
+    var el = $('#letter');
+    if (!el) return;
+    el.classList.remove('on');
+    setTimeout(function () { el.hidden = true; }, 240);
+    var inp = $('#letterInput');
+    if (inp) { try { inp.blur(); } catch (e) { /* ignore */ } }
+  }
+
+  function addLetterBeads() {
+    var chars = letterChars();
+    if (!chars.length) {
+      toast('넣을 글자를 먼저 적어 주세요');
+      var el = $('#letterInput');
+      if (el) { try { el.focus(); } catch (e) { /* ignore */ } }
+      return;
+    }
+    var st = BEAD_BY_ID[beadStyle] || BEAD_STYLES[0];
+    var items = beadWord
+      ? [{ txt: chars.join(''), word: true }]
+      : chars.map(function (c) { return { txt: c, word: false }; });
+    if (parts.length + items.length > MAX_PARTS) {
+      toast('파츠가 너무 많아요! 몇 개 지우고 다시 해 봐요');
+      return;
+    }
+    var made = 0, i, p;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i];
+      p = spawnPart({
+        r: it.word ? WORD_R : st.r,
+        sprite: getLetterSprite(it.txt, st.id, it.word),
+        art: it.word ? WORD_ART : st.art,
+        kind: it.word ? 'word' : 'letter',
+        txt: it.txt, sty: st.id
+      });
+      if (p) made++;
+    }
+    if (!made) { toast('파츠가 너무 많아요!'); return; }
+    Sound.unlock();
+    Sound.pop(true);
+    touchState();
+    closeLetterSheet();
+    toast('🔤 「' + chars.join('') + '」 비즈 ' + made + '개를 넣었어!');
+  }
+
+  function buildLetterUI() {
+    var lsc = $('#letterStyleChips');
+    if (lsc) {
+      BEAD_STYLES.forEach(function (B) {
+        var b = document.createElement('button');
+        b.className = 'chip' + (B.id === beadStyle ? ' sel' : '');
+        b.type = 'button';
+        b.setAttribute('data-bead', B.id);
+        b.setAttribute('aria-label', B.name + ' 비즈');
+        var cv = cutCanvas(72, 72);
+        var cg = cv.getContext('2d');
+        cg.drawImage(getLetterSprite('A', B.id, false), C - 70, C - 70, 140, 140, 0, 0, 72, 72);
+        b.appendChild(cv);
+        var sp = document.createElement('span');
+        sp.textContent = B.name;
+        b.appendChild(sp);
+        b.addEventListener('click', function () {
+          beadStyle = B.id;
+          markSel(lsc, b);
+          paintLetterPreview();
+          Sound.unlock();
+          Sound.pop(false);
+        });
+        lsc.appendChild(b);
+      });
+    }
+
+    var lmc = $('#letterModeChips');
+    if (lmc) {
+      [['letter', '한 글자씩'], ['word', '한 덩어리로']].forEach(function (o) {
+        var b = document.createElement('button');
+        b.className = 'chip' + (((o[0] === 'word') === beadWord) ? ' sel' : '');
+        b.type = 'button';
+        b.textContent = o[1];
+        b.addEventListener('click', function () {
+          beadWord = (o[0] === 'word');
+          markSel(lmc, b);
+          paintLetterPreview();
+        });
+        lmc.appendChild(b);
+      });
+    }
+
+    var lb = $('#letterBtn');
+    if (lb) lb.addEventListener('click', openLetterSheet);
+    var lc = $('#letterClose');
+    if (lc) lc.addEventListener('click', closeLetterSheet);
+    var lcl = $('#letterCancel');
+    if (lcl) lcl.addEventListener('click', closeLetterSheet);
+    var la = $('#letterAdd');
+    if (la) la.addEventListener('click', addLetterBeads);
+    var li = $('#letterInput');
+    if (li) {
+      li.addEventListener('input', paintLetterPreview);
+      li.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+          e.preventDefault();
+          addLetterBeads();
+        }
+      });
+    }
+    var lel = $('#letter');
+    if (lel) lel.addEventListener('click', function (e) { if (e.target === this) closeLetterSheet(); });
+  }
+
   /* ---------------- UI build ---------------- */
   function markSel(box, btn) {
     var all = box.children, q;
@@ -5151,7 +5665,26 @@ input[type=range]::-webkit-slider-thumb{
         fb.addEventListener('click', function () { setFinish(F.id); });
         fc.appendChild(fb);
       });
+
+      /* 🌈 오로라 코팅: its own toggle, so it can be worn over gloss or matte */
+      var hb = document.createElement('button');
+      hb.className = 'chip holo' + (holoOn ? ' sel' : '');
+      hb.type = 'button';
+      hb.setAttribute('data-holo', '1');
+      hb.setAttribute('aria-label', '오로라 코팅');
+      hb.setAttribute('aria-pressed', holoOn ? 'true' : 'false');
+      var hem = document.createElement('em');
+      hem.textContent = '🌈';
+      hb.appendChild(hem);
+      var hsp = document.createElement('span');
+      hsp.textContent = '오로라';
+      hb.appendChild(hsp);
+      hb.addEventListener('click', function () { setHolo(!holoOn); });
+      fc.appendChild(hb);
     }
+
+    /* 🔤 letter beads */
+    buildLetterUI();
 
     /* 🔔 sound theme chips */
     var sch = $('#soundChips');
