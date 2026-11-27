@@ -394,6 +394,48 @@ input[type=range]::-webkit-slider-thumb{
 }
 .slot-del:active{transform:scale(.9);}
 #slotEmpty{text-align:center;padding:16px 4px 10px;}
+
+/* ---------- 📸 인증샷 이름 · 💌 공유 ---------- */
+#shotNameRow{display:flex;align-items:center;gap:9px;margin:2px 0 6px;}
+#shotNameRow span{flex:0 0 auto;font-size:12px;font-weight:800;color:#a98fa2;}
+#shotName{
+  flex:1;min-width:0;border:1.5px solid #f2e2ef;border-radius:14px;background:#fff;
+  padding:11px 13px;font:inherit;font-size:16px;font-weight:800;color:#6d5570;
+  -webkit-appearance:none;appearance:none;
+}
+#shotName::placeholder{color:#cbb3c6;font-weight:700;}
+#shotName:focus{outline:none;border-color:#ffb6d3;box-shadow:0 0 0 3px rgba(255,158,196,.18);}
+@media (hover:hover) and (pointer:fine) and (min-width:700px){
+  #shotName{font-size:13.5px;}
+}
+.share-top{display:flex;align-items:center;gap:12px;margin:2px 0 10px;}
+#sharePrev{
+  flex:0 0 auto;width:84px;height:112px;border-radius:16px;display:block;
+  background:linear-gradient(160deg,#fff,#fdf0f8 60%,#f6ebff);
+  box-shadow:0 5px 14px rgba(180,130,165,.2), inset 0 1px 0 #fff;
+}
+.share-facts{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
+.share-facts .srow{font-size:12px;}
+.share-facts .srow em{font-size:11.5px;max-width:64%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.share-link-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.share-link-row .btn{flex:0 0 auto;padding:11px 14px;border-radius:13px;font-size:13px;}
+#shareLink{
+  flex:1;min-width:0;border:1.5px solid #f2e2ef;border-radius:13px;background:#fff;
+  padding:10px 12px;font:inherit;font-size:16px;font-weight:700;color:#6d5570;
+  -webkit-appearance:none;appearance:none;text-align:left;
+}
+#shareLink::placeholder{color:#cbb3c6;font-weight:700;font-size:12px;}
+#shareLink:focus{outline:none;border-color:#ffb6d3;box-shadow:0 0 0 3px rgba(255,158,196,.18);}
+@media (hover:hover) and (pointer:fine) and (min-width:700px){
+  #shareLink{font-size:12.5px;}
+}
+#share .sheet-actions .btn{font-size:13.5px;padding:11px 13px;}
+#shareHint{margin-top:9px;}
+@media (max-width:379px){
+  h1{font-size:17px;}
+  .top-btns{gap:6px;}
+  .icon-btn{width:35px;height:35px;font-size:15px;}
+}
 @media (prefers-reduced-motion: reduce){
   #stage.wob #cv{animation:none;}
 }
@@ -412,6 +454,7 @@ input[type=range]::-webkit-slider-thumb{
     <div class="top-btns">
       <button id="drawerBtn" class="icon-btn" type="button" aria-label="내 서랍">🗂️</button>
       <button id="shotBtn" class="icon-btn" type="button" aria-label="인증샷 만들기">📸</button>
+      <button id="shareBtn" class="icon-btn" type="button" aria-label="쉐이커 공유">💌</button>
       <button id="soundBtn" class="icon-btn" aria-label="소리 켜기/끄기">🔊</button>
     </div>
   </header>
@@ -566,6 +609,11 @@ input[type=range]::-webkit-slider-thumb{
     <div class="prev-wrap">
       <img id="shotImg" alt="포켓쉐이커 인증샷" />
     </div>
+    <div id="shotNameRow">
+      <span>이름</span>
+      <input id="shotName" type="text" maxlength="16" placeholder="포켓쉐이커" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" />
+    </div>
+    <div class="notice">사진 아래 이름과 저장 파일 이름에 쓰여요 · 최대 16자</div>
     <div class="sheet-actions">
       <button id="shotDownload" class="btn ghost" type="button">다운로드</button>
       <button id="shotSave" class="btn primary grow" type="button">사진에 저장</button>
@@ -621,8 +669,42 @@ input[type=range]::-webkit-slider-thumb{
   </div>
 </div>
 
+<div id="share" class="sheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <div>
+        <b>💌 쉐이커 공유</b>
+        <span class="sub" id="shareSub">이 쉐이커를 링크나 파일로 보내요</span>
+      </div>
+      <button id="shareClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div class="share-top">
+      <canvas id="sharePrev" width="120" height="160"></canvas>
+      <div class="share-facts">
+        <div class="srow"><span>지금 쉐이커</span><em id="shareFacts"></em></div>
+        <div class="srow"><span>링크 크기</span><em id="shareSize">—</em></div>
+        <div class="srow"><span>파츠 · 데코</span><em id="shareCounts"></em></div>
+      </div>
+    </div>
+    <button id="shareMake" class="btn primary" type="button" style="width:100%">🔗 공유 링크 만들기</button>
+    <div class="share-link-row">
+      <input id="shareLink" type="text" readonly placeholder="링크를 만들면 여기에 보여요" />
+      <button id="shareCopy" class="btn ghost" type="button">복사</button>
+    </div>
+    <div class="sheet-actions">
+      <button id="shareSend" class="btn ghost" type="button" hidden>📤 링크 보내기</button>
+      <button id="shareFile" class="btn ghost grow" type="button">📦 파일로 보내기</button>
+    </div>
+    <div class="sheet-actions">
+      <button id="shareLoad" class="btn photo grow" type="button">📥 친구 쉐이커 불러오기</button>
+    </div>
+    <div class="notice" id="shareHint">링크를 열면 친구 화면에 이 쉐이커가 그대로 떠요. 사진 파츠는 작게 담겨요 · 파일(.shaker.json)은 사진까지 원본 크기로 담겨요</div>
+  </div>
+</div>
+
 <input id="fileInput" type="file" accept="image/*" multiple style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
 <input id="bgFile" type="file" accept="image/*" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
+<input id="shareFileIn" type="file" accept=".json,application/json" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
 
 <script>
 /* =========================================================
@@ -4250,6 +4332,25 @@ input[type=range]::-webkit-slider-thumb{
 
   /* ---------------- 인증샷 (save the shaker as a picture) ---------------- */
   var shotURL = '', shotBlob = null;
+  var shotTitle = '', shotNameTimer = 0, shotRenderTimer = 0;
+
+  function shotCaption() {
+    return shotTitle || '포켓쉐이커';
+  }
+
+  /* a name that survives every phone's file system */
+  function safeFileName(name) {
+    var s = String(name || '')
+      .replace(/[\u0000-\u001f<>:"/\\|?*]+/g, ' ')
+      .replace(/\s+/g, '-')
+      .replace(/^[-.]+|[-.]+$/g, '')
+      .slice(0, 40);
+    return s || '포켓쉐이커';
+  }
+
+  function shotFileName() {
+    return (shotTitle ? safeFileName(shotTitle) : '포켓쉐이커-인증샷') + '.png';
+  }
 
   function renderShot() {
     var W = 1080, H = 1350;
@@ -4337,10 +4438,17 @@ input[type=range]::-webkit-slider-thumb{
     g.restore();
 
     var capY = H - 148;
+    var capName = shotCaption();
+    var capFont = '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif';
     g.textAlign = 'center';
     g.fillStyle = '#5c4358';
-    g.font = '800 58px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif';
-    g.fillText('포켓쉐이커', W / 2, capY);
+    g.font = '800 58px ' + capFont;
+    /* a long custom name shrinks to stay inside the shot */
+    var capW = g.measureText(capName).width, capMax = W - 160;
+    if (capW > capMax) {
+      g.font = '800 ' + Math.max(30, Math.floor(58 * capMax / capW)) + 'px ' + capFont;
+    }
+    g.fillText(capName, W / 2, capY);
     g.fillStyle = 'rgba(120,94,114,0.66)';
     g.font = '700 19px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif';
     g.fillText('P O C K E T   S H A K E R', W / 2, capY + 42);
@@ -4355,30 +4463,68 @@ input[type=range]::-webkit-slider-thumb{
     return d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.';
   }
 
-  function openShot() {
+  function makeShotImage() {
     var cv;
-    try { cv = renderShot(); } catch (e) { toast('인증샷을 만들지 못했어요'); return; }
+    try { cv = renderShot(); } catch (e) { return false; }
     shotURL = cv.toDataURL('image/png');
     shotBlob = null;
     try { cv.toBlob(function (b) { shotBlob = b; }, 'image/png'); } catch (e) { shotBlob = null; }
-    $('#shotImg').src = shotURL;
+    var img = $('#shotImg');
+    if (img) img.src = shotURL;
+    return true;
+  }
+
+  function openShot() {
+    if (!makeShotImage()) { toast('인증샷을 만들지 못했어요'); return; }
+    var nameEl = $('#shotName');
+    if (nameEl) nameEl.value = shotTitle;
     $('#shotSub').textContent = ENV.ios ? '길게 눌러 ‘사진에 저장’도 돼요' : '저장하면 PNG로 받아요';
     var sh = $('#shot');
     sh.hidden = false;
     requestAnimationFrame(function () { sh.classList.add('on'); });
   }
+
+  function onShotNameInput() {
+    var el = $('#shotName');
+    if (!el) return;
+    var v = String(el.value || '').replace(/\s+/g, ' ').slice(0, 16);
+    if (v === shotTitle) return;
+    shotTitle = v;
+    clearTimeout(shotRenderTimer);
+    shotRenderTimer = setTimeout(function () {
+      var sh = $('#shot');
+      if (!sh || sh.hidden) return;
+      makeShotImage();
+    }, 260);
+  }
+
+  /* applied on Enter / when the sheet closes, and before every save */
+  function commitShotName() {
+    var el = $('#shotName');
+    if (!el) return;
+    var v = String(el.value || '').replace(/\s+/g, ' ').slice(0, 16);
+    if (v === shotTitle) return;
+    shotTitle = v;
+    clearTimeout(shotRenderTimer);
+    var sh = $('#shot');
+    if (sh && !sh.hidden) makeShotImage();
+  }
   function closeShot() {
     var sh = $('#shot');
     if (!sh) return;
+    commitShotName();
+    var nameEl = $('#shotName');
+    if (nameEl) { try { nameEl.blur(); } catch (e) { /* ignore */ } }
     sh.classList.remove('on');
     setTimeout(function () { sh.hidden = true; }, 240);
   }
   function downloadShot() {
+    commitShotName();
     if (!shotURL) return;
     try {
       var a = document.createElement('a');
       a.href = shotURL;
-      a.download = '포켓쉐이커-인증샷.png';
+      a.download = shotFileName();
       document.body.appendChild(a);
       a.click();
       setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 0);
@@ -4388,16 +4534,400 @@ input[type=range]::-webkit-slider-thumb{
     }
   }
   function saveShot() {
+    commitShotName();
     if (!shotURL) return;
-    var file = null;
+    var name = shotFileName(), file = null;
     try {
-      if (shotBlob) file = new File([shotBlob], '포켓쉐이커-인증샷.png', { type: 'image/png' });
+      if (shotBlob) file = new File([shotBlob], name, { type: 'image/png' });
     } catch (e) { file = null; }
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file], title: '포켓쉐이커 인증샷' }).catch(function () { downloadShot(); });
       return;
     }
     downloadShot();
+  }
+
+  /* =========================================================
+     💌 쉐이커 공유 — 링크(#s=) · 파일(.shaker.json)
+     ========================================================= */
+  var SHARE_MAX_URL = 8000;
+  var SHARE_HINT = '링크를 열면 친구 화면에 이 쉐이커가 그대로 떠요. 사진 파츠는 작게 담겨요 · 파일(.shaker.json)은 사진까지 원본 크기로 담겨요';
+  var shareEl = null, shareURL = '', shareBusy = false;
+
+  function shareBaseURL() { return location.href.split('#')[0]; }
+
+  function bytesToB64url(bytes) {
+    var s = '', i, n = bytes.length;
+    for (i = 0; i < n; i += 0x8000) {
+      s += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(n, i + 0x8000)));
+    }
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function b64urlToBytes(str) {
+    var s = String(str || '').replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s), out = new Uint8Array(bin.length), i;
+    for (i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function deflateRawBytes(bytes) {
+    if (typeof CompressionStream !== 'function') return Promise.resolve(null);
+    try {
+      var cs = new CompressionStream('deflate-raw');
+      var stream = new Blob([bytes]).stream().pipeThrough(cs);
+      return new Response(stream).arrayBuffer().then(function (buf) {
+        return new Uint8Array(buf);
+      }, function () { return null; });
+    } catch (e) { return Promise.resolve(null); }
+  }
+
+  function inflateRawBytes(bytes) {
+    if (typeof DecompressionStream !== 'function') return Promise.resolve(null);
+    try {
+      var ds = new DecompressionStream('deflate-raw');
+      var stream = new Blob([bytes]).stream().pipeThrough(ds);
+      return new Response(stream).arrayBuffer().then(function (buf) {
+        return new Uint8Array(buf);
+      }, function () { return null; });
+    } catch (e) { return Promise.resolve(null); }
+  }
+
+  /* payload = 'z' + base64url(deflate-raw json) or 'u' + base64url(json) */
+  function encodeSharePayload(st) {
+    var bytes;
+    try { bytes = new TextEncoder().encode(JSON.stringify(st)); }
+    catch (e) { return Promise.resolve(''); }
+    return deflateRawBytes(bytes).then(function (z) {
+      return z ? 'z' + bytesToB64url(z) : 'u' + bytesToB64url(bytes);
+    });
+  }
+
+  function decodeSharePayload(payload) {
+    payload = String(payload || '');
+    if (payload.length < 4) return Promise.resolve(null);
+    var kind = payload.charAt(0), bytes;
+    try { bytes = b64urlToBytes(payload.slice(1)); } catch (e) { return Promise.resolve(null); }
+    var work = kind === 'z' ? inflateRawBytes(bytes) : Promise.resolve(bytes);
+    return work.then(function (out) {
+      if (!out || !out.length) return null;
+      try { return JSON.parse(new TextDecoder().decode(out)); } catch (e) { return null; }
+    }, function () { return null; });
+  }
+
+  /* draw any image source (canvas or data URL) small, keeping the alpha for parts */
+  function shrinkImageURL(src, maxS, type, q) {
+    return new Promise(function (resolve) {
+      function draw(img) {
+        try {
+          var iw = img.naturalWidth || img.width || 0, ih = img.naturalHeight || img.height || 0;
+          if (!iw || !ih) { resolve(''); return; }
+          var k = Math.min(1, maxS / Math.max(iw, ih));
+          var w = Math.max(1, Math.round(iw * k)), h = Math.max(1, Math.round(ih * k));
+          var cv = cutCanvas(w, h), g = cv.getContext('2d');
+          try { g.imageSmoothingQuality = 'high'; } catch (e) { /* older engines */ }
+          g.drawImage(img, 0, 0, w, h);
+          var url = '';
+          try { url = cv.toDataURL(type, q); } catch (e2) { url = ''; }
+          if (!url || (type === 'image/webp' && url.indexOf('data:image/webp') !== 0)) {
+            try { url = cv.toDataURL('image/png'); } catch (e3) { url = ''; }
+          }
+          resolve(url);
+        } catch (e) { resolve(''); }
+      }
+      if (!src) { resolve(''); return; }
+      if (src.getContext || src.naturalWidth) { draw(src); return; }
+      var im = new Image();
+      im.onload = function () { draw(im); };
+      im.onerror = function () { resolve(''); };
+      im.src = String(src);
+    });
+  }
+
+  /* the same shaker, with every photo squeezed into a tiny thumbnail */
+  function buildShareState(st) {
+    var photos = {}, ids = [], jobs = [], id;
+    for (id in st.photos) {
+      if (Object.prototype.hasOwnProperty.call(st.photos, id)) ids.push(id);
+    }
+    ids.forEach(function (pid) {
+      var ent = photoStore[pid], src = ent && ent.cv ? ent.cv : st.photos[pid];
+      jobs.push(shrinkImageURL(src, 64, 'image/webp', 0.55).then(function (url) {
+        photos[pid] = url || st.photos[pid];
+      }));
+    });
+    var bgJob;
+    if (st.bgp && st.pat === 'photo') {
+      bgJob = shrinkImageURL(bgArt && bgArt.src ? bgArt.src : st.bgp, 64, 'image/jpeg', 0.55)
+        .then(function (url) { st.bgp = url || st.bgp; });
+    } else {
+      st.bgp = '';
+      bgJob = Promise.resolve();
+    }
+    return Promise.all(jobs.concat([bgJob])).then(function () {
+      st.photos = photos;
+      st.v = 2;
+      return st;
+    });
+  }
+
+  function setShareHint(html) {
+    var el = $('#shareHint');
+    if (el) el.innerHTML = html;
+  }
+
+  function copyText(text, done, failMsg) {
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      } catch (e) { toast(failMsg || '복사하지 못했어요'); }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function copyShareURL() {
+    if (!shareURL) { toast('먼저 링크를 만들어 주세요'); return; }
+    copyText(shareURL, function () { toast('공유 링크를 복사했어! 친구에게 붙여넣어 보내 💌'); }, '링크: ' + shareURL);
+  }
+
+  function countPhotos(st) {
+    var n = 0, i;
+    for (i = 0; i < st.parts.length; i++) if (st.parts[i] && st.parts[i].k === 'photo') n++;
+    return n;
+  }
+
+  function makeShareLink(auto) {
+    if (shareBusy) return;
+    shareBusy = true;
+    var btn = $('#shareMake'), input = $('#shareLink'), sizeEl = $('#shareSize');
+    if (btn) { btn.disabled = true; btn.textContent = '만드는 중…'; }
+    if (sizeEl && !auto) sizeEl.textContent = '만드는 중…';
+    var mine = stateSnapshot();
+    buildShareState(mine).then(function (small) {
+      return encodeSharePayload(small).then(function (payload) {
+        var url = shareBaseURL() + '#s=' + payload;
+        if (url.length <= SHARE_MAX_URL) {
+          return { url: url, dropped: 0, droppedBg: false };
+        }
+        /* too heavy: a link without the photos still lets the friend see the design */
+        var light = stateSnapshot(), keep = [], i, p, n = 0;
+        for (i = 0; i < light.parts.length; i++) {
+          p = light.parts[i];
+          if (p.k === 'photo') { n++; continue; }
+          keep.push(p);
+        }
+        var droppedBg = !!light.bgp;
+        light.parts = keep;
+        light.photos = {};
+        light.bgp = '';
+        if (light.pat === 'photo') light.pat = 'none';
+        light.v = 2;
+        return encodeSharePayload(light).then(function (payload2) {
+          var url2 = shareBaseURL() + '#s=' + payload2;
+          return { url: url2.length <= SHARE_MAX_URL ? url2 : '', dropped: n, droppedBg: droppedBg };
+        });
+      });
+    }).then(function (res) {
+      shareBusy = false;
+      if (btn) { btn.disabled = false; btn.textContent = '🔗 공유 링크 만들기'; }
+      if (!res || !res.url) {
+        shareURL = '';
+        if (input) input.value = '';
+        if (sizeEl) sizeEl.textContent = '링크로는 너무 커요';
+        setShareHint('이 쉐이커는 링크로 담기엔 너무 커요. <b>📦 파일로 보내기</b>를 써 주세요');
+        toast('링크가 너무 길어요. 📦 파일로 보내 주세요');
+        return;
+      }
+      shareURL = res.url;
+      if (input) input.value = res.url;
+      if (sizeEl) sizeEl.textContent = res.url.length.toLocaleString() + '자';
+      if (res.dropped || res.droppedBg) {
+        var what = [];
+        if (res.dropped) what.push('사진 파츠 ' + res.dropped + '개');
+        if (res.droppedBg) what.push('배경 사진');
+        setShareHint(what.join(' · ') + '는 링크에 담지 못했어요. 사진까지 그대로 보내려면 <b>📦 파일로 보내기</b>를 써 주세요');
+      } else {
+        setShareHint(SHARE_HINT);
+      }
+      if (!auto) copyShareURL();
+    }, function () {
+      shareBusy = false;
+      if (btn) { btn.disabled = false; btn.textContent = '🔗 공유 링크 만들기'; }
+      toast('링크를 만들지 못했어요');
+    });
+  }
+
+  function sendShareLink() {
+    if (!shareURL) { toast('먼저 링크를 만들어 주세요'); return; }
+    var data = { title: '포켓쉐이커', text: '내가 만든 포켓쉐이커야, 열어서 흔들어 봐 🪇', url: shareURL };
+    try {
+      if (navigator.share) {
+        navigator.share(data).catch(function () { copyShareURL(); });
+        return;
+      }
+    } catch (e) { /* fall through to copy */ }
+    copyShareURL();
+  }
+
+  function downloadBlob(blob, name) {
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        if (a.parentNode) a.parentNode.removeChild(a);
+        try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+      }, 1500);
+      toast('「' + name + '」로 저장했어요');
+    } catch (e) { toast('파일을 저장하지 못했어요'); }
+  }
+
+  /* the full shaker, photos at their real size, as one small json file */
+  function shareFileOut() {
+    var st = stateSnapshot();
+    st.v = 2;
+    st.app = 'pocket-shaker';
+    st.name = shotTitle || '';
+    var name = safeFileName(shotTitle) + '.shaker.json';
+    var blob, file = null;
+    try { blob = new Blob([JSON.stringify(st)], { type: 'application/json' }); }
+    catch (e) { toast('파일을 만들지 못했어요'); return; }
+    try { file = new File([blob], name, { type: 'application/json' }); } catch (e) { file = null; }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: '포켓쉐이커' }).catch(function () { downloadBlob(blob, name); });
+      return;
+    }
+    downloadBlob(blob, name);
+  }
+
+  function isImageData(v) {
+    return typeof v === 'string' && v.length < 3000000 &&
+      /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
+  }
+
+  /* never trust a friend's file with remote urls or absurd values */
+  function cleanShareState(st) {
+    if (!st || typeof st !== 'object' || !Array.isArray(st.parts)) return null;
+    var photos = {}, ph;
+    if (st.photos && typeof st.photos === 'object') {
+      for (ph in st.photos) {
+        if (!Object.prototype.hasOwnProperty.call(st.photos, ph)) continue;
+        if (/^p\d{1,6}$/.test(ph) && isImageData(st.photos[ph])) photos[ph] = st.photos[ph];
+      }
+    }
+    var bgp = isImageData(st.bgp) ? st.bgp : '';
+    var pat = String(st.pat || 'none');
+    if (!bgp && pat === 'photo') pat = 'none';
+    var out = {
+      v: 2,
+      shape: String(st.shape || ''),
+      theme: parseInt(st.theme, 10) || 0,
+      snd: parseInt(st.snd, 10) || 0,
+      mode: String(st.mode || ''),
+      fin: st.fin === 'matte' ? 'matte' : 'gloss',
+      holo: st.holo ? 1 : 0,
+      pat: pat,
+      bgp: bgp,
+      ring: String(st.ring || 'none'),
+      parts: [],
+      photos: photos,
+      deco: Array.isArray(st.deco) ? st.deco : []
+    };
+    var i, p;
+    for (i = 0; i < st.parts.length && out.parts.length < 60; i++) {
+      p = st.parts[i];
+      if (!p || typeof p !== 'object') continue;
+      out.parts.push(p);
+    }
+    return out;
+  }
+
+  function importShareFile(file) {
+    if (!file) return;
+    if (file.size > 16 * 1024 * 1024) { toast('파일이 너무 커요'); return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      var raw = null;
+      try { raw = JSON.parse(String(rd.result)); } catch (e) { raw = null; }
+      var st = cleanShareState(raw);
+      if (!st) { toast('쉐이커 파일이 아니에요 😢'); return; }
+      applyState(st, true);
+      closeShare();
+      Sound.unlock();
+      Sound.pop(true);
+      toast('친구 쉐이커를 불러왔어 💌 서랍에 저장해 내 께로!');
+    };
+    rd.onerror = function () { toast('파일을 읽지 못했어요'); };
+    rd.readAsText(file);
+  }
+
+  function openShare() {
+    if (!shareEl) return;
+    Sound.unlock();
+    shareEl.hidden = false;
+    requestAnimationFrame(function () { shareEl.classList.add('on'); });
+    var pv = $('#sharePrev');
+    if (pv) { try { renderMini(pv); } catch (e) { /* not ready yet */ } }
+    var factEl = $('#shareFacts');
+    if (factEl) factEl.textContent = THEMES[themeIdx].name + ' · ' + SHAPES[shapeKey].name + ' · ' + (fin === 'matte' ? '무광' : '유광') + (holoOn ? ' · 오로라' : '');
+    var cntEl = $('#shareCounts');
+    if (cntEl) cntEl.textContent = '파츠 ' + parts.length + ' · 데코 ' + Deco.items.length;
+    var input = $('#shareLink');
+    shareURL = '';
+    if (input) input.value = '';
+    var sizeEl = $('#shareSize');
+    if (sizeEl) sizeEl.textContent = '만드는 중…';
+    setShareHint(SHARE_HINT);
+    makeShareLink(true);
+    Sound.pop(true);
+  }
+
+  function closeShare() {
+    if (!shareEl) return;
+    shareEl.classList.remove('on');
+    setTimeout(function () { shareEl.hidden = true; }, 240);
+    var input = $('#shareLink');
+    if (input) { try { input.blur(); } catch (e) { /* ignore */ } }
+  }
+
+  function clearShareHash() {
+    try { history.replaceState(null, '', location.pathname + location.search); }
+    catch (e) { try { location.hash = ''; } catch (e2) { /* ignore */ } }
+  }
+
+  function loadSharedFromHash() {
+    var h = location.hash || '';
+    if (h.indexOf('#s=') !== 0) return Promise.resolve(false);
+    var payload = h.slice(3);
+    return decodeSharePayload(payload).then(function (raw) {
+      var st = cleanShareState(raw);
+      clearShareHash();
+      if (!st) { toast('공유 링크를 읽지 못했어요 😢'); return true; }
+      applyState(st, false);
+      if (shareEl && !shareEl.hidden) closeShare();
+      Sound.pop(true);
+      setTimeout(function () { toast('친구가 보낸 포켓쉐이커를 열었어 💌'); }, 380);
+      setTimeout(function () { toast('마음에 들면 🗂️ 서랍에 저장해 내 께로!'); }, 3400);
+      return true;
+    });
   }
 
   /* =========================================================
@@ -5957,7 +6487,35 @@ input[type=range]::-webkit-slider-thumb{
     $('#shotClose').addEventListener('click', closeShot);
     $('#shotDownload').addEventListener('click', downloadShot);
     $('#shotSave').addEventListener('click', saveShot);
+    $('#shotName').addEventListener('input', onShotNameInput);
+    $('#shotName').addEventListener('change', commitShotName);
+    $('#shotName').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        commitShotName();
+        try { this.blur(); } catch (e2) { /* ignore */ }
+      }
+    });
     $('#shot').addEventListener('click', function (e) { if (e.target === this) closeShot(); });
+
+    /* 💌 share */
+    shareEl = $('#share');
+    $('#shareBtn').addEventListener('click', openShare);
+    $('#shareClose').addEventListener('click', closeShare);
+    shareEl.addEventListener('click', function (e) { if (e.target === this) closeShare(); });
+    $('#shareMake').addEventListener('click', function () { makeShareLink(false); });
+    $('#shareCopy').addEventListener('click', copyShareURL);
+    $('#shareSend').addEventListener('click', sendShareLink);
+    $('#shareFile').addEventListener('click', shareFileOut);
+    $('#shareLoad').addEventListener('click', function () {
+      Sound.unlock();
+      var fi = $('#shareFileIn');
+      if (fi) { fi.value = ''; fi.click(); }
+    });
+    $('#shareFileIn').addEventListener('change', function (e) {
+      importShareFile(e.target.files && e.target.files[0]);
+    });
+    if (navigator.share) { var ssend = $('#shareSend'); if (ssend) ssend.hidden = false; }
 
     /* listeners */
     $('#shakeBtn').addEventListener('click', function () { shakeIt(1); });
@@ -6117,7 +6675,14 @@ input[type=range]::-webkit-slider-thumb{
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) saveState(true);
     });
-    if (restored) setTimeout(function () { toast('지난번 쉐이커를 그대로 꺼내왔어 🫧'); }, 420);
+    var viaShare = /^#s=/.test(location.hash || '');
+    if (restored && !viaShare) setTimeout(function () { toast('지난번 쉐이커를 그대로 꺼내왔어 🫧'); }, 420);
+
+    /* 💌 a friend's link: decode and put that shaker on the stage */
+    if (viaShare) loadSharedFromHash();
+    window.addEventListener('hashchange', function () {
+      if (/^#s=/.test(location.hash || '')) loadSharedFromHash();
+    });
 
     /* iOS: block double-tap zoom & rubber band on the stage */
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
