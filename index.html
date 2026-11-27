@@ -808,7 +808,7 @@ input[type=range]::-webkit-slider-thumb{
   RINGS.forEach(function (r) { RING_BY_ID[r.id] = r; });
   var ringKey = 'none';
   var ringAng = 0, ringVel = 0;
-  var RING_H = 0.19;   /* how far the ring reaches above the case top, in frame units */
+  var RING_H = 0.20;   /* how far the ring reaches above the case top, in frame units */
 
   function hexA(hex, a) {
     var h = String(hex).replace('#', '');
@@ -869,7 +869,7 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   /* ---------------- 🖼️ the inner background (pattern or my photo) ---------------- */
-  var BG_TINT = 0.62;   /* how much of the acrylic colour stays over the background */
+  var BG_TINT = 0.5;   /* how much of the acrylic colour stays over the background */
 
   function paintPattern(g, id, box, t) {
     var x0 = box.x0, y0 = box.y0, w = box.x1 - box.x0, h = box.y1 - box.y0;
@@ -904,11 +904,11 @@ input[type=range]::-webkit-slider-thumb{
       row = 0;
       for (y = y0 + t * 0.66; y < y0 + h + t; y += t * 1.22, row++) {
         for (x = x0 + (row % 2 ? t * 0.6 : 0) + t * 0.42; x < x0 + w + t; x += t * 1.22) {
-          heartPath(g, x, y, t * 0.24);
-          g.fillStyle = hexA(theme.accent, 0.56);
+          heartPath(g, x, y, t * 0.27);
+          g.fillStyle = hexA(theme.accent, 0.7);
           g.fill();
-          g.strokeStyle = 'rgba(255,255,255,0.8)';
-          g.lineWidth = Math.max(0.5, t * 0.028);
+          g.strokeStyle = 'rgba(255,255,255,0.85)';
+          g.lineWidth = Math.max(0.5, t * 0.026);
           g.stroke();
         }
       }
@@ -1620,8 +1620,8 @@ input[type=range]::-webkit-slider-thumb{
      🔑 키링 고리가 케이스 꼭대기에 달려요
      ========================================================= */
   var RING_METAL = {
-    silver: [[0, '#fbfcff'], [0.26, '#ccd3df'], [0.5, '#8a92a3'], [0.74, '#eef2f8'], [1, '#9aa2b2']],
-    gold: [[0, '#fffaea'], [0.26, '#f5dd9a'], [0.5, '#c1953c'], [0.74, '#fff0b8'], [1, '#cfa646']]
+    silver: [[0, '#ffffff'], [0.24, '#cbd2de'], [0.5, '#7d8595'], [0.72, '#f3f7fd'], [1, '#8f97a7']],
+    gold: [[0, '#fff3c4'], [0.24, '#f7d97e'], [0.5, '#b9862f'], [0.72, '#fff2b8'], [1, '#c79a3d']]
   };
 
   function metalFill(g, x0, y0, x1, y1, stops) {
@@ -1703,12 +1703,12 @@ input[type=range]::-webkit-slider-thumb{
   function drawRingLoopKind(g, kind, x, jy, S) {
     var i, a, bx, by, r, s, cy, gr;
     if (kind === 'ball') {
-      var rx = 0.058 * S, ry = 0.050 * S, cyc = jy - 0.056 * S, n = 22;
+      var rx = 0.062 * S, ry = 0.054 * S, cyc = jy - 0.056 * S, n = 24;
       for (i = 0; i < n; i++) {
         a = i / n * TAU - Math.PI / 2;
         bx = x + Math.cos(a) * rx;
         by = cyc + Math.sin(a) * ry;
-        r = 0.0128 * S;
+        r = 0.0135 * S;
         g.save();
         g.shadowColor = 'rgba(120,85,112,0.26)';
         g.shadowBlur = 0.014 * S;
@@ -1725,7 +1725,7 @@ input[type=range]::-webkit-slider-thumb{
       return;
     }
     if (kind === 'heart') {
-      s = 0.052 * S; cy = jy - 0.080 * S;
+      s = 0.058 * S; cy = jy - 0.088 * S;
       g.save();
       g.shadowColor = 'rgba(200,90,145,0.4)';
       g.shadowBlur = 0.032 * S;
@@ -1746,7 +1746,7 @@ input[type=range]::-webkit-slider-thumb{
       return;
     }
     if (kind === 'star') {
-      r = 0.056 * S; cy = jy - 0.074 * S;
+      r = 0.060 * S; cy = jy - 0.078 * S;
       g.save();
       g.shadowColor = 'rgba(185,135,55,0.42)';
       g.shadowBlur = 0.03 * S;
@@ -1770,8 +1770,8 @@ input[type=range]::-webkit-slider-thumb{
       return;
     }
     /* silver / gold loop */
-    var R0 = 0.052 * S, w0 = 0.0165 * S;
-    cy = jy - 0.062 * S;
+    var R0 = 0.056 * S, w0 = 0.018 * S;
+    cy = jy - 0.066 * S;
     g.save();
     g.shadowColor = 'rgba(120,85,112,0.32)';
     g.shadowBlur = 0.03 * S;
