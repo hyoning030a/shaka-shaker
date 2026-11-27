@@ -90,7 +90,48 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
 .counter.on{opacity:1;}
 
 /* ---------- dock ---------- */
-#dock{flex:0 0 auto;padding:0 11px calc(env(safe-area-inset-bottom) + 9px);}
+#dock{
+  position:relative;z-index:6;flex:0 0 auto;
+  padding:4px 11px calc(env(safe-area-inset-bottom) + 9px);
+  transition:transform .34s cubic-bezier(.22,.9,.26,1);
+}
+#dock.collapsed{
+  position:absolute;left:0;right:0;bottom:0;
+  transform:translateY(calc(100% + 14px));pointer-events:none;
+}
+.dock-handle{
+  display:flex;align-items:center;justify-content:center;gap:3px;
+  margin:0 auto 5px;padding:4px 12px;border:0;border-radius:999px;
+  background:rgba(255,255,255,.8);color:#b189a4;
+  font:inherit;font-size:10.5px;font-weight:800;letter-spacing:-.1px;
+  box-shadow:0 3px 10px rgba(190,140,170,.14), inset 0 1px 0 #fff;
+  transition:transform .12s ease, color .18s, background .18s;
+}
+.dock-handle:active{transform:scale(.95);color:#c4709a;}
+.dock-handle .ch{font-size:12px;line-height:1;transform:translateY(-1px);}
+
+/* floating buttons shown while the menu is collapsed */
+#dockFab{
+  position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 13px);z-index:9;
+  display:flex;justify-content:center;gap:8px;padding:0 14px;pointer-events:none;
+  opacity:0;transform:translateY(18px);
+  transition:opacity .26s ease .05s, transform .3s cubic-bezier(.2,.9,.25,1) .05s;
+}
+#dockFab.on{opacity:1;transform:translateY(0);}
+.fab{
+  pointer-events:auto;border:0;border-radius:999px;font:inherit;
+  font-size:13.5px;font-weight:800;letter-spacing:-.2px;padding:11px 16px;
+  background:rgba(255,255,255,.92);color:#8a6a82;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  box-shadow:0 9px 22px rgba(170,120,155,.22), inset 0 1px 0 #fff;
+  transition:transform .12s ease;
+}
+.fab:active{transform:scale(.95);}
+.fab.primary{
+  background:linear-gradient(180deg,#ffa6c8,#ff7aa8);color:#fff;
+  box-shadow:0 10px 22px rgba(255,110,160,.32), inset 0 1px 0 rgba(255,255,255,.5);
+}
+#app.dock-collapsed #toast{bottom:calc(env(safe-area-inset-bottom) + 64px);}
 .dock-inner{
   background:var(--panel);
   -webkit-backdrop-filter:blur(18px) saturate(1.15);
@@ -159,6 +200,21 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
 .mini{display:flex;gap:6px;padding:0;overflow:visible;}
 .mini .chip{width:auto;min-width:40px;height:30px;padding:0 9px;border-radius:10px;font-size:11.5px;font-weight:800;color:#9a7f95;}
 .mini .chip.sel{color:#c05a86;}
+
+/* ---------- motion guide ---------- */
+.guide-body{font-size:13px;line-height:1.68;color:#6f5570;padding:2px 2px 0;}
+.guide-body p{margin:0 0 8px;}
+.guide-body p:last-child{margin-bottom:0;}
+.guide-body ol{margin:4px 0 10px;padding-left:20px;}
+.guide-body li{margin:6px 0;}
+.guide-body b{color:#c05a86;}
+.guide-body .kbd{
+  display:inline-block;padding:0 6px;border-radius:7px;background:#fff2f8;
+  border:1px solid #ffdcea;font-weight:800;color:#c05a86;font-size:12px;line-height:1.6;
+}
+#guide .sheet-actions{flex-wrap:wrap;}
+#guide .sheet-actions .btn{font-size:13.5px;padding:11px 13px;flex:1;}
+#guide .sheet-actions .btn.ghost{flex:0 1 auto;}
 
 /* ---------- sheet ---------- */
 .sheet{
@@ -243,6 +299,9 @@ input[type=range]::-webkit-slider-thumb{
   </main>
 
   <section id="dock">
+    <button id="dockHandle" class="dock-handle" type="button" aria-label="메뉴 접기" aria-controls="dock">
+      <span class="ch">⌄</span><span>메뉴 접기</span>
+    </button>
     <div class="dock-inner">
       <div class="row">
         <button id="shakeBtn" class="btn primary grow">흔들기!</button>
@@ -266,6 +325,29 @@ input[type=range]::-webkit-slider-thumb{
       </div>
     </div>
   </section>
+
+  <div id="dockFab" aria-hidden="true">
+    <button id="shakeFab" class="fab primary" type="button">🪇 흔들기!</button>
+    <button id="dockOpen" class="fab" type="button">⌃ 메뉴</button>
+  </div>
+</div>
+
+<div id="guide" class="sheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <div>
+        <b id="guideTitle">모션 센서</b>
+        <span class="sub" id="guideSub">아이폰 센서 권한 안내</span>
+      </div>
+      <button id="guideClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div id="guideBody" class="guide-body"></div>
+    <div class="sheet-actions">
+      <button id="guideTry" class="btn ghost" type="button" style="display:none">방향 센서로 시도</button>
+      <button id="guideCopy" class="btn ghost" type="button">주소 복사</button>
+      <button id="guideOk" class="btn primary" type="button">알겠어!</button>
+    </div>
+  </div>
 </div>
 
 <div id="sheet" class="sheet" hidden>
@@ -1349,9 +1431,31 @@ input[type=range]::-webkit-slider-thumb{
   /* ---------------- motion ---------------- */
   var motion = {
     on: false, supported: false, sign: 1, sx: 0, sy: 1,
-    lastShake: 0, mag: 0, got: false
+    lastShake: 0, mag: 0, got: false,
+    mode: 'motion', lastO: 0, ob: 0, og: 0
   };
   var motionBtn = null;
+
+  /* where are we running? iOS asks for motion permission in Safari only; in-app
+     browsers (WKWebView based) answer 'denied' with no prompt at all */
+  var ENV = (function () {
+    var ua = navigator.userAgent || '';
+    var ios = /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var standalone = false;
+    try {
+      standalone = (window.navigator.standalone === true) ||
+        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    } catch (e) { standalone = false; }
+    var framed = false;
+    try { framed = window.self !== window.top; } catch (e) { framed = true; }
+    var appUA = /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|Line\/|NAVER|DaumApps|everytime|wadiz|BAND|Toss|Coupang|Snapchat|Pinterest|MicroMessenger|Threads|LinkedIn/i.test(ua);
+    var bareWebkit = ios && !/Safari\//.test(ua) && !standalone;
+    return {
+      ios: ios, standalone: standalone, framed: framed,
+      inApp: !!(appUA || bareWebkit || (ios && framed))
+    };
+  })();
 
   function handleMotion(e) {
     var a = e.accelerationIncludingGravity;
@@ -1386,6 +1490,29 @@ input[type=range]::-webkit-slider-thumb{
     }
   }
 
+  /* fallback for browsers that grant orientation but not motion */
+  function handleOrient(e) {
+    if (e.beta === null && e.gamma === null) return;
+    motion.got = true;
+    var beta = e.beta || 0, gamma = e.gamma || 0;
+    var tx = clamp(gamma / 40, -1, 1);
+    var ty = clamp((beta - 90) / 40, -1, 1);
+    grav.x = lerp(grav.x, tx, 0.22);
+    grav.y = lerp(grav.y, ty, 0.22);
+    var now = performance.now();
+    if (motion.lastO) {
+      var dt = Math.max(16, now - motion.lastO);
+      var rate = (Math.abs(beta - motion.ob) + Math.abs(gamma - motion.og)) * 1000 / dt;
+      motion.lastO = now; motion.ob = beta; motion.og = gamma;
+      if (rate > 150 && now - motion.lastShake > 280) {
+        motion.lastShake = now;
+        shakeIt(clamp(rate / 320, 0.55, 1.8));
+      }
+    } else {
+      motion.lastO = now; motion.ob = beta; motion.og = gamma;
+    }
+  }
+
   function calibrateSign() {
     /* one-shot: assume the phone is held roughly upright when the button is pressed */
     var n = 0, sx = 0, sy = 0, sz = 0;
@@ -1404,54 +1531,206 @@ input[type=range]::-webkit-slider-thumb{
     }, 420);
   }
 
-  function enableMotion() {
+  function setMotionBtnState(on) {
+    if (!motionBtn) return;
+    motionBtn.textContent = on ? '모션 센서 ON' : '모션 센서 켜기';
+    motionBtn.classList.toggle('on', !!on);
+  }
+
+  function attachMotion() {
     Sound.unlock();
+    window.addEventListener('devicemotion', handleMotion);
+    motion.on = true;
+    motion.mode = 'motion';
+    motion.got = false;
+    setMotionBtnState(true);
+    toast('폰을 흔들거나 기울여 봐! 🪇');
+    calibrateSign();
+    setTimeout(function () {
+      if (motion.on && motion.mode === 'motion' && !motion.got) {
+        stopMotion(true);
+        openGuide(ENV.inApp ? 'webview' : 'nodata');
+      }
+    }, 1700);
+  }
+
+  function enableMotion() {
     if (motion.on) {
       stopMotion();
       return;
     }
     var DM = window.DeviceMotionEvent;
     if (!DM) {
-      toast('이 브라우저는 모션 센서를 지원하지 않아요. "흔들기!" 버튼을 눌러줘!');
+      openGuide(ENV.inApp ? 'webview' : 'unsupported');
       return;
     }
-    function attach() {
-      window.addEventListener('devicemotion', handleMotion);
-      motion.on = true;
-      motion.got = false;
-      if (motionBtn) {
-        motionBtn.textContent = '모션 센서 ON';
-        motionBtn.classList.add('on');
-      }
-      toast('폰을 흔들거나 기울여 봐! 🪇');
-      calibrateSign();
-      setTimeout(function () {
-        if (motion.on && !motion.got) {
-          toast('센서 값을 못 받았어요. "흔들기!" 버튼으로도 놀 수 있어요.');
-        }
-      }, 1400);
-    }
     if (typeof DM.requestPermission === 'function') {
-      DM.requestPermission().then(function (res) {
-        if (res === 'granted') attach();
-        else toast('모션 센서 권한이 꺼져 있어요. "흔들기!" 버튼을 눌러줘!');
-      }).catch(function () {
-        toast('모션 센서를 켤 수 없어요. "흔들기!" 버튼을 눌러줘!');
+      var req = null;
+      try {
+        /* iOS: must be called synchronously inside this tap handler */
+        req = DM.requestPermission();
+      } catch (err) {
+        openGuide(ENV.inApp ? 'webview' : 'denied');
+        return;
+      }
+      if (!req || typeof req.then !== 'function') { attachMotion(); return; }
+      req.then(function (res) {
+        if (res === 'granted') attachMotion();
+        else openGuide(ENV.inApp ? 'webview' : 'denied');
+      }, function () {
+        openGuide(ENV.inApp ? 'webview' : 'denied');
       });
+      return;
+    }
+    /* no permission API (Android Chrome, desktop, or a webview that grants directly) */
+    attachMotion();
+  }
+
+  function enableOrientation() {
+    var DO = window.DeviceOrientationEvent;
+    if (!DO) { toast('이 브라우저에는 방향 센서도 없어요'); return; }
+    function go() {
+      Sound.unlock();
+      window.addEventListener('deviceorientation', handleOrient);
+      motion.on = true;
+      motion.mode = 'orient';
+      motion.got = false;
+      motion.lastO = 0;
+      setMotionBtnState(true);
+      toast('폰을 기울여 봐! (방향 센서) 🪇');
+      setTimeout(function () {
+        if (motion.on && motion.mode === 'orient' && !motion.got) {
+          stopMotion(true);
+          openGuide(ENV.inApp ? 'webview' : 'nodata');
+        }
+      }, 1700);
+    }
+    if (typeof DO.requestPermission === 'function') {
+      try {
+        DO.requestPermission().then(function (r) {
+          if (r === 'granted') go();
+          else openGuide(ENV.inApp ? 'webview' : 'denied');
+        }, function () {
+          openGuide(ENV.inApp ? 'webview' : 'denied');
+        });
+      } catch (err) {
+        openGuide(ENV.inApp ? 'webview' : 'denied');
+      }
+      return;
+    }
+    go();
+  }
+
+  function stopMotion(silent) {
+    window.removeEventListener('devicemotion', handleMotion);
+    window.removeEventListener('deviceorientation', handleOrient);
+    motion.on = false;
+    motion.got = false;
+    motion.sx = 0; motion.sy = 1;
+    motion.lastO = 0;
+    grav.x = 0; grav.y = 1;
+    setMotionBtnState(false);
+    if (!silent) toast('모션 센서를 껐어요');
+  }
+
+  /* ---------------- motion help sheet ---------------- */
+  var GUIDE = {
+    webview: {
+      title: '사파리에서 열어 주세요',
+      sub: '앱 안 브라우저는 센서를 막아요',
+      body: '<p>지금은 <b>앱 안의 작은 브라우저</b>로 열려 있어서 아이폰이 모션 센서를 아예 막고 있어요. 그래서 허용 창이 뜨지도 않고 바로 “꺼짐”이 돼요.</p>' +
+        '<ol><li>오른쪽 위(또는 아래)의 <span class="kbd">공유</span> 나 <span class="kbd">⋯</span> 를 눌러요.</li>' +
+        '<li><b>Safari로 열기</b>를 골라요. 그 메뉴가 없으면 <b>링크 복사</b>를 골라요.</li>' +
+        '<li>Safari를 열어 주소창에 붙여넣고, <b>모션 센서 켜기</b> → <b>허용</b>!</li></ol>' +
+        '<p>Safari 공유 메뉴에서 <b>홈 화면에 추가</b>까지 하면 진짜 앱처럼 열려요.</p>',
+      copy: true, action: ''
+    },
+    denied: {
+      title: '권한을 한 번 더 물어보게 할까요?',
+      sub: '한 번 거절하면 같은 탭에선 다시 안 물어봐요',
+      body: '<p>아이폰은 <b>허용 안 함</b>을 한 번 누르면 그 탭에서는 다시 묻지 않고 계속 “꺼짐”으로만 답해요.</p>' +
+        '<ol><li>이 탭을 <b>닫고</b> Safari에서 <b>새 탭</b>을 열어요.</li>' +
+        '<li>아래 <b>주소 복사</b>로 주소를 복사해 새 탭 주소창에 붙여넣어요.</li>' +
+        '<li><b>모션 센서 켜기</b> → 이번엔 <b>허용</b>을 눌러요.</li></ol>' +
+        '<p>그래도 안 되면 <b>설정 › Safari › 모션 및 방향 접근</b>이 켜져 있는지 봐 주세요.</p>',
+      copy: true, action: 'orient'
+    },
+    nodata: {
+      title: '권한은 켜졌는데 값이 안 와요',
+      sub: '브라우저가 센서를 막고 있을 수 있어요',
+      body: '<p>허용은 됐는데 센서 값이 오지 않아요. 앱 안 브라우저라면 아이폰이 조용히 막고 있는 경우가 많아요.</p>' +
+        '<ol><li>Safari 새 탭에서 이 주소를 다시 열어 봐요 (<b>주소 복사</b>).</li>' +
+        '<li>아래 <b>방향 센서로 시도</b>로 한 번 더 해 볼 수도 있어요.</li></ol>',
+      copy: true, action: 'orient'
+    },
+    unsupported: {
+      title: '이 브라우저엔 센서가 없어요',
+      sub: '아이폰 Safari로 열면 돼요',
+      body: '<p>지금 브라우저는 모션 센서를 지원하지 않아요. 아이폰 <b>Safari</b>에서 열면 폰을 흔들 수 있어요.</p>' +
+        '<p>센서 없이도 <b>흔들기!</b> 버튼과 손으로 톡톡 튕기기는 그대로 돼요 🪇</p>',
+      copy: true, action: ''
+    }
+  };
+  var guideEl = null, guideAction = '';
+
+  function openGuide(kind) {
+    var g = GUIDE[kind];
+    if (!guideEl || !g) { toast('모션 센서는 Safari에서 열면 돼요'); return; }
+    $('#guideTitle').textContent = g.title;
+    $('#guideSub').textContent = g.sub;
+    $('#guideBody').innerHTML = g.body;
+    $('#guideCopy').style.display = g.copy ? '' : 'none';
+    guideAction = g.action || '';
+    $('#guideTry').style.display = guideAction ? '' : 'none';
+    guideEl.hidden = false;
+    requestAnimationFrame(function () { guideEl.classList.add('on'); });
+  }
+
+  function closeGuide() {
+    if (!guideEl) return;
+    guideEl.classList.remove('on');
+    setTimeout(function () { guideEl.hidden = true; }, 240);
+  }
+
+  function copyPageUrl() {
+    var url = location.href.split('#')[0];
+    function done() { toast('주소를 복사했어요! Safari 주소창에 붙여넣어 주세요'); }
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      } catch (e) { toast('주소: ' + url); }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, fallback);
     } else {
-      attach();
+      fallback();
     }
   }
-  function stopMotion() {
-    window.removeEventListener('devicemotion', handleMotion);
-    motion.on = false;
-    motion.sx = 0; motion.sy = 1;
-    grav.x = 0; grav.y = 1;
-    if (motionBtn) {
-      motionBtn.textContent = '모션 센서 켜기';
-      motionBtn.classList.remove('on');
+
+  /* ---------------- dock collapse ---------------- */
+  var dockEl = null, dockFabEl = null, dockCollapsed = false;
+
+  function setDockCollapsed(v) {
+    v = !!v;
+    if (!dockEl || dockCollapsed === v) return;
+    dockCollapsed = v;
+    dockEl.classList.toggle('collapsed', v);
+    document.getElementById('app').classList.toggle('dock-collapsed', v);
+    if (dockFabEl) {
+      dockFabEl.classList.toggle('on', v);
+      dockFabEl.setAttribute('aria-hidden', v ? 'false' : 'true');
     }
-    toast('모션 센서를 껐어요');
+    /* the stage now owns the whole screen: re-fit the shaker */
+    setTimeout(layout, 20);
+    setTimeout(layout, 120);
   }
 
   /* ---------------- photo cutout ---------------- */
@@ -2001,6 +2280,24 @@ input[type=range]::-webkit-slider-thumb{
     $('#shakeBtn').addEventListener('click', function () { shakeIt(1); });
     motionBtn = $('#motionBtn');
     motionBtn.addEventListener('click', enableMotion);
+
+    /* dock collapse / reopen */
+    dockEl = $('#dock');
+    dockFabEl = $('#dockFab');
+    $('#dockHandle').addEventListener('click', function () { setDockCollapsed(true); });
+    $('#dockOpen').addEventListener('click', function () { setDockCollapsed(false); });
+    $('#shakeFab').addEventListener('click', function () { shakeIt(1); });
+
+    /* motion help sheet */
+    guideEl = $('#guide');
+    $('#guideClose').addEventListener('click', closeGuide);
+    $('#guideOk').addEventListener('click', closeGuide);
+    $('#guideCopy').addEventListener('click', copyPageUrl);
+    $('#guideTry').addEventListener('click', function () {
+      closeGuide();
+      enableOrientation();
+    });
+    guideEl.addEventListener('click', function (e) { if (e.target === this) closeGuide(); });
     $('#soundBtn').addEventListener('click', function () {
       var m = !Sound.isMuted();
       Sound.setMuted(m);
@@ -2056,6 +2353,11 @@ input[type=range]::-webkit-slider-thumb{
       clearTimeout(rz);
       rz = setTimeout(function () { layout(); }, 120);
     });
+    if (window.ResizeObserver) {
+      try {
+        new ResizeObserver(function () { layout(); }).observe(stageEl);
+      } catch (e) { /* older engines fall back to the resize handler */ }
+    }
     window.addEventListener('orientationchange', function () {
       setTimeout(function () { layout(); }, 220);
     });
