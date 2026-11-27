@@ -287,6 +287,14 @@ input[type=range]::-webkit-slider-thumb{
 #shot .prev-wrap{background:#fff;background-image:none;border-color:rgba(235,225,240,.9);}
 .mini .chip.brush-wide{min-width:66px;}
 
+/* ---------- 🖼️ 케이스 배경 · 🔑 키링 고리 ---------- */
+.tchips .chip{width:60px;height:62px;}
+.tchips .chip canvas{width:34px;height:34px;border-radius:9px;display:block;}
+.tchips .chip span{font-size:9px;}
+.rchips .chip{width:56px;height:62px;}
+.rchips .chip canvas{width:38px;height:38px;display:block;}
+.rchips .chip span{font-size:9px;}
+
 /* ---------- 🎀 데코덴 + 🗂️ 서랍 ---------- */
 .dchips .chip{width:52px;height:56px;}
 .dchips .chip canvas{width:31px;height:31px;}
@@ -386,6 +394,19 @@ input[type=range]::-webkit-slider-thumb{
       <div class="sec">
         <div class="sec-head"><span>아크릴 색</span><span class="hint">✨ 글리터</span></div>
         <div class="swatches" id="swatches"></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span>🖼️ 케이스 배경</span>
+          <span><span class="hint" id="bgName">기본</span><button id="bgSwap" class="link-btn" type="button" hidden>사진 바꾸기</button></span>
+        </div>
+        <div class="chips tchips" id="patChips"></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span>🔑 키링 고리</span><span class="hint" id="ringName">없음</span></div>
+        <div class="chips rchips" id="ringChips"></div>
       </div>
 
       <div class="sec">
@@ -512,13 +533,14 @@ input[type=range]::-webkit-slider-thumb{
         <button id="slotSave" class="btn primary" type="button">지금 쉐이커 서랍에 저장</button>
       </div>
     </div>
-    <div class="notice" id="slotHint">지금 보이는 모양·색·파츠·데코덴·소리 테마를 통째로 저장해요 · 최대 14개</div>
+    <div class="notice" id="slotHint">지금 보이는 모양·색·배경·키링·파츠·데코덴·소리 테마를 통째로 저장해요 · 최대 14개</div>
     <div id="slotGrid" class="slot-grid"></div>
     <div id="slotEmpty" class="notice" hidden>아직 서랍이 비었어요. 지금 쉐이커를 하나 넣어 볼까요? 🎀</div>
   </div>
 </div>
 
 <input id="fileInput" type="file" accept="image/*" multiple style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
+<input id="bgFile" type="file" accept="image/*" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
 
 <script>
 /* =========================================================
@@ -683,6 +705,51 @@ input[type=range]::-webkit-slider-thumb{
   }
   function normSdf(u, v) { return SHAPES[shapeKey].sdf(u, v); }
 
+  /* ---------------- case bounds & keyring anchor ---------------- */
+  var boundsCache = {}, ringTopCache = {};
+  function shapeBounds(key) {
+    if (boundsCache[key]) return boundsCache[key];
+    var sdf = SHAPES[key].sdf, u, v;
+    var b = { u0: 1e9, u1: -1e9, v0: 1e9, v1: -1e9 };
+    for (v = -0.8; v <= 0.64; v += 0.01) {
+      for (u = -0.62; u <= 0.62; u += 0.01) {
+        if (sdf(u, v) < 0) {
+          if (u < b.u0) b.u0 = u;
+          if (u > b.u1) b.u1 = u;
+          if (v < b.v0) b.v0 = v;
+          if (v > b.v1) b.v1 = v;
+        }
+      }
+    }
+    if (b.u1 < b.u0) { b.u0 = -0.4; b.u1 = 0.4; b.v0 = -0.5; b.v1 = 0.5; }
+    boundsCache[key] = b;
+    return b;
+  }
+  /* the top of the case right above the middle: where the keyring hangs */
+  function ringTopV(key) {
+    key = key || shapeKey;
+    if (ringTopCache[key] !== undefined) return ringTopCache[key];
+    var sdf = SHAPES[key].sdf, v = -0.8;
+    while (v < 0.6 && sdf(0, v) > 0) v += 0.0015;
+    ringTopCache[key] = v;
+    return v;
+  }
+  /* shapes with a dip or ears at the top (heart, cat, bear) would push the ring
+     down into the case, so lift it a little and let the tab reach back down */
+  function ringAnchorV(key) {
+    key = key || shapeKey;
+    var s = ringTopV(key), t = shapeBounds(key).v0;
+    return s - clamp((s - t) * 0.45, 0, 0.05);
+  }
+  function ringTabDown(key) {
+    key = key || shapeKey;
+    return Math.max(0.052, ringTopV(key) - ringAnchorV(key) + 0.045);
+  }  /* how much extra room the frame needs above the case for the ring */
+  function frameRoom() {
+    if (ringKey === 'none') return 0;
+    return Math.max(0, (-FRAME_UH / 2) - (ringAnchorV() - RING_H - 0.015));
+  }
+
   /* ---------------- themes ---------------- */
   var THEMES = [
     { id: 'rose', name: '로지', top: '#fff2f8', mid: '#ffe0ee', bottom: '#ffc8dd', accent: '#ff8fba', gold: '#ffe6a8' },
@@ -713,6 +780,35 @@ input[type=range]::-webkit-slider-thumb{
     { id: 'bubble', emoji: '🫧', name: '버블팝' }
   ];
   var soundIdx = 0;
+
+  /* ---------------- 🖼️ case background: check / dot / stripe / heart / my photo ---------------- */
+  var PATTERNS = [
+    { id: 'none', name: '기본' },
+    { id: 'gingham', name: '깅엄체크' },
+    { id: 'dot', name: '도트' },
+    { id: 'stripe', name: '스트라이프' },
+    { id: 'heart', name: '하트' },
+    { id: 'photo', name: '내 사진', em: '📷' }
+  ];
+  var PAT_BY_ID = {};
+  PATTERNS.forEach(function (p) { PAT_BY_ID[p.id] = p; });
+  var bgPattern = 'none';
+  var bgURL = '', bgArt = null;
+
+  /* ---------------- 🔑 keyring loop on top of the case ---------------- */
+  var RINGS = [
+    { id: 'none', name: '없음' },
+    { id: 'ball', name: '볼체인', em: '⚪' },
+    { id: 'heart', name: '하트고리', em: '🩷' },
+    { id: 'star', name: '별고리', em: '⭐' },
+    { id: 'silver', name: '실버링', em: '🔗' },
+    { id: 'gold', name: '골드링', em: '🌟' }
+  ];
+  var RING_BY_ID = {};
+  RINGS.forEach(function (r) { RING_BY_ID[r.id] = r; });
+  var ringKey = 'none';
+  var ringAng = 0, ringVel = 0;
+  var RING_H = 0.20;   /* how far the ring reaches above the case top, in frame units */
 
   function hexA(hex, a) {
     var h = String(hex).replace('#', '');
@@ -772,6 +868,75 @@ input[type=range]::-webkit-slider-thumb{
     g.globalAlpha = 1;
   }
 
+  /* ---------------- 🖼️ the inner background (pattern or my photo) ---------------- */
+  var BG_TINT = 0.5;   /* how much of the acrylic colour stays over the background */
+
+  function paintPattern(g, id, box, t) {
+    var x0 = box.x0, y0 = box.y0, w = box.x1 - box.x0, h = box.y1 - box.y0;
+    var x, y, row;
+    if (w <= 1 || h <= 1 || t < 2) return;
+    g.save();
+    g.beginPath(); g.rect(x0, y0, w, h); g.clip();
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.fillRect(x0, y0, w, h);
+
+    if (id === 'gingham') {
+      g.fillStyle = hexA(theme.accent, 0.42);
+      for (x = x0 - w; x < x0 + w * 2; x += t * 2) g.fillRect(x, y0, t, h);
+      for (y = y0 - h; y < y0 + h * 2; y += t * 2) g.fillRect(x0, y, w, t);
+    } else if (id === 'dot') {
+      g.fillStyle = hexA(theme.accent, 0.5);
+      row = 0;
+      for (y = y0 + t * 0.5; y < y0 + h + t; y += t * 1.25, row++) {
+        for (x = x0 + (row % 2 ? t * 0.62 : 0) + t * 0.4; x < x0 + w + t; x += t * 1.25) {
+          g.beginPath(); g.arc(x, y, t * 0.26, 0, TAU); g.fill();
+        }
+      }
+    } else if (id === 'stripe') {
+      g.save();
+      g.translate(x0 + w / 2, y0 + h / 2);
+      g.rotate(-Math.PI / 4);
+      var D = Math.max(w, h) * 0.78 + t * 2;
+      g.fillStyle = hexA(theme.accent, 0.34);
+      for (x = -D; x < D; x += t * 1.5) g.fillRect(x, -D, t * 0.72, D * 2);
+      g.restore();
+    } else if (id === 'heart') {
+      row = 0;
+      for (y = y0 + t * 0.66; y < y0 + h + t; y += t * 1.22, row++) {
+        for (x = x0 + (row % 2 ? t * 0.6 : 0) + t * 0.42; x < x0 + w + t; x += t * 1.22) {
+          heartPath(g, x, y, t * 0.27);
+          g.fillStyle = hexA(theme.accent, 0.7);
+          g.fill();
+          g.strokeStyle = 'rgba(255,255,255,0.85)';
+          g.lineWidth = Math.max(0.5, t * 0.026);
+          g.stroke();
+        }
+      }
+    }
+    g.restore();
+  }
+
+  function drawInnerBackground(g) {
+    var b = shapeBounds(shapeKey);
+    var box = {
+      x0: VIEW.cx + b.u0 * VIEW.S, x1: VIEW.cx + b.u1 * VIEW.S,
+      y0: VIEW.cy + b.v0 * VIEW.S, y1: VIEW.cy + b.v1 * VIEW.S
+    };
+    if (bgPattern === 'photo') {
+      if (!bgArt || !bgArt.w || !bgArt.h) return;
+      var w = box.x1 - box.x0, h = box.y1 - box.y0;
+      var k = Math.max(w / bgArt.w, h / bgArt.h);
+      var dw = bgArt.w * k, dh = bgArt.h * k;
+      var mx = (box.x0 + box.x1) / 2, my = (box.y0 + box.y1) / 2;
+      g.save();
+      g.globalAlpha = 0.96;
+      try { g.drawImage(bgArt.src, mx - dw / 2, my - dh / 2, dw, dh); } catch (e) { /* not ready */ }
+      g.restore();
+      return;
+    }
+    paintPattern(g, bgPattern, box, VIEW.S * 0.115);
+  }
+
   function buildCaseLayers() {
     var W = canvasEl.width, H = canvasEl.height, dpr = VIEW.dpr;
     layerBack.width = W; layerBack.height = H;
@@ -814,11 +979,23 @@ input[type=range]::-webkit-slider-thumb{
       g.fillStyle = gr;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
 
+      /* 🖼️ the chosen pattern or photo, washed over with the acrylic colour
+         so the parts in front of it still pop */
+      if (bgPattern !== 'none') {
+        drawInnerBackground(g);
+        var wash = g.createLinearGradient(0, VIEW.cy - VIEW.S * 0.72, 0, VIEW.cy + VIEW.S * 0.72);
+        wash.addColorStop(0, hexA(theme.top, BG_TINT * 0.62));
+        wash.addColorStop(0.52, hexA(theme.mid, BG_TINT * 0.78));
+        wash.addColorStop(1, hexA(theme.bottom, BG_TINT * 0.88));
+        g.fillStyle = wash;
+        g.fillRect(0, 0, VIEW.w, VIEW.h);
+      }
+
       var rg = g.createRadialGradient(
         VIEW.cx - VIEW.S * 0.26, VIEW.cy - VIEW.S * 0.44, VIEW.S * 0.02,
         VIEW.cx - VIEW.S * 0.1, VIEW.cy - VIEW.S * 0.2, VIEW.S * 0.95
       );
-      rg.addColorStop(0, 'rgba(255,255,255,0.82)');
+      rg.addColorStop(0, bgPattern === 'none' ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.34)');
       rg.addColorStop(1, 'rgba(255,255,255,0)');
       g.fillStyle = rg;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
@@ -1431,6 +1608,234 @@ input[type=range]::-webkit-slider-thumb{
       fluidAcc += dt;
       if (fluidAcc >= 1 / 30) { updateFluid(fluidAcc); fluidAcc = 0; }
     }
+    /* 🔑 the keyring sways a little, like a charm on a bag */
+    if (ringKey !== 'none') {
+      var tgt = clamp(-grav.x * 0.2, -0.4, 0.4);
+      ringVel += ((tgt - ringAng) * 30 - ringVel * 5.6) * dt;
+      ringAng = clamp(ringAng + ringVel * dt, -0.5, 0.5);
+    }
+  }
+
+  /* =========================================================
+     🔑 키링 고리가 케이스 꼭대기에 달려요
+     ========================================================= */
+  var RING_METAL = {
+    silver: [[0, '#ffffff'], [0.24, '#cbd2de'], [0.5, '#7d8595'], [0.72, '#f3f7fd'], [1, '#8f97a7']],
+    gold: [[0, '#fff3c4'], [0.24, '#f7d97e'], [0.5, '#b9862f'], [0.72, '#fff2b8'], [1, '#c79a3d']]
+  };
+
+  function metalFill(g, x0, y0, x1, y1, stops) {
+    var gr = g.createLinearGradient(x0, y0, x1, y1), i;
+    for (i = 0; i < stops.length; i++) gr.addColorStop(stops[i][0], stops[i][1]);
+    return gr;
+  }
+
+  function roundRectPath(g, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r);
+    g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r);
+    g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y);
+    g.closePath();
+  }
+
+  function ringMetalFor() { return ringKey === 'gold' ? RING_METAL.gold : RING_METAL.silver; }
+
+  /* the little acrylic tab glued onto the top of the case, with its hole */
+  function drawKeyTab(g, x, yTop, S, down) {
+    var hw = 0.037 * S, top = yTop - 0.085 * S, bot = yTop + (down || 0.052) * S;
+    var hh = bot - top, r = 0.020 * S;
+    g.save();
+    g.shadowColor = 'rgba(146,98,138,0.42)';
+    g.shadowBlur = 0.028 * S;
+    g.shadowOffsetY = 0.012 * S;
+    var gr = g.createLinearGradient(x - hw, top, x + hw, bot);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(0.42, '#fffcfd');
+    gr.addColorStop(0.74, hexA(theme.mid, 1));
+    gr.addColorStop(1, hexA(theme.bottom, 1));
+    g.fillStyle = gr;
+    roundRectPath(g, x - hw, top, hw * 2, hh, r);
+    g.fill();
+    g.restore();
+
+    /* a soft edge so the tab reads as a separate piece of acrylic */
+    g.save();
+    g.strokeStyle = 'rgba(158,120,150,0.4)';
+    g.lineWidth = Math.max(0.8, 0.005 * S);
+    roundRectPath(g, x - hw, top, hw * 2, hh, r);
+    g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,0.95)';
+    g.lineWidth = Math.max(0.8, 0.007 * S);
+    roundRectPath(g, x - hw + 0.006 * S, top + 0.006 * S, hw * 2 - 0.012 * S, hh - 0.012 * S, Math.max(1, r - 0.006 * S));
+    g.stroke();
+    g.restore();
+
+    /* the hole the jump ring goes through */
+    var hy = yTop - 0.045 * S, hrx = 0.0155 * S, hry = 0.0135 * S;
+    g.save();
+    g.fillStyle = 'rgba(86,58,80,0.5)';
+    g.beginPath(); g.ellipse(x, hy, hrx, hry, 0, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    g.beginPath(); g.ellipse(x, hy + hry * 0.52, hrx * 0.62, hry * 0.34, 0, 0, TAU); g.fill();
+    g.restore();
+  }
+
+  function drawJumpRing(g, x, y, r, w, stops, S) {
+    g.save();
+    g.shadowColor = 'rgba(120,85,112,0.32)';
+    g.shadowBlur = 0.02 * S;
+    g.shadowOffsetY = 0.006 * S;
+    g.strokeStyle = metalFill(g, x - r, y - r, x + r, y + r, stops);
+    g.lineWidth = w;
+    g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke();
+    g.restore();
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.8)';
+    g.lineWidth = Math.max(0.6, w * 0.3);
+    g.beginPath(); g.arc(x, y, r + w * 0.2, Math.PI * 1.04, Math.PI * 1.58); g.stroke();
+    g.restore();
+  }
+
+  /* the loop that hangs above the jump ring; (x, jy) is the jump ring centre */
+  function drawRingLoopKind(g, kind, x, jy, S) {
+    var i, a, bx, by, r, s, cy, gr;
+    if (kind === 'ball') {
+      var rx = 0.062 * S, ry = 0.054 * S, cyc = jy - 0.056 * S, n = 24;
+      for (i = 0; i < n; i++) {
+        a = i / n * TAU - Math.PI / 2;
+        bx = x + Math.cos(a) * rx;
+        by = cyc + Math.sin(a) * ry;
+        r = 0.0135 * S;
+        g.save();
+        g.shadowColor = 'rgba(120,85,112,0.26)';
+        g.shadowBlur = 0.014 * S;
+        g.shadowOffsetY = 0.004 * S;
+        gr = g.createRadialGradient(bx - r * 0.4, by - r * 0.45, r * 0.08, bx, by, r * 1.02);
+        gr.addColorStop(0, '#ffffff');
+        gr.addColorStop(0.42, '#eef1f7');
+        gr.addColorStop(0.78, '#c3cad7');
+        gr.addColorStop(1, '#8f97a7');
+        g.fillStyle = gr;
+        g.beginPath(); g.arc(bx, by, r, 0, TAU); g.fill();
+        g.restore();
+      }
+      return;
+    }
+    if (kind === 'heart') {
+      s = 0.058 * S; cy = jy - 0.088 * S;
+      g.save();
+      g.shadowColor = 'rgba(200,90,145,0.4)';
+      g.shadowBlur = 0.032 * S;
+      g.shadowOffsetY = 0.008 * S;
+      gr = g.createLinearGradient(x - s, cy - s, x + s, cy + s);
+      gr.addColorStop(0, '#ffe2ee');
+      gr.addColorStop(0.42, '#ff9dc4');
+      gr.addColorStop(1, '#ef5f97');
+      heartPath(g, x, cy, s);
+      g.fillStyle = gr;
+      g.fill();
+      g.restore();
+      g.save();
+      g.fillStyle = 'rgba(255,255,255,0.88)';
+      g.beginPath(); g.ellipse(x - s * 0.32, cy - s * 0.46, s * 0.2, s * 0.34, -0.5, 0, TAU); g.fill();
+      g.restore();
+      drawJumpRing(g, x, jy - 0.026 * S, 0.012 * S, 0.0066 * S, RING_METAL.silver, S);
+      return;
+    }
+    if (kind === 'star') {
+      r = 0.060 * S; cy = jy - 0.078 * S;
+      g.save();
+      g.shadowColor = 'rgba(185,135,55,0.42)';
+      g.shadowBlur = 0.03 * S;
+      g.shadowOffsetY = 0.008 * S;
+      gr = g.createLinearGradient(x - r, cy - r, x + r, cy + r);
+      gr.addColorStop(0, '#fff7d2');
+      gr.addColorStop(0.45, '#ffd979');
+      gr.addColorStop(1, '#dfa23a');
+      starPath(g, x, cy, r, r * 0.46, 5, -Math.PI / 2);
+      g.fillStyle = gr;
+      g.strokeStyle = gr;
+      g.lineJoin = 'round';
+      g.lineWidth = r * 0.17;
+      g.fill(); g.stroke();
+      g.restore();
+      g.save();
+      g.fillStyle = 'rgba(255,255,255,0.75)';
+      g.beginPath(); g.ellipse(x - r * 0.22, cy - r * 0.3, r * 0.13, r * 0.24, -0.5, 0, TAU); g.fill();
+      g.restore();
+      drawJumpRing(g, x, jy - 0.026 * S, 0.012 * S, 0.0066 * S, RING_METAL.gold, S);
+      return;
+    }
+    /* silver / gold loop */
+    var R0 = 0.056 * S, w0 = 0.018 * S;
+    cy = jy - 0.066 * S;
+    g.save();
+    g.shadowColor = 'rgba(120,85,112,0.32)';
+    g.shadowBlur = 0.03 * S;
+    g.shadowOffsetY = 0.01 * S;
+    g.beginPath();
+    g.arc(x, cy, R0, 0, TAU);
+    g.arc(x, cy, R0 - w0, 0, TAU, true);
+    g.fillStyle = metalFill(g, x - R0, cy - R0, x + R0, cy + R0,
+      kind === 'gold' ? RING_METAL.gold : RING_METAL.silver);
+    g.fill();
+    g.restore();
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.86)';
+    g.lineWidth = Math.max(0.7, w0 * 0.34);
+    g.beginPath(); g.arc(x, cy, R0 - w0 * 0.2, Math.PI * 1.05, Math.PI * 1.52); g.stroke();
+    g.restore();
+  }
+
+  var ringSpr = null;
+
+  function buildRingSprites() {
+    var dpr = VIEW.dpr, S = VIEW.S * dpr, down = ringTabDown();
+    var key = ringKey + '|' + themeIdx + '|' + Math.round(S) + '|' + Math.round(dpr * 100) + '|' + shapeKey;
+    if (ringSpr && ringSpr.key === key) return ringSpr;
+    var pad = Math.ceil(0.07 * S);
+
+    /* tab + jump ring, standing straight on the case top */
+    var tabW = Math.ceil(0.30 * S), tabH = Math.ceil((0.11 + down + 0.02) * S);
+    var tabCv = cutCanvas(tabW + pad * 2, tabH + pad * 2);
+    var tg = tabCv.getContext('2d');
+    var tabOX = pad + tabW / 2, tabOY = pad + Math.round(0.11 * S);  /* = the ring anchor */
+    tg.translate(tabOX, tabOY);
+    drawKeyTab(tg, 0, 0, S, down);
+    drawJumpRing(tg, 0, -0.072 * S, 0.026 * S, 0.0095 * S, ringMetalFor(), S);
+
+    /* the loop above, swinging around the jump ring centre */
+    var loopW = Math.ceil(0.34 * S), loopH = Math.ceil(0.24 * S);
+    var loopCv = cutCanvas(loopW + pad * 2, loopH + pad * 2);
+    var lg = loopCv.getContext('2d');
+    var pivX = pad + loopW / 2, pivY = pad + loopH - Math.round(0.02 * S);
+    lg.translate(pivX, pivY);
+    drawRingLoopKind(lg, ringKey, 0, 0, S);
+
+    ringSpr = {
+      key: key, dpr: dpr,
+      tab: tabCv, tabOX: tabOX, tabOY: tabOY, tw: tabCv.width, th: tabCv.height,
+      loop: loopCv, pivX: pivX, pivY: pivY, lw: loopCv.width, lh: loopCv.height
+    };
+    return ringSpr;
+  }
+
+  /* drawn in canvas coords (also used inside the saved picture / thumbnails) */
+  function drawKeyring(g) {
+    if (ringKey === 'none') return;
+    var spr = buildRingSprites();
+    var d = spr.dpr;
+    var x = VIEW.cx, yTop = VIEW.cy + ringAnchorV() * VIEW.S;
+    var jy = yTop - 0.072 * VIEW.S;
+    g.drawImage(spr.tab, x - spr.tabOX / d, yTop - spr.tabOY / d, spr.tw / d, spr.th / d);
+    g.save();
+    g.translate(x, jy);
+    g.rotate(ringAng);
+    g.drawImage(spr.loop, -spr.pivX / d, -spr.pivY / d, spr.lw / d, spr.lh / d);
+    g.restore();
   }
 
   /* ---------------- render ---------------- */
@@ -1464,6 +1869,7 @@ input[type=range]::-webkit-slider-thumb{
     renderParts(g);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    drawKeyring(g);
     drawDeco(g);
   }
 
@@ -2035,6 +2441,7 @@ input[type=range]::-webkit-slider-thumb{
     }
     bumpCounter();
     wobble();
+    if (ringKey !== 'none') ringVel += rand(-2.8, 2.8) * power;
     if (isOil()) Sound.swish(power); else Sound.rattle(power);
   }
 
@@ -2982,7 +3389,7 @@ input[type=range]::-webkit-slider-thumb{
       }
       list.push(s);
     }
-    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, parts: list, photos: photos, deco: decoSnapshot() };
+    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, pat: bgPattern, bgp: bgURL || '', ring: ringKey, parts: list, photos: photos, deco: decoSnapshot() };
   }
 
   function flashSaved() {
@@ -3029,6 +3436,11 @@ input[type=range]::-webkit-slider-thumb{
     }
     if (st.snd !== undefined) setSound(parseInt(st.snd, 10), 'restore');
     if (st.shape && SHAPES[st.shape]) shapeKey = st.shape;
+    /* 🖼️ background pattern & 🔑 keyring, they come with the shaker */
+    bgPattern = (st.pat && PAT_BY_ID[st.pat]) ? st.pat : 'none';
+    ringKey = (st.ring && RING_BY_ID[st.ring]) ? st.ring : 'none';
+    ringAng = 0; ringVel = 0; ringSpr = null;
+    if (st.bgp !== bgURL || !bgArt) loadBgPhoto(st.bgp || '');
     var m;
     for (m = 0; m < MODES.length; m++) if (MODES[m].id === st.mode) modeIdx = m;
   }
@@ -3073,6 +3485,235 @@ input[type=range]::-webkit-slider-thumb{
       r: r, sprite: cv,
       art: s.a || (118 * (cv.width / SPRITE)), sc: s.sc || cv.width,
       kind: 'photo', ph: id, x: s.x, y: s.y, rot: s.ro
+    });
+  }
+
+  /* ---------------- 🖼️ case background: choosing & keeping it ---------------- */
+  var patPhotoCv = null;
+
+  function paintPatPhoto(cv) {
+    if (!cv) return;
+    var g = cv.getContext('2d'), W = cv.width, H = cv.height;
+    g.clearRect(0, 0, W, H);
+    if (bgArt && bgArt.w && bgArt.h) {
+      var k = Math.max(W / bgArt.w, H / bgArt.h);
+      var w = bgArt.w * k, h = bgArt.h * k;
+      try { g.drawImage(bgArt.src, (W - w) / 2, (H - h) / 2, w, h); } catch (e) { /* not ready */ }
+      return;
+    }
+    g.fillStyle = '#fff4fa';
+    g.fillRect(0, 0, W, H);
+    g.save();
+    g.strokeStyle = 'rgba(198,155,190,0.85)';
+    g.lineWidth = 3;
+    if (g.setLineDash) g.setLineDash([7, 6]);
+    g.strokeRect(5, 5, W - 10, H - 10);
+    g.restore();
+    g.fillStyle = '#b98aa6';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = '700 26px -apple-system, system-ui, sans-serif';
+    g.fillText('📷', W / 2, H / 2 + 1);
+  }
+
+  function patThumb(id) {
+    var W = 68, H = 68;
+    var cv = cutCanvas(W, H), g = cv.getContext('2d');
+    if (id === 'photo') { patPhotoCv = cv; paintPatPhoto(cv); return cv; }
+    if (id === 'none') {
+      var gr = g.createLinearGradient(0, 0, W, H);
+      gr.addColorStop(0, theme.top);
+      gr.addColorStop(0.55, theme.mid);
+      gr.addColorStop(1, theme.bottom);
+      g.fillStyle = gr;
+      g.fillRect(0, 0, W, H);
+      return cv;
+    }
+    paintPattern(g, id, { x0: 0, y0: 0, x1: W, y1: H }, W * 0.30);
+    return cv;
+  }
+
+  function ringThumb(id) {
+    var W = 76, H = 76;
+    var cv = cutCanvas(W, H), g = cv.getContext('2d');
+    if (id === 'none') {
+      g.strokeStyle = 'rgba(188,160,180,0.8)';
+      g.lineWidth = 3.4;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(W * 0.31, H * 0.33); g.lineTo(W * 0.69, H * 0.71); g.stroke();
+      g.beginPath(); g.moveTo(W * 0.69, H * 0.33); g.lineTo(W * 0.31, H * 0.71); g.stroke();
+      return cv;
+    }
+    var S = H * 3.3;
+    var x = W / 2, yTop = H - 0.075 * S - H * 0.03;
+    var jy = yTop - 0.072 * S;
+    g.save();
+    drawKeyTab(g, x, yTop, S, 0.075);
+    drawJumpRing(g, x, jy, 0.026 * S, 0.0095 * S, (id === 'gold' ? RING_METAL.gold : RING_METAL.silver), S);
+    drawRingLoopKind(g, id, x, jy, S);
+    g.restore();
+    return cv;
+  }
+
+  function syncBgUI() {
+    var chips = document.querySelectorAll('#patChips .chip'), i;
+    for (i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle('sel', chips[i].getAttribute('data-pat') === bgPattern);
+    }
+    var nm = $('#bgName');
+    if (nm) nm.textContent = (PAT_BY_ID[bgPattern] || PAT_BY_ID.none).name;
+    var sw = $('#bgSwap');
+    if (sw) sw.hidden = !bgURL;
+    paintPatPhoto(patPhotoCv);
+  }
+
+  function syncRingUI() {
+    var chips = document.querySelectorAll('#ringChips .chip'), i;
+    for (i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle('sel', chips[i].getAttribute('data-ring') === ringKey);
+    }
+    var nm = $('#ringName');
+    if (nm) nm.textContent = (RING_BY_ID[ringKey] || RING_BY_ID.none).name;
+  }
+
+  function rebuildPatternChips() {
+    var box = $('#patChips');
+    if (!box) return;
+    while (box.firstChild) box.removeChild(box.firstChild);
+    patPhotoCv = null;
+    PATTERNS.forEach(function (P) {
+      var b = document.createElement('button');
+      b.className = 'chip';
+      b.type = 'button';
+      b.setAttribute('data-pat', P.id);
+      b.setAttribute('aria-label', P.name);
+      b.appendChild(patThumb(P.id));
+      var s = document.createElement('span');
+      s.textContent = P.name;
+      b.appendChild(s);
+      b.addEventListener('click', function () { onPatChip(P.id); });
+      box.appendChild(b);
+    });
+    syncBgUI();
+  }
+
+  function rebuildRingChips() {
+    var box = $('#ringChips');
+    if (!box) return;
+    while (box.firstChild) box.removeChild(box.firstChild);
+    RINGS.forEach(function (R) {
+      var b = document.createElement('button');
+      b.className = 'chip';
+      b.type = 'button';
+      b.setAttribute('data-ring', R.id);
+      b.setAttribute('aria-label', R.name);
+      b.appendChild(ringThumb(R.id));
+      var s = document.createElement('span');
+      s.textContent = R.name;
+      b.appendChild(s);
+      b.addEventListener('click', function () { setRing(R.id); });
+      box.appendChild(b);
+    });
+    syncRingUI();
+  }
+
+  function openBgPicker() {
+    var el = $('#bgFile');
+    if (!el) return;
+    el.value = '';
+    el.click();
+  }
+
+  function onPatChip(id) {
+    Sound.unlock();
+    if (id === 'photo' && !bgURL) {
+      openBgPicker();
+      toast('케이스 배경에 넣을 사진을 골라 줘 📷');
+      return;
+    }
+    setPattern(id);
+  }
+
+  function setPattern(id) {
+    if (!PAT_BY_ID[id]) return;
+    if (bgPattern === id) {
+      if (id === 'photo') { openBgPicker(); return; }
+      Sound.pop(false);
+      return;
+    }
+    bgPattern = id;
+    buildCaseLayers();
+    draw();
+    syncBgUI();
+    touchState();
+    Sound.unlock();
+    Sound.pop(true);
+    if (id === 'none') toast('케이스 배경을 기본으로 돌렸어');
+    else if (id === 'photo') toast('내 사진을 케이스 안쪽 배경에 넣었어 🖼️');
+    else toast(PAT_BY_ID[id].name + ' 패턴을 넣었어 🖼️');
+  }
+
+  function setRing(id) {
+    if (!RING_BY_ID[id]) return;
+    ringKey = id;
+    ringAng = 0;
+    ringVel = 0;
+    ringSpr = null;
+    layout();
+    syncRingUI();
+    touchState();
+    Sound.unlock();
+    Sound.pop(id !== 'none');
+    if (id === 'none') toast('키링 고리를 뗐어');
+    else { var nm = RING_BY_ID[id].name; toast(nm + josa(nm, '을', '를') + ' 달았어 🔑'); }
+  }
+
+  function loadBgPhoto(url) {
+    if (!url) {
+      if (bgURL || bgArt) { bgURL = ''; bgArt = null; buildCaseLayers(); draw(); syncBgUI(); }
+      return;
+    }
+    if (bgURL === url && bgArt) return;
+    bgURL = url;
+    bgArt = null;
+    var im = new Image();
+    im.onload = function () {
+      if (bgURL !== url || !im.naturalWidth) return;
+      bgArt = { src: im, w: im.naturalWidth, h: im.naturalHeight };
+      buildCaseLayers();
+      draw();
+      syncBgUI();
+    };
+    im.onerror = function () { /* a broken saved photo just leaves the case plain */ };
+    im.src = url;
+  }
+
+  function handleBgFile(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type || '')) { toast('사진 파일만 넣을 수 있어요'); return; }
+    loadImage(file, function (im) {
+      if (!im) { toast('사진을 읽지 못했어요'); return; }
+      var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+      if (!iw || !ih) { toast('사진을 읽지 못했어요'); return; }
+      var k = Math.min(1, 360 / Math.max(iw, ih));
+      var w = Math.max(1, Math.round(iw * k)), h = Math.max(1, Math.round(ih * k));
+      var cv = cutCanvas(w, h);
+      var g = cv.getContext('2d');
+      try { g.imageSmoothingQuality = 'high'; } catch (e) { /* older engines */ }
+      g.drawImage(im, 0, 0, w, h);
+      var url = '';
+      try { url = cv.toDataURL('image/jpeg', 0.82); } catch (e) { url = ''; }
+      if (!url) { toast('사진을 케이스에 넣지 못했어요'); return; }
+      bgURL = url;
+      bgArt = { src: cv, w: w, h: h };
+      bgPattern = 'photo';
+      buildCaseLayers();
+      draw();
+      syncBgUI();
+      touchState();
+      Sound.unlock();
+      Sound.pop(true);
+      toast('내 사진을 케이스 배경에 넣었어 📷');
     });
   }
 
@@ -3124,13 +3765,14 @@ input[type=range]::-webkit-slider-thumb{
 
     var pad = 60;
     /* frame the acrylic case itself, so the picture looks the same on a phone
-       and on a wide desktop window */
-    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * FRAME_UH;
+       and on a wide desktop window; the ring on top gets its own headroom */
+    var room = frameRoom();
+    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * (FRAME_UH + room);
     var s = Math.min((W - pad * 2) / caseW, (H - 400) / caseH);
     var cx0 = W / 2;
     var cy0 = (H - 380) / 2 + 36;
     var dx = cx0 - VIEW.cx * s;
-    var dy = cy0 - VIEW.cy * s;
+    var dy = cy0 + room * VIEW.S * s / 2 - VIEW.cy * s;
     var dw = caseW * s, dh = caseH * s;
 
     var shg = g.createRadialGradient(0, 0, 10, 0, 0, dw * 0.46);
@@ -3138,7 +3780,7 @@ input[type=range]::-webkit-slider-thumb{
     shg.addColorStop(0.6, 'rgba(122,84,122,0.12)');
     shg.addColorStop(1, 'rgba(122,84,122,0)');
     g.save();
-    g.translate(cx0, cy0 + dh * 0.46);
+    g.translate(cx0, dy + s * (VIEW.cy + VIEW.S * 0.6));
     g.scale(1, 0.26);
     g.fillStyle = shg;
     g.beginPath();
@@ -3153,6 +3795,7 @@ input[type=range]::-webkit-slider-thumb{
     g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    drawKeyring(g);
     drawDeco(g);
     g.restore();
 
@@ -3949,15 +4592,16 @@ input[type=range]::-webkit-slider-thumb{
     bg.addColorStop(1, theme.mid);
     g.fillStyle = bg;
     g.fillRect(0, 0, W, H);
-    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * FRAME_UH;
+    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * (FRAME_UH + frameRoom());
     var s = Math.min(W / caseW, H / caseH) * 0.92;
     g.save();
-    g.translate(W / 2 - VIEW.cx * s, H / 2 - VIEW.cy * s);
+    g.translate(W / 2 - VIEW.cx * s, H / 2 + frameRoom() * VIEW.S * s / 2 - VIEW.cy * s);
     g.scale(s, s);
     g.drawImage(layerBack, 0, 0, VIEW.w, VIEW.h);
     g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    drawKeyring(g);
     drawDeco(g);
     g.restore();
   }
@@ -4015,6 +4659,7 @@ input[type=range]::-webkit-slider-thumb{
     restoreDeco(st.deco);
     if (isOil()) seedFluid(); else { bubbles.length = 0; sparkles.length = 0; }
     restoreParts(st);
+    layout();
     syncCaseUI();
     draw();
     if (save !== false) touchState();
@@ -4035,6 +4680,8 @@ input[type=range]::-webkit-slider-thumb{
     var mc = document.querySelectorAll('#modeChips .chip');
     for (i = 0; i < mc.length; i++) mc[i].classList.toggle('sel', i === modeIdx);
     syncSoundChips();
+    syncBgUI();
+    syncRingUI();
     for (i = 0; i < parts.length; i++) parts[i].bounce = modeCfg().bounce;
     decoRefit();
     syncDecoUI();
@@ -4151,10 +4798,11 @@ input[type=range]::-webkit-slider-thumb{
     var padX = 14 * dpr / dpr;
     var availW = w - 20;
     var availH = h - 12;
-    var S = Math.min(availW / FRAME_UW, availH / FRAME_UH);
+    var room = frameRoom();
+    var S = Math.min(availW / FRAME_UW, availH / (FRAME_UH + room));
     VIEW.S = S;
     VIEW.cx = w / 2;
-    VIEW.cy = h / 2 + 2;
+    VIEW.cy = h / 2 + 2 + room * S / 2;
 
     maskMain = getMask(shapeKey, 0, 300);
     maskEdge = getMask(shapeKey, -0.034, 300);
@@ -4166,7 +4814,7 @@ input[type=range]::-webkit-slider-thumb{
     shapeKey = key;
     maskMain = getMask(shapeKey, 0, 300);
     maskEdge = getMask(shapeKey, -0.034, 300);
-    buildCaseLayers();
+    layout();
     var nm = $('#shapeName');
     if (nm) nm.textContent = SHAPES[key].name;
     var chips = document.querySelectorAll('#shapeChips .chip');
@@ -4512,6 +5160,15 @@ input[type=range]::-webkit-slider-thumb{
     dcc.appendChild(delChip);
     $('#decoUndo').addEventListener('click', decoUndo);
     $('#decoClear').addEventListener('click', decoClearAll);
+
+    /* 🖼️ case background chips + 🔑 keyring chips */
+    rebuildPatternChips();
+    rebuildRingChips();
+    $('#bgSwap').addEventListener('click', openBgPicker);
+    $('#bgFile').addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      handleBgFile(f);
+    });
 
     /* 🗂️ drawer */
     drawerEl = $('#drawer');
