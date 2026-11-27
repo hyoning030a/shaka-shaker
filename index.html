@@ -1273,11 +1273,15 @@ input[type=range]::-webkit-slider-thumb{
     }
     g.closePath();
   }
-  function heartPath(g, cx, cy, s) {
+  function heartPath(g, cx, cy, s, notch, wag, lobeY) {
+    /* notch = how high the top dip sits (bigger = plumper lobes), wag/lobeY = how fat the lobes are */
+    notch = (notch === undefined) ? 0.44 : notch;
+    wag = (wag === undefined) ? 0.78 : wag;
+    lobeY = (lobeY === undefined) ? 1.08 : lobeY;
     g.beginPath();
     g.moveTo(cx, cy + s * 0.86);
-    g.bezierCurveTo(cx - s * 1.34, cy - s * 0.04, cx - s * 0.78, cy - s * 1.08, cx, cy - s * 0.44);
-    g.bezierCurveTo(cx + s * 0.78, cy - s * 1.08, cx + s * 1.34, cy - s * 0.04, cx, cy + s * 0.86);
+    g.bezierCurveTo(cx - s * 1.34, cy - s * 0.04, cx - s * wag, cy - s * lobeY, cx, cy - s * notch);
+    g.bezierCurveTo(cx + s * wag, cy - s * lobeY, cx + s * 1.34, cy - s * 0.04, cx, cy + s * 0.86);
     g.closePath();
   }
   function softShadow(g, color, blur, dy) {
@@ -1521,13 +1525,18 @@ input[type=range]::-webkit-slider-thumb{
      ========================================================= */
   var FONT_STACK = '"Apple SD Gothic Neo","Pretendard",-apple-system,BlinkMacSystemFont,system-ui,sans-serif';
   var BEAD_STYLES = [
-    { id: 'white', name: '화이트 사각', art: 62, r: 0.060 },
-    { id: 'pastel', name: '파스텔 하트', art: 64, r: 0.062 },
-    { id: 'clear', name: '투명 별', art: 72, r: 0.066 },
-    { id: 'pink', name: '핑크 원형', art: 62, r: 0.060 }
+    { id: 'white', name: '화이트 사각', art: 62, r: 0.060, box: 108 },
+    { id: 'pastel', name: '파스텔 하트', art: 80, r: 0.068, box: 136 },
+    { id: 'clear', name: '투명 별', art: 84, r: 0.072, box: 136 },
+    { id: 'pink', name: '핑크 원형', art: 62, r: 0.060, box: 108 }
   ];
   var BEAD_BY_ID = {};
   BEAD_STYLES.forEach(function (b) { BEAD_BY_ID[b.id] = b; });
+  /* frame every shape the same way in sheet previews, by how big it really is in the shaker */
+  function beadCrop(sty) {
+    var st = BEAD_BY_ID[sty];
+    return (st && st.art ? st.art : 62) * 2.2;
+  }
   var WORD_ART = 70, WORD_R = 0.078;
   var beadStyle = 'white', beadWord = false;
   var letterCache = {}, letterCacheN = 0;
@@ -1541,12 +1550,12 @@ input[type=range]::-webkit-slider-thumb{
     pastel: {
       stops: ['#ffeaf4', '#ffc6de', '#ff9dc0'],
       rim: 'rgba(255,255,255,0.96)', rim2: 'rgba(255,255,255,0.72)',
-      ink: '#b2406c', shadow: 'rgba(220,110,155,0.34)', fs: 56
+      ink: '#b2406c', shadow: 'rgba(220,110,155,0.34)', fs: 68
     },
     clear: {
       stops: ['rgba(242,251,255,0.78)', 'rgba(200,230,252,0.62)', 'rgba(158,204,240,0.7)'],
       rim: 'rgba(255,255,255,0.96)', rim2: 'rgba(186,218,244,0.7)',
-      ink: '#4e7799', shadow: 'rgba(120,160,200,0.3)', fs: 52
+      ink: '#4e7799', shadow: 'rgba(120,160,200,0.3)', fs: 58
     },
     pink: {
       stops: ['#ffe8f2', '#ffb5d1', '#ff7fac'],
@@ -1558,8 +1567,10 @@ input[type=range]::-webkit-slider-thumb{
   /* the outline of one bead, so fill, rim and clip all share the same shape */
   function beadPath(g, sty, x, y, w, h, pill) {
     if (pill) { roundRectPath(g, x, y, w, h, Math.min(h / 2, 46)); return; }
-    if (sty === 'pastel') { heartPath(g, x + w / 2, y + h * 0.43, h * 0.47); return; }
-    if (sty === 'clear') { starPath(g, x + w / 2, y + h / 2, w * 0.54, w * 0.25, 5, -Math.PI / 2); return; }
+    /* a plump heart: shallow top dip, fat lobes, so a letter can sit in the wide belly */
+    if (sty === 'pastel') { heartPath(g, x + w / 2, y + h * 0.44, h * 0.647, 0.54, 0.80, 1.05); return; }
+    /* a chunky star: fatter inner radius keeps the letter clear of the notches */
+    if (sty === 'clear') { starPath(g, x + w / 2, y + h / 2, h * 0.5441, h * 0.3047, 5, -Math.PI / 2); return; }
     if (sty === 'pink') { g.beginPath(); g.arc(x + w / 2, y + h / 2, w / 2, 0, TAU); return; }
     roundRectPath(g, x, y, w, h, Math.min(w, h) * 0.29);
   }
@@ -1584,9 +1595,12 @@ input[type=range]::-webkit-slider-thumb{
       x0 = (SPRITE - w) / 2; y0 = (SPRITE - h) / 2;
       ty = y0 + h * 0.53;
     } else {
-      w = 108; h = 108; x0 = (SPRITE - w) / 2; y0 = (SPRITE - h) / 2;
+      var bs = BEAD_BY_ID[sty];
+      w = (bs && bs.box) ? bs.box : 108;
+      h = w; x0 = (SPRITE - w) / 2; y0 = (SPRITE - h) / 2;
       fs = pal.fs;
-      ty = y0 + h * (sty === 'pastel' ? 0.57 : 0.53);
+      /* heart: optical centre of the belly; star: centre of the pentagon core */
+      ty = y0 + h * (sty === 'pastel' ? 0.44 : (sty === 'clear' ? 0.50 : 0.53));
     }
 
     /* body */
@@ -1628,15 +1642,18 @@ input[type=range]::-webkit-slider-thumb{
     g.globalAlpha = 1;
     g.restore();
 
-    /* the letter itself */
+    /* the letter itself — centred on the ink box, not the em box, so ♥ · A · 효 all sit level */
     g.save();
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.font = '900 ' + fs + 'px ' + FONT_STACK;
+    var tm = g.measureText(txt);
+    var inkAsc = tm.actualBoundingBoxAscent || 0, inkDesc = tm.actualBoundingBoxDescent || 0;
+    var ly = ty + (inkAsc - inkDesc) / 2;
     if (sty === 'pink') { g.shadowColor = 'rgba(178,52,104,0.45)'; g.shadowBlur = 4; g.shadowOffsetY = 2; }
     else if (sty === 'clear') { g.shadowColor = 'rgba(255,255,255,0.9)'; g.shadowBlur = 5; }
     g.fillStyle = pal.ink;
-    g.fillText(txt, x0 + w / 2, ty);
+    g.fillText(txt, x0 + w / 2, ly);
     g.restore();
   }
 
@@ -5415,7 +5432,8 @@ input[type=range]::-webkit-slider-thumb{
         g.drawImage(spr, C - 112, C - 60, 224, 120, -dw / 2, -dh / 2, dw, dh);
       } else {
         var ds = d * 0.8;
-        g.drawImage(spr, C - 70, C - 70, 140, 140, -ds / 2, -ds / 2, ds, ds);
+        var cp = beadCrop(beadStyle);
+        g.drawImage(spr, C - cp / 2, C - cp / 2, cp, cp, -ds / 2, -ds / 2, ds, ds);
       }
       g.restore();
       x += d + gap * k;
@@ -5489,7 +5507,8 @@ input[type=range]::-webkit-slider-thumb{
         b.setAttribute('aria-label', B.name + ' 비즈');
         var cv = cutCanvas(72, 72);
         var cg = cv.getContext('2d');
-        cg.drawImage(getLetterSprite('A', B.id, false), C - 70, C - 70, 140, 140, 0, 0, 72, 72);
+        var cp = beadCrop(B.id);
+        cg.drawImage(getLetterSprite('A', B.id, false), C - cp / 2, C - cp / 2, cp, cp, 0, 0, 72, 72);
         b.appendChild(cv);
         var sp = document.createElement('span');
         sp.textContent = B.name;
