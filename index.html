@@ -1176,8 +1176,10 @@ input[type=range]::-webkit-slider-thumb{
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
   }
 
-  var lastT = 0, acc = 0, running = true;
+  var lastT = 0, acc = 0, running = false, rafId = 0, lastFrameAt = 0;
   function loop(t) {
+    rafId = 0;
+    lastFrameAt = performance.now();
     if (!running) return;
     if (!lastT) lastT = t;
     var dt = (t - lastT) / 1000;
@@ -1192,30 +1194,170 @@ input[type=range]::-webkit-slider-thumb{
     }
     if (guard >= 6) acc = 0;
     draw();
-    requestAnimationFrame(loop);
+    rafId = requestAnimationFrame(loop);
+  }
+  function startLoop() {
+    /* the browser may have dropped our frame while we were away, so a frame
+       that stopped arriving is scheduled again instead of trusted */
+    var stale = running && (!rafId || performance.now() - lastFrameAt > 400);
+    if (running && !stale) return;
+    running = true;
+    lastT = 0;
+    acc = 0;
+    if (rafId) { try { cancelAnimationFrame(rafId); } catch (e) { /* gone */ } rafId = 0; }
+    rafId = requestAnimationFrame(loop);
+  }
+  function stopLoop() {
+    running = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+  }
+
+  /* ---------------- coming back from another app ---------------- */
+  /* iOS stops the animation loop and starves the sound while the app is away,
+     so on the way back we restart the loop, re-fit the canvas if the viewport
+     moved, and wake the audio — which only takes effect on a user gesture, so
+     every touch gets a wake as well. */
+  function relayoutIfResized() {
+    if (!stageEl) return;
+    var rect = stageEl.getBoundingClientRect();
+    var w = Math.max(40, Math.round(rect.width));
+    var h = Math.max(40, Math.round(rect.height));
+    var dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    if (w !== VIEW.w || h !== VIEW.h || dpr !== VIEW.dpr) layout();
+  }
+
+  function onReturn() {
+    startLoop();
+    relayoutIfResized();
+    Sound.wake();
+    setTimeout(relayoutIfResized, 260);
+  }
+
+  function bindReturnHandlers() {
+    function gesture() { Sound.wake(true); }
+    try {
+      document.addEventListener('pointerdown', gesture, { capture: true, passive: true });
+      document.addEventListener('touchstart', gesture, { capture: true, passive: true });
+      document.addEventListener('click', gesture, { capture: true, passive: true });
+    } catch (e) {
+      /* older engines: plain capture listeners */
+      document.addEventListener('pointerdown', gesture, true);
+      document.addEventListener('touchstart', gesture, true);
+      document.addEventListener('click', gesture, true);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stopLoop();
+      else onReturn();
+    });
+    window.addEventListener('pageshow', onReturn);
+    window.addEventListener('pagehide', function () { stopLoop(); });
+    window.addEventListener('focus', function () {
+      startLoop();
+      Sound.wake();
+    });
   }
 
   /* ---------------- audio ---------------- */
+  /* iOS cuts the AudioContext off when another app takes the sound, when the
+     app goes to the background or the screen locks. It comes back as
+     'suspended' or 'interrupted', and an 'interrupted' context often refuses
+     to resume at all — so a wake-up first asks it to run, then pokes the
+     output with one silent sample (what WebKit actually listens for), and
+     swaps in a brand new context when it still will not run. */
   var Sound = (function () {
     var ac = null, master = null, noise = null, muted = false, recent = [];
-    function unlock() {
-      if (!ac) {
-        var Ctx = window.AudioContext || window.webkitAudioContext;
-        if (!Ctx) return;
-        ac = new Ctx();
+    var lastWake = 0, lastSwap = 0, swapTimer = 0;
+
+    function build() {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      var made = null;
+      try { made = new Ctx(); } catch (e) { return null; }
+      ac = made;
+      try {
         master = ac.createGain();
-        master.gain.value = 0.5;
+        master.gain.value = muted ? 0.0001 : 0.5;
         master.connect(ac.destination);
         var len = Math.floor(ac.sampleRate * 0.4);
         noise = ac.createBuffer(1, len, ac.sampleRate);
         var data = noise.getChannelData(0);
         for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      } catch (e) {
+        master = null; noise = null;
       }
-      if (ac.state === 'suspended') ac.resume();
       return ac;
     }
+
+    function drop() {
+      var old = ac;
+      ac = null; master = null; noise = null;
+      if (old && old.close) { try { old.close(); } catch (e) { /* already gone */ } }
+    }
+
+    /* one silent sample straight to the destination */
+    function ping() {
+      if (!ac) return;
+      try {
+        var b = ac.createBuffer(1, 1, ac.sampleRate);
+        var s = ac.createBufferSource();
+        s.buffer = b;
+        s.connect(ac.destination);
+        s.start(0);
+      } catch (e) { /* nothing to wake yet */ }
+    }
+
+    /* ask the context to run; ping the output stage while we are at it */
+    function ask() {
+      if (!ac) return;
+      try {
+        var p = ac.resume();
+        if (p && typeof p.then === 'function') p.then(null, function () { swap(); });
+      } catch (e) { swap(); return; }
+      ping();
+    }
+
+    /* a context that stays dead gets replaced, at most once in a while */
+    function swap() {
+      var now = performance.now();
+      if (now - lastSwap < 800) return;
+      lastSwap = now;
+      drop();
+      if (!build()) return;
+      ask();
+    }
+
+    function watch() {
+      clearTimeout(swapTimer);
+      swapTimer = setTimeout(function () {
+        if (ac && ac.state !== 'running') swap();
+      }, 300);
+    }
+
+    function unlock() {
+      if (muted) return ac;
+      if (!ac) build();
+      if (!ac) return null;
+      if (ac.state !== 'running') { ask(); watch(); }
+      return ac;
+    }
+
+    /* called on every return to the app and on every touch; only a touch may
+       create the context, because that is the only time iOS lets sound start */
+    function wake(fromGesture) {
+      if (muted) return;
+      if (!ac) {
+        if (!fromGesture) return;
+        build();
+      }
+      if (!ac) return;
+      var now = performance.now();
+      if (now - lastWake < 80) return;
+      lastWake = now;
+      ask();
+      watch();
+    }
     function clack(vol, freq, dur) {
-      if (!ac || muted) return 0;
+      if (!ac || !master || muted) return 0;
       var now = performance.now();
       var c = 0, i;
       for (i = recent.length - 1; i >= 0; i--) {
@@ -1253,7 +1395,7 @@ input[type=range]::-webkit-slider-thumb{
       return 1;
     }
     function pop(up) {
-      if (!ac || muted) return;
+      if (!ac || !master || muted) return;
       var t = ac.currentTime;
       var o = ac.createOscillator();
       o.type = 'sine';
@@ -1267,7 +1409,7 @@ input[type=range]::-webkit-slider-thumb{
       o.start(t); o.stop(t + 0.14);
     }
     function rattle(power) {
-      if (!ac || muted) return;
+      if (!ac || !master || muted) return;
       var n = Math.round(3 + power * 4), i;
       for (i = 0; i < n; i++) {
         (function (k) {
@@ -1279,10 +1421,14 @@ input[type=range]::-webkit-slider-thumb{
     }
     return {
       unlock: unlock,
+      wake: wake,
       clack: clack,
       pop: pop,
       rattle: rattle,
-      setMuted: function (m) { muted = m; },
+      setMuted: function (m) {
+        muted = m;
+        if (master) { try { master.gain.value = m ? 0.0001 : 0.5; } catch (e) { /* ignore */ } }
+      },
       isMuted: function () { return muted; }
     };
   })();
@@ -2361,10 +2507,6 @@ input[type=range]::-webkit-slider-thumb{
     window.addEventListener('orientationchange', function () {
       setTimeout(function () { layout(); }, 220);
     });
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) { running = false; }
-      else if (!running) { running = true; lastT = 0; requestAnimationFrame(loop); }
-    });
   }
 
   function makeAppIcon() {
@@ -2421,7 +2563,8 @@ input[type=range]::-webkit-slider-thumb{
     fillDefault();
     buildUI();
     draw();
-    requestAnimationFrame(loop);
+    startLoop();
+    bindReturnHandlers();
 
     /* iOS: block double-tap zoom & rubber band on the stage */
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
