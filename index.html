@@ -6497,6 +6497,7 @@ input[type=range]::-webkit-slider-thumb{
       deco.push({ k: t.id, u: Math.cos(a) * rr, v: Math.sin(a) * rr * 1.15, s: t.s, r: rand(-0.3, 0.3) });
     }
     restoreDeco(deco);
+    fitDecoInside();
     selectedPart = null;
     syncPartSel();
     layout();
@@ -6525,10 +6526,21 @@ input[type=range]::-webkit-slider-thumb{
     { id: 'ocean', name: '바다', em: '🌊', shape: 'capsule', theme: 'mint', fin: 'gloss', holo: true, pat: 'stripe', ring: 'silver', outer: '#dff6f2',
       parts: ['marble', 'marble', 'jelly', 'cloud', 'star', 'marble', 'jelly'],
       deco: [{ k: 'pearl_chain', u: 0, v: -0.34 }, { k: 'pearl', u: 0.26, v: 0.14 }, { k: 'gem_heart', u: -0.24, v: 0.24 }] },
-    { id: 'xmas', name: '크리스마스', em: '🎄', shape: 'bear', theme: 'snow', fin: 'gloss', holo: true, pat: 'gingham', ring: 'gold', outer: '#eaf6ee',
+    { id: 'xmas', name: '크리스마스', em: '🎄', shape: 'bear', theme: 'mint', fin: 'gloss', holo: false, pat: 'gingham', ring: 'gold', outer: '#e7f6ee',
       parts: ['star', 'star', 'ribbon', 'heart', 'marble', 'star', 'heart'],
       deco: [{ k: 'clover', u: -0.20, v: -0.24 }, { k: 'gem_star', u: 0.24, v: -0.14 }, { k: 'ribbon_white', u: 0.02, v: 0.30 }] }
   ];
+
+  /* charms are glued to the front of the case, so the whole charm — not just
+     its centre — should sit on the acrylic */
+  function fitDecoInside() {
+    var i, it, p;
+    for (i = 0; i < Deco.items.length; i++) {
+      it = Deco.items[i];
+      p = decoPull(it.u, it.v, -it.s * 0.48);
+      it.u = p.u; it.v = p.v;
+    }
+  }
 
   function themeIndexById(id) {
     for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return i;
@@ -6559,6 +6571,7 @@ input[type=range]::-webkit-slider-thumb{
       if (t) deco.push({ k: d.k, u: d.u, v: d.v, s: d.s || t.s, r: d.r || 0 });
     });
     restoreDeco(deco);
+    fitDecoInside();
     selectedPart = null;
     syncPartSel();
     layout();
@@ -7018,10 +7031,10 @@ input[type=range]::-webkit-slider-thumb{
         VIEW.cx - VIEW.S * 0.45, VIEW.cy - VIEW.S * 0.7,
         VIEW.cx + VIEW.S * 0.35, VIEW.cy + VIEW.S * 0.6
       );
-      lg.addColorStop(0, 'rgba(255,255,255,0.26)');
+      lg.addColorStop(0, 'rgba(255,255,255,0.19)');
       lg.addColorStop(0.34, 'rgba(255,255,255,0.035)');
       lg.addColorStop(0.7, 'rgba(255,255,255,0.02)');
-      lg.addColorStop(1, 'rgba(255,255,255,0.17)');
+      lg.addColorStop(1, 'rgba(255,255,255,0.13)');
       gg.fillStyle = lg;
       gg.fillRect(0, 0, VIEW.w, VIEW.h);
 
