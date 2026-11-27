@@ -3882,15 +3882,17 @@ input[type=range]::-webkit-slider-thumb{
 
     var bg = g.createLinearGradient(0, -H * 0.1, W * 0.2, H * 1.05);
     bg.addColorStop(0, '#ffffff');
-    bg.addColorStop(0.42, t.top);
-    bg.addColorStop(1, t.mid);
+    bg.addColorStop(0.42, t.clear ? '#f3faff' : t.top);
+    bg.addColorStop(1, t.clear ? '#e3eff9' : t.mid);
     g.fillStyle = bg;
     g.fillRect(0, 0, W, H);
 
+    /* a clear case needs a little colour behind it, or it vanishes into white */
+    var bs = t.clear ? 1.7 : 1;
     var blobs = [
-      [W * 0.06, H * 0.06, W * 0.58, t.accent, 0.30],
-      [W * 1.00, H * 0.16, W * 0.46, t.gold, 0.30],
-      [W * 0.92, H * 0.94, W * 0.56, t.accent, 0.22],
+      [W * 0.06, H * 0.06, W * 0.58, t.accent, 0.30 * bs],
+      [W * 1.00, H * 0.16, W * 0.46, t.gold, 0.30 * (t.clear ? 1.2 : 1)],
+      [W * 0.92, H * 0.94, W * 0.56, t.accent, 0.22 * bs],
       [W * 0.02, H * 0.8, W * 0.44, t.mid, 0.6]
     ];
     for (i = 0; i < blobs.length; i++) {
@@ -4742,8 +4744,8 @@ input[type=range]::-webkit-slider-thumb{
     g.clearRect(0, 0, W, H);
     var bg = g.createLinearGradient(0, 0, W * 0.6, H);
     bg.addColorStop(0, '#ffffff');
-    bg.addColorStop(0.5, theme.top);
-    bg.addColorStop(1, theme.mid);
+    bg.addColorStop(0.5, theme.clear ? '#f2f9ff' : theme.top);
+    bg.addColorStop(1, theme.clear ? '#dfeefa' : theme.mid);
     g.fillStyle = bg;
     g.fillRect(0, 0, W, H);
     var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * (FRAME_UH + frameRoom());
