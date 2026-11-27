@@ -303,8 +303,9 @@ input[type=range]::-webkit-slider-thumb{
 #slotName:focus{outline:none;border-color:#ffb6d3;box-shadow:0 0 0 3px rgba(255,158,196,.18);}
 #slotSave{font-size:13.5px;padding:11px 12px;border-radius:13px;}
 .slot-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:10px 0 4px;}
+.slot-wrap{position:relative;}
 .slot{
-  position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;
   padding:6px 6px 7px;border-radius:16px;background:#fff;cursor:pointer;
   box-shadow:0 4px 12px rgba(190,140,170,.16), inset 0 1px 0 #fff;
   transition:transform .12s ease, box-shadow .18s;
@@ -1843,7 +1844,6 @@ input[type=range]::-webkit-slider-thumb{
       return;
     }
     if (Deco.place) { decoPlaceAt(n.x, n.y); return; }
-
     var p = findPart(n.x, n.y);
     if (p) {
       drag.on = true;
@@ -3619,6 +3619,15 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   var decoHintBase = '마음에 드는 데코를 고르고 <b>케이스 위를 톡</b>! 붙인 데코는 흔들어도 그대로 있어요';
+  function syncDecoUI() {
+    syncDecoChips();
+    var hint = $('#decoHint');
+    if (!hint) return;
+    if (Deco.del) hint.innerHTML = '떼고 싶은 데코를 <b>톡</b> 눌러 주세요';
+    else if (Deco.place) hint.innerHTML = '케이스 위를 톡 누르면 <b>' + DECO_BY_ID[Deco.place].name + '</b>이 붙어요 · 끄려면 같은 데코를 한 번 더';
+    else hint.innerHTML = decoHintBase;
+  }
+
   function setDecoPlace(id) {
     Sound.unlock();
     if (Deco.place === id) {
@@ -3628,13 +3637,7 @@ input[type=range]::-webkit-slider-thumb{
       Deco.del = false;
       Sound.pop(true);
     }
-    syncDecoChips();
-    var hint = $('#decoHint');
-    if (hint) {
-      hint.innerHTML = Deco.place
-        ? '케이스 위를 톡 누르면 <b>' + DECO_BY_ID[Deco.place].name + '</b>이 붙어요 · 끄려면 같은 데코를 한 번 더'
-        : decoHintBase;
-    }
+    syncDecoUI();
     if (Deco.place) toast(DECO_BY_ID[id].name + ' 골랐어! 케이스 위를 톡 눌러 붙여 🎀');
     else toast('데코 붙이기 끝!');
   }
@@ -3642,16 +3645,23 @@ input[type=range]::-webkit-slider-thumb{
   function toggleDecoDelete() {
     Deco.del = !Deco.del;
     if (Deco.del) Deco.place = '';
-    syncDecoChips();
+    syncDecoUI();
     Sound.unlock();
     Sound.pop(false);
-    var hint = $('#decoHint');
-    if (hint) {
-      hint.innerHTML = Deco.del
-        ? '떼고 싶은 데코를 <b>톡</b> 눌러 주세요'
-        : decoHintBase;
-    }
     toast(Deco.del ? '떼고 싶은 데코를 톡 눌러 주세요' : '데코 떼기 끝!');
+  }
+
+  /* keep the charms sitting on the case when the case shape changes */
+  function decoRefit() {
+    var i, it, p;
+    for (i = 0; i < Deco.items.length; i++) {
+      it = Deco.items[i];
+      if (normSdf(it.u, it.v) > -0.01) {
+        p = decoPull(it.u, it.v, -0.01);
+        it.u = p.u;
+        it.v = p.v;
+      }
+    }
   }
 
   /* =========================================================
@@ -3770,8 +3780,7 @@ input[type=range]::-webkit-slider-thumb{
   function syncCaseUI() {
     maskMain = getMask(shapeKey, 0, 300);
     maskEdge = getMask(shapeKey, -0.034, 300);
-    buildCaseLayers();
-    var nm = $('#shapeName');
+    buildCaseLayers();    var nm = $('#shapeName');
     if (nm) nm.textContent = SHAPES[shapeKey].name;
     var i;
     var chips = document.querySelectorAll('#shapeChips .chip');
@@ -3783,6 +3792,8 @@ input[type=range]::-webkit-slider-thumb{
     var mc = document.querySelectorAll('#modeChips .chip');
     for (i = 0; i < mc.length; i++) mc[i].classList.toggle('sel', i === modeIdx);
     for (i = 0; i < parts.length; i++) parts[i].bounce = modeCfg().bounce;
+    decoRefit();
+    syncDecoUI();
   }
 
   function loadSlot(id) {
@@ -3816,19 +3827,29 @@ input[type=range]::-webkit-slider-thumb{
     var i;
     for (i = 0; i < list.length; i++) {
       (function (slot) {
+        var wrap = document.createElement('div');
+        wrap.className = 'slot-wrap';
+
         var card = document.createElement('div');
         card.className = 'slot';
         card.setAttribute('role', 'button');
         card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', slot.name + ' 불러오기');
 
         var img = document.createElement('img');
-        img.alt = slot.name;
+        img.alt = '';
         img.src = slot.thumb || '';
         card.appendChild(img);
 
         var nm = document.createElement('b');
         nm.textContent = slot.name;
         card.appendChild(nm);
+
+        card.addEventListener('click', function () { loadSlot(slot.id); });
+        card.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); loadSlot(slot.id); }
+        });
+        wrap.appendChild(card);
 
         var del = document.createElement('button');
         del.className = 'slot-del';
@@ -3839,13 +3860,9 @@ input[type=range]::-webkit-slider-thumb{
           ev.stopPropagation();
           delSlot(slot.id, slot.name);
         });
-        card.appendChild(del);
+        wrap.appendChild(del);
 
-        card.addEventListener('click', function () { loadSlot(slot.id); });
-        card.addEventListener('keydown', function (ev) {
-          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); loadSlot(slot.id); }
-        });
-        slotGridEl.appendChild(card);
+        slotGridEl.appendChild(wrap);
       })(list[i]);
     }
   }
@@ -3926,6 +3943,8 @@ input[type=range]::-webkit-slider-thumb{
         guard++;
       }
     }
+    /* and keep the decoden charms sitting on the new outline */
+    decoRefit();
     Sound.pop(false);
     touchState();
   }
