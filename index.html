@@ -22,6 +22,7 @@
   --panel:rgba(255,255,255,.76);
 }
 *,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+[hidden]{display:none!important;}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
@@ -40,7 +41,7 @@ body{
 
 /* ---------- header ---------- */
 header{
-  position:relative;z-index:5;flex:0 0 auto;
+  position:relative;z-index:5;flex:0 0 auto;width:100%;max-width:560px;margin:0 auto;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:calc(env(safe-area-inset-top) + 10px) 16px 2px;
 }
@@ -63,7 +64,7 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
 .icon-btn.small{width:32px;height:32px;font-size:14px;}
 
 /* ---------- stage ---------- */
-#stage{position:relative;flex:1 1 auto;min-height:140px;}
+#stage{position:relative;flex:1 1 auto;min-height:140px;width:100%;max-width:560px;margin:0 auto;}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
 #stage.wob #cv{animation:wob .42s cubic-bezier(.36,.07,.19,.97);}
 @keyframes wob{
@@ -75,7 +76,7 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
   100%{transform:translate(0,0) rotate(0deg);}
 }
 .toast{
-  position:absolute;left:50%;bottom:6px;transform:translate(-50%,12px);
+  position:absolute;left:50%;bottom:46px;transform:translate(-50%,12px);
   background:rgba(74,54,70,.86);color:#fff;font-size:12.5px;font-weight:700;
   padding:8px 15px;border-radius:999px;opacity:0;transition:opacity .22s, transform .22s;
   pointer-events:none;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;
@@ -83,72 +84,154 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
 }
 .toast.on{opacity:1;transform:translate(-50%,0);}
 .counter{
-  position:absolute;right:14px;top:4px;font-size:11.5px;font-weight:800;color:#c78fae;
+  position:absolute;right:12px;top:36px;font-size:11.5px;font-weight:800;color:#c78fae;
   background:rgba(255,255,255,.75);padding:5px 10px;border-radius:999px;
   box-shadow:0 3px 10px rgba(190,140,170,.14);opacity:0;transition:opacity .3s;pointer-events:none;
 }
 .counter.on{opacity:1;}
 
-/* ---------- dock ---------- */
-#dock{
-  position:relative;z-index:6;flex:0 0 auto;
-  padding:4px 11px calc(env(safe-area-inset-bottom) + 9px);
-  transition:transform .34s cubic-bezier(.22,.9,.26,1);
+/* ---------- v2: 바깥 배경 · 실시간 미리보기 · 퀵 버튼 · 6메뉴 · 하단 바 ---------- */
+#outerBg{
+  position:fixed;inset:0;z-index:0;
+  background-color:#fdf5fa;
+  background-size:cover;background-position:center;
+  transition:background-color .3s ease;
 }
-#dock.collapsed{
-  position:absolute;left:0;right:0;bottom:0;
-  transform:translateY(calc(100% + 14px));pointer-events:none;
+#outerBg::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.06) 36%,rgba(255,255,255,.18) 100%);
 }
-.dock-handle{
-  display:flex;align-items:center;justify-content:center;gap:3px;
-  margin:0 auto 5px;padding:4px 12px;border:0;border-radius:999px;
-  background:rgba(255,255,255,.8);color:#b189a4;
-  font:inherit;font-size:10.5px;font-weight:800;letter-spacing:-.1px;
-  box-shadow:0 3px 10px rgba(190,140,170,.14), inset 0 1px 0 #fff;
-  transition:transform .12s ease, color .18s, background .18s;
+#outerBg.photo::after{
+  background:linear-gradient(180deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,.02) 34%,rgba(255,255,255,.14) 100%);
 }
-.dock-handle:active{transform:scale(.95);color:#c4709a;}
-.dock-handle .ch{font-size:12px;line-height:1;transform:translateY(-1px);}
-
-/* floating buttons shown while the menu is collapsed */
-#dockFab{
-  position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 13px);z-index:9;
-  display:flex;justify-content:center;gap:8px;padding:0 14px;pointer-events:none;
-  opacity:0;transform:translateY(18px);
-  transition:opacity .26s ease .05s, transform .3s cubic-bezier(.2,.9,.25,1) .05s;
+#app{z-index:1;}
+.stage-label{
+  position:absolute;left:50%;top:3px;transform:translateX(-50%);z-index:3;
+  font-size:11px;font-weight:800;letter-spacing:-.1px;color:#3f7d69;
+  background:rgba(224,246,236,.94);padding:5px 14px;border-radius:999px;
+  box-shadow:0 2px 9px rgba(120,180,160,.2), inset 0 1px 0 rgba(255,255,255,.9);
+  pointer-events:none;white-space:nowrap;
 }
-#dockFab.on{opacity:1;transform:translateY(0);}
-.fab{
-  pointer-events:auto;border:0;border-radius:999px;font:inherit;
-  font-size:13.5px;font-weight:800;letter-spacing:-.2px;padding:11px 16px;
-  background:rgba(255,255,255,.92);color:#8a6a82;
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-  box-shadow:0 9px 22px rgba(170,120,155,.22), inset 0 1px 0 #fff;
+#quickRow{display:flex;width:100%;max-width:560px;margin:0 auto;justify-content:center;gap:7px;padding:2px 12px 8px;flex:0 0 auto;}
+.qbtn{
+  border:0;border-radius:999px;font:inherit;font-size:12.5px;font-weight:800;letter-spacing:-.25px;
+  padding:9px 13px;background:rgba(255,255,255,.88);color:#7b5c74;
+  box-shadow:0 3px 11px rgba(190,140,170,.16), inset 0 1px 0 #fff;
+  transition:transform .12s ease, opacity .18s;
+}
+.qbtn:active{transform:scale(.95);}
+.qbtn:disabled{opacity:.4;box-shadow:none;}
+#menuGrid{
+  flex:0 0 auto;display:grid;width:100%;max-width:560px;margin:0 auto;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+  padding:0 12px 9px;
+}
+.menu-btn{
+  border:0;border-radius:20px;font:inherit;color:#7c5573;
+  padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:linear-gradient(180deg,#fff7fb,#ffe9f3);
+  box-shadow:0 6px 14px rgba(214,150,185,.16), inset 0 1px 0 #fff;
   transition:transform .12s ease;
 }
-.fab:active{transform:scale(.95);}
-.fab.primary{
-  background:linear-gradient(180deg,#ffa6c8,#ff7aa8);color:#fff;
-  box-shadow:0 10px 22px rgba(255,110,160,.32), inset 0 1px 0 rgba(255,255,255,.5);
+.menu-btn:active{transform:scale(.955);}
+.menu-btn em{font-style:normal;font-size:19px;line-height:1.05;}
+.menu-btn span{font-size:12.5px;font-weight:800;letter-spacing:-.3px;}
+#actionBar{
+  flex:0 0 auto;display:flex;width:100%;max-width:560px;margin:0 auto;gap:8px;align-items:center;
+  padding:1px 12px calc(env(safe-area-inset-bottom) + 10px);
 }
-#app.dock-collapsed #toast{bottom:calc(env(safe-area-inset-bottom) + 64px);}
-.dock-inner{
-  background:var(--panel);
-  -webkit-backdrop-filter:blur(18px) saturate(1.15);
-  backdrop-filter:blur(18px) saturate(1.15);
-  border:1px solid rgba(255,255,255,.9);
-  border-radius:26px;
-  padding:10px 12px 12px;
-  box-shadow:0 14px 34px rgba(180,130,165,.16), inset 0 1px 0 #fff;
-  display:flex;flex-direction:column;gap:9px;
-  max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+#actionBar .btn{padding:13px 16px;border-radius:20px;}
+#shakeBtn{flex:1 1 auto;}
+#motionBtn{flex:0 0 auto;font-size:13.5px;background:rgba(255,255,255,.72);}
+.part-acts{
+  position:absolute;right:10px;bottom:8px;z-index:4;display:flex;gap:6px;align-items:center;
+  animation:popIn .16s ease-out;
 }
-/* on a phone the panel keeps a lid on its height, so the shaker above it stays
-   the star of the screen (the panel itself scrolls) */
-@media (max-width:560px){
-  .dock-inner{max-height:46vh;padding:9px 10px 11px;gap:8px;border-radius:24px;}
-  #dock{padding:4px 9px calc(env(safe-area-inset-bottom) + 8px);}
+.part-act{
+  border:0;border-radius:999px;font:inherit;font-size:12.5px;font-weight:800;padding:9px 13px;
+  background:rgba(255,255,255,.94);color:#8a6a82;
+  box-shadow:0 8px 18px rgba(150,100,140,.22), inset 0 1px 0 #fff;
 }
+.part-act.del{
+  background:rgba(90,60,84,.9);color:#fff;
+  box-shadow:0 8px 18px rgba(90,50,80,.3), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.part-act:active{transform:scale(.95);}
+@keyframes popIn{from{opacity:0;transform:translateY(6px) scale(.94);}to{opacity:1;transform:none;}}
+
+/* ---------- 6메뉴 시트 ---------- */
+.menu-card{max-height:88%;}
+.mpanel{display:flex;flex-direction:column;gap:13px;padding:2px 0 4px;}
+.mpanel[hidden]{display:none!important;}
+#themeChips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;overflow:visible;padding:2px;}
+#themeChips .chip{width:100%;height:60px;gap:2px;}
+#themeChips .chip em{font-style:normal;font-size:19px;line-height:1.05;}
+#themeChips .chip span{font-size:10.5px;}
+/* all the charms at a glance instead of a hidden scroll */
+#decoChips{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;overflow:visible;padding:2px;}
+#decoChips .chip{width:100%;height:56px;}
+.btn:disabled{opacity:.45;box-shadow:none;}
+.outerrow{display:flex;align-items:center;gap:10px;}
+.wheelwrap{position:relative;flex:0 0 auto;width:46px;height:46px;border-radius:50%;}
+#outerColor{
+  -webkit-appearance:none;appearance:none;position:absolute;inset:0;width:100%;height:100%;
+  border:0;padding:0;margin:0;border-radius:50%;background:transparent;opacity:0;cursor:pointer;
+}
+.wheelwrap .ring{
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:conic-gradient(#ff8fba,#ffd166,#9be48f,#8fd0ff,#c1a2ff,#ff8fba);
+  box-shadow:0 3px 10px rgba(160,120,150,.24);
+  -webkit-mask:radial-gradient(circle, transparent 54%, #000 57%);
+  mask:radial-gradient(circle, transparent 54%, #000 57%);
+}
+.wheelwrap .fill{
+  position:absolute;inset:8px;border-radius:50%;pointer-events:none;
+  box-shadow:inset 0 0 0 2px #fff, 0 2px 6px rgba(160,120,150,.2);
+}
+.pastelrow{display:flex;gap:7px;flex-wrap:wrap;flex:1 1 auto;}
+.pastel{
+  width:26px;height:26px;border-radius:50%;border:2px solid #fff;padding:0;
+  box-shadow:0 2px 7px rgba(160,120,150,.2);transition:transform .12s ease;
+}
+.pastel:active{transform:scale(.92);}
+.pastel.sel{box-shadow:0 0 0 2px #ff9ec4, 0 2px 7px rgba(160,120,150,.2);}
+
+/* ---------- 나만의 파츠 보관함 ---------- */
+.vaultstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;}
+.vaultstrip::-webkit-scrollbar{display:none;}
+.vitem{
+  position:relative;border:1.5px solid #ffe2ef;background:#fff;
+  border-radius:15px;display:grid;place-items:center;padding:0;
+  box-shadow:0 2px 8px rgba(190,140,170,.12);overflow:hidden;
+}
+.vaultstrip .vitem{flex:0 0 auto;width:58px;height:58px;}
+.vitem img,.vitem canvas{width:42px;height:42px;object-fit:contain;display:block;}
+.vitem b{
+  position:absolute;bottom:1px;left:0;right:0;font-size:8.5px;color:#a488a0;
+  font-weight:800;text-align:center;line-height:1.15;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.vaultgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 4px;}
+.vwrap{position:relative;}
+.vwrap .vitem{width:100%;aspect-ratio:1;border-radius:16px;}
+.vwrap .vitem img,.vwrap .vitem canvas{width:74%;height:74%;}
+.vdel{
+  position:absolute;top:-5px;right:-5px;width:22px;height:22px;border-radius:50%;border:0;padding:0;
+  background:#fff;color:#c189aa;font-size:11px;font-weight:800;line-height:1;
+  box-shadow:0 2px 7px rgba(150,110,140,.3);display:grid;place-items:center;
+}
+.vaultempty{font-size:12px;color:#b59aae;font-weight:700;text-align:center;padding:16px 6px;line-height:1.6;}
+
+/* ---------- segmented control / tabs ---------- */
+.seg{display:flex;gap:5px;background:#f4ecf4;border-radius:16px;padding:4px;margin:0 0 10px;}
+.seg button,.tabs button{
+  flex:1;border:0;border-radius:12px;padding:10px 6px;font:inherit;font-size:12.5px;font-weight:800;
+  background:transparent;color:#9a7f95;transition:background .15s, color .15s, box-shadow .15s;
+}
+.seg button.sel,.tabs button.sel{background:#fff;color:#c05a86;box-shadow:0 3px 9px rgba(190,140,170,.18);}
+.tabs{display:flex;gap:5px;background:#f4ecf4;border-radius:16px;padding:4px;margin:2px 0 10px;}
+.tabs button{padding:9px 6px;}
+#shot .sheet-card,#drawer .sheet-card{max-height:90%;}
+#sheet .sheet-actions .btn{font-size:13px;padding:11px 9px;}
 .row{display:flex;gap:8px;align-items:center;}
 .btn{
   border:0;border-radius:16px;font:inherit;font-size:15px;font-weight:800;letter-spacing:-.2px;
@@ -395,7 +478,7 @@ input[type=range]::-webkit-slider-thumb{
 .slot-del:active{transform:scale(.9);}
 #slotEmpty{text-align:center;padding:16px 4px 10px;}
 
-/* ---------- 📸 인증샷 이름 · 💌 공유 ---------- */
+/* ---------- 📸 인증샷 이름 ---------- */
 #shotNameRow{display:flex;align-items:center;gap:9px;margin:2px 0 6px;}
 #shotNameRow span{flex:0 0 auto;font-size:12px;font-weight:800;color:#a98fa2;}
 #shotName{
@@ -408,29 +491,6 @@ input[type=range]::-webkit-slider-thumb{
 @media (hover:hover) and (pointer:fine) and (min-width:700px){
   #shotName{font-size:13.5px;}
 }
-.share-top{display:flex;align-items:center;gap:12px;margin:2px 0 10px;}
-#sharePrev{
-  flex:0 0 auto;width:84px;height:112px;border-radius:16px;display:block;
-  background:linear-gradient(160deg,#fff,#fdf0f8 60%,#f6ebff);
-  box-shadow:0 5px 14px rgba(180,130,165,.2), inset 0 1px 0 #fff;
-}
-.share-facts{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
-.share-facts .srow{font-size:12px;}
-.share-facts .srow em{font-size:11.5px;max-width:64%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.share-link-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
-.share-link-row .btn{flex:0 0 auto;padding:11px 14px;border-radius:13px;font-size:13px;}
-#shareLink{
-  flex:1;min-width:0;border:1.5px solid #f2e2ef;border-radius:13px;background:#fff;
-  padding:10px 12px;font:inherit;font-size:16px;font-weight:700;color:#6d5570;
-  -webkit-appearance:none;appearance:none;text-align:left;
-}
-#shareLink::placeholder{color:#cbb3c6;font-weight:700;font-size:12px;}
-#shareLink:focus{outline:none;border-color:#ffb6d3;box-shadow:0 0 0 3px rgba(255,158,196,.18);}
-@media (hover:hover) and (pointer:fine) and (min-width:700px){
-  #shareLink{font-size:12.5px;}
-}
-#share .sheet-actions .btn{font-size:13.5px;padding:11px 13px;}
-#shareHint{margin-top:9px;}
 @media (max-width:379px){
   h1{font-size:17px;}
   .top-btns{gap:6px;}
@@ -442,49 +502,87 @@ input[type=range]::-webkit-slider-thumb{
 </style>
 </head>
 <body>
+<div id="outerBg" aria-hidden="true"></div>
 <div id="app">
   <header>
     <div class="brand">
-      <div class="brand-mark">🪇</div>
+      <div class="brand-mark">🐿️</div>
       <div>
         <h1>포켓쉐이커</h1>
         <p class="tag">POCKET SHAKER</p>
       </div>
     </div>
     <div class="top-btns">
-      <button id="drawerBtn" class="icon-btn" type="button" aria-label="내 서랍">🗂️</button>
-      <button id="shotBtn" class="icon-btn" type="button" aria-label="인증샷 만들기">📸</button>
-      <button id="shareBtn" class="icon-btn" type="button" aria-label="쉐이커 공유">💌</button>
-      <button id="soundBtn" class="icon-btn" aria-label="소리 켜기/끄기">🔊</button>
+      <button id="drawerBtn" class="icon-btn" type="button" aria-label="보관함">🗂️</button>
+      <button id="shotBtn" class="icon-btn" type="button" aria-label="사진 저장">📸</button>
     </div>
   </header>
 
   <main id="stage">
+    <span class="stage-label">실시간 미리보기</span>
     <canvas id="cv"></canvas>
+    <div id="partActs" class="part-acts" hidden>
+      <button id="partSave" class="part-act" type="button">🗃️ 보관함</button>
+      <button id="partDel" class="part-act del" type="button">🗑️ 선택 삭제</button>
+    </div>
     <div id="counter" class="counter"></div>
     <div id="toast" class="toast"></div>
   </main>
 
-  <section id="dock">
-    <button id="dockHandle" class="dock-handle" type="button" aria-label="메뉴 접기" aria-controls="dock">
-      <span class="ch">⌄</span><span>메뉴 접기</span>
-    </button>
-    <div class="dock-inner">
-      <div class="row">
-        <button id="shakeBtn" class="btn primary grow">흔들기!</button>
-        <button id="motionBtn" class="btn ghost">모션 센서 켜기</button>
-      </div>
+  <div id="quickRow">
+    <button id="undoBtn" class="qbtn" type="button" disabled>↩ 실행 취소</button>
+    <button id="redoBtn" class="qbtn" type="button" disabled>↪ 다시 실행</button>
+    <button id="randomBtn" class="qbtn" type="button">🎲 랜덤</button>
+  </div>
 
-      <div class="sec">
-        <div class="sec-head"><span>쉐이커 모드</span><span class="hint" id="saveHint">자동 저장</span></div>
-        <div class="mini" id="modeChips"></div>
-      </div>
+  <nav id="menuGrid" aria-label="꾸미기 메뉴">
+    <button class="menu-btn" type="button" data-menu="case"><em>📦</em><span>케이스</span></button>
+    <button class="menu-btn" type="button" data-menu="look"><em>🔑</em><span>외형</span></button>
+    <button class="menu-btn" type="button" data-menu="parts"><em>🧩</em><span>파츠</span></button>
+    <button class="menu-btn" type="button" data-menu="deco"><em>🎨</em><span>데코</span></button>
+    <button class="menu-btn" type="button" data-menu="fx"><em>🎵</em><span>효과</span></button>
+    <button class="menu-btn" type="button" data-menu="drawer"><em>🗂️</em><span>보관함</span></button>
+  </nav>
 
+  <div id="actionBar">
+    <button id="shakeBtn" class="btn primary grow" type="button">🪇 흔들기!</button>
+    <button id="motionBtn" class="btn ghost" type="button">📳 모션 센서</button>
+  </div>
+</div>
+
+<div id="menu" class="sheet" hidden>
+  <div class="sheet-card menu-card">
+    <div class="sheet-head">
+      <div>
+        <b id="menuTitle">📦 케이스</b>
+        <span class="sub" id="menuSub">모양 · 테마 프리셋 · 안쪽 배경 · 키링</span>
+      </div>
+      <button id="menuClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
+    </div>
+
+    <section class="mpanel" data-panel="case">
       <div class="sec">
         <div class="sec-head"><span>케이스 모양</span><span class="hint" id="shapeName">캡슐</span></div>
         <div class="chips" id="shapeChips"></div>
       </div>
+      <div class="sec">
+        <div class="sec-head"><span>🎀 테마 프리셋</span><span class="hint">한 번에 통째로</span></div>
+        <div class="chips psetchips" id="themeChips"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-head">
+          <span>🖼️ 케이스 안 배경</span>
+          <span><span class="hint" id="bgName">기본</span><button id="bgSwap" class="link-btn" type="button" hidden>사진 바꾸기</button></span>
+        </div>
+        <div class="chips tchips" id="patChips"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-head"><span>🔑 키링 고리</span><span class="hint" id="ringName">없음</span></div>
+        <div class="chips rchips" id="ringChips"></div>
+      </div>
+    </section>
 
+    <section class="mpanel" data-panel="look" hidden>
       <div class="sec">
         <div class="sec-head"><span>아크릴 색</span><span class="hint" id="finHint">✨ 유광</span></div>
         <div class="swatches" id="swatches"></div>
@@ -493,32 +591,39 @@ input[type=range]::-webkit-slider-thumb{
           <div class="finchips" id="finChips"></div>
         </div>
       </div>
-
       <div class="sec">
-        <div class="sec-head">
-          <span>🖼️ 케이스 배경</span>
-          <span><span class="hint" id="bgName">기본</span><button id="bgSwap" class="link-btn" type="button" hidden>사진 바꾸기</button></span>
+        <div class="sec-head"><span>🌈 바깥 배경</span><span class="hint">앱 무대 색</span></div>
+        <div class="outerrow">
+          <span class="wheelwrap">
+            <span class="ring"></span>
+            <span class="fill" id="outerDot"></span>
+            <input type="color" id="outerColor" value="#fdf5fa" aria-label="바깥 배경 색 고르기" />
+          </span>
+          <div class="pastelrow" id="outerSwatches"></div>
         </div>
-        <div class="chips tchips" id="patChips"></div>
+        <div class="row" style="margin-top:9px">
+          <button id="outerPhotoBtn" class="btn photo grow" type="button">🖼️ 배경 사진 올리기</button>
+          <button id="outerPhotoClear" class="btn ghost" type="button">기본색</button>
+        </div>
+        <div class="notice">동그라미를 눌러 원하는 색을 고르거나, 사진을 배경으로 깔 수 있어요</div>
       </div>
+    </section>
 
+    <section class="mpanel" data-panel="parts" hidden>
       <div class="sec">
-        <div class="sec-head"><span>🔑 키링 고리</span><span class="hint" id="ringName">없음</span></div>
-        <div class="chips rchips" id="ringChips"></div>
-      </div>
-
-      <div class="sec">
-        <div class="sec-head"><span>🔔 소리 테마</span><span class="hint">톡 하면 미리 들려요</span></div>
-        <div class="chips schips" id="soundChips"></div>
-      </div>
-
-      <div class="sec">
-        <div class="sec-head"><span>파츠 넣기</span><button id="clearBtn" class="link-btn">모두 지우기</button></div>
+        <div class="sec-head"><span>기본 파츠</span><button id="clearBtn" class="link-btn" type="button">모두 지우기</button></div>
         <div class="chips pchips" id="partChips"></div>
+        <button id="photoBtn" class="btn photo" type="button">📷 사진으로 누끼 파츠 만들기</button>
         <button id="letterBtn" class="btn photo" type="button">🔤 글자 비즈 만들기</button>
-        <button id="photoBtn" class="btn photo">📷 사진으로 누끼 파츠 만들기</button>
       </div>
+      <div class="sec">
+        <div class="sec-head"><span>🗃️ 나만의 파츠 보관함</span><span class="hint">톡 하면 넣어요</span></div>
+        <div class="vaultstrip" id="vaultStrip"></div>
+        <div class="notice" id="vaultHint">사진 누끼나 글자 비즈를 만들 때 <b>보관함에 저장</b>을 누르면 여기에 쌓여요</div>
+      </div>
+    </section>
 
+    <section class="mpanel" data-panel="deco" hidden>
       <div class="sec">
         <div class="sec-head">
           <span>🎀 데코덴 꾸미기</span>
@@ -527,12 +632,21 @@ input[type=range]::-webkit-slider-thumb{
         <div class="chips dchips" id="decoChips"></div>
         <div class="notice" id="decoHint">마음에 드는 데코를 고르고 <b>케이스 위를 톡</b>! 붙인 데코는 흔들어도 그대로 있어요</div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <div id="dockFab" aria-hidden="true">
-    <button id="shakeFab" class="fab primary" type="button">🪇 흔들기!</button>
-    <button id="dockOpen" class="fab" type="button">⌃ 메뉴</button>
+    <section class="mpanel" data-panel="fx" hidden>
+      <div class="sec">
+        <div class="sec-head"><span>쉐이커 모드</span><span class="hint" id="saveHint">자동 저장</span></div>
+        <div class="mini" id="modeChips"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-head"><span>🔔 소리 테마</span><span class="hint">톡 하면 미리 들려요</span></div>
+        <div class="chips schips" id="soundChips"></div>
+        <div class="row" style="margin-top:8px">
+          <button id="soundBtn" class="btn ghost grow" type="button">🔊 소리 켜짐</button>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -592,6 +706,7 @@ input[type=range]::-webkit-slider-thumb{
 
     <div class="sheet-actions">
       <button id="skipBtn" class="btn ghost">건너뛰기</button>
+      <button id="cutSave" class="btn ghost" type="button">🗃️ 보관함에 저장</button>
       <button id="addBtn" class="btn primary grow">파츠 추가</button>
     </div>
   </div>
@@ -601,10 +716,14 @@ input[type=range]::-webkit-slider-thumb{
   <div class="sheet-card">
     <div class="sheet-head">
       <div>
-        <b>인증샷</b>
+        <b>📸 사진 저장</b>
         <span class="sub" id="shotSub">길게 눌러 사진에 저장할 수 있어요</span>
       </div>
       <button id="shotClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div class="seg" id="shotModeChips">
+      <button type="button" data-mode="shot" class="sel">📸 일반 인증샷</button>
+      <button type="button" data-mode="product">🎁 제품 목업 모드</button>
     </div>
     <div class="prev-wrap">
       <img id="shotImg" alt="포켓쉐이커 인증샷" />
@@ -613,7 +732,7 @@ input[type=range]::-webkit-slider-thumb{
       <span>이름</span>
       <input id="shotName" type="text" maxlength="16" placeholder="포켓쉐이커" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" />
     </div>
-    <div class="notice">사진 아래 이름과 저장 파일 이름에 쓰여요 · 최대 16자</div>
+    <div class="notice" id="shotNotice">사진 아래 이름과 저장 파일 이름에 쓰여요 · 최대 16자</div>
     <div class="sheet-actions">
       <button id="shotDownload" class="btn ghost" type="button">다운로드</button>
       <button id="shotSave" class="btn primary grow" type="button">사진에 저장</button>
@@ -642,6 +761,7 @@ input[type=range]::-webkit-slider-thumb{
     <div class="srow"><span>넣는 방식</span><div class="mini" id="letterModeChips"></div></div>
     <div class="sheet-actions">
       <button id="letterCancel" class="btn ghost" type="button">닫기</button>
+      <button id="letterSave" class="btn ghost" type="button">🗃️ 보관함에 저장</button>
       <button id="letterAdd" class="btn primary grow" type="button">비즈 넣기</button>
     </div>
   </div>
@@ -651,11 +771,16 @@ input[type=range]::-webkit-slider-thumb{
   <div class="sheet-card">
     <div class="sheet-head">
       <div>
-        <b>🗂️ 내 서랍</b>
+        <b>🗂️ 보관함</b>
         <span class="sub" id="drawerSub">저장한 쉐이커를 톡 누르면 바로 꺼내요</span>
       </div>
       <button id="drawerClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
     </div>
+    <div class="tabs" id="drawerTabs">
+      <button type="button" data-tab="slots" class="sel">🪇 내 쉐이커</button>
+      <button type="button" data-tab="vault">🧩 나만의 파츠</button>
+    </div>
+    <div id="tabSlots">
     <div class="slot-save">
       <canvas id="drawerPrev" width="144" height="192"></canvas>
       <div class="slot-form">
@@ -666,45 +791,18 @@ input[type=range]::-webkit-slider-thumb{
     <div class="notice" id="slotHint">지금 보이는 모양·색·배경·키링·파츠·데코덴·소리 테마를 통째로 저장해요 · 최대 14개</div>
     <div id="slotGrid" class="slot-grid"></div>
     <div id="slotEmpty" class="notice" hidden>아직 서랍이 비었어요. 지금 쉐이커를 하나 넣어 볼까요? 🎀</div>
-  </div>
-</div>
-
-<div id="share" class="sheet" hidden>
-  <div class="sheet-card">
-    <div class="sheet-head">
-      <div>
-        <b>💌 쉐이커 공유</b>
-        <span class="sub" id="shareSub">이 쉐이커를 링크나 파일로 보내요</span>
-      </div>
-      <button id="shareClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
     </div>
-    <div class="share-top">
-      <canvas id="sharePrev" width="120" height="160"></canvas>
-      <div class="share-facts">
-        <div class="srow"><span>지금 쉐이커</span><em id="shareFacts"></em></div>
-        <div class="srow"><span>링크 크기</span><em id="shareSize">—</em></div>
-        <div class="srow"><span>파츠 · 데코</span><em id="shareCounts"></em></div>
-      </div>
+    <div id="tabVault" hidden>
+      <div class="notice">한 번 만들어 둔 <b>사진 누끼</b>와 <b>글자 비즈</b>를 여기 모아 두고, 어느 쉐이커에서든 톡 눌러 다시 넣을 수 있어요 · 최대 30개</div>
+      <div id="vaultGrid" class="vaultgrid"></div>
+      <div id="vaultEmpty" class="vaultempty" hidden>아직 담아 둔 파츠가 없어요.<br>🧩 파츠 → 사진 누끼·글자 비즈를 만들 때 <b>보관함에 저장</b>을 눌러 보세요</div>
     </div>
-    <button id="shareMake" class="btn primary" type="button" style="width:100%">🔗 공유 링크 만들기</button>
-    <div class="share-link-row">
-      <input id="shareLink" type="text" readonly placeholder="링크를 만들면 여기에 보여요" />
-      <button id="shareCopy" class="btn ghost" type="button">복사</button>
-    </div>
-    <div class="sheet-actions">
-      <button id="shareSend" class="btn ghost" type="button" hidden>📤 링크 보내기</button>
-      <button id="shareFile" class="btn ghost grow" type="button">📦 파일로 보내기</button>
-    </div>
-    <div class="sheet-actions">
-      <button id="shareLoad" class="btn photo grow" type="button">📥 친구 쉐이커 불러오기</button>
-    </div>
-    <div class="notice" id="shareHint">링크를 열면 친구 화면에 이 쉐이커가 그대로 떠요. 사진 파츠는 작게 담겨요 · 파일(.shaker.json)은 사진까지 원본 크기로 담겨요</div>
   </div>
 </div>
 
 <input id="fileInput" type="file" accept="image/*" multiple style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
 <input id="bgFile" type="file" accept="image/*" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
-<input id="shareFileIn" type="file" accept=".json,application/json" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
+<input id="outerFile" type="file" accept="image/*" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0" />
 
 <script>
 /* =========================================================
@@ -1035,38 +1133,6 @@ input[type=range]::-webkit-slider-thumb{
     return cv;
   }
 
-  function drawGlitter(g, seed, k) {
-    if (k === undefined) k = 1;
-    var rnd = mulberry32(seed);
-    var i, x, y, r, rot;
-    for (i = 0; i < 110; i++) {
-      x = VIEW.cx + (rnd() - 0.5) * VIEW.S * 1.05;
-      y = VIEW.cy + (rnd() - 0.5) * VIEW.S * 1.22;
-      r = 0.9 + rnd() * 2.4;
-      rot = rnd() * TAU;
-      g.globalAlpha = (0.22 + rnd() * 0.6) * k;
-      g.fillStyle = rnd() < 0.55 ? '#ffffff' : (rnd() < 0.6 ? theme.accent : theme.gold);
-      g.beginPath();
-      g.ellipse(x, y, r, r * (0.45 + rnd() * 0.8), rot, 0, TAU);
-      g.fill();
-    }
-    for (i = 0; i < 9; i++) {
-      x = VIEW.cx + (rnd() - 0.5) * VIEW.S * 0.9;
-      y = VIEW.cy + (rnd() - 0.5) * VIEW.S * 1.1;
-      r = 3.5 + rnd() * 5;
-      g.globalAlpha = (0.55 + rnd() * 0.4) * k;
-      g.fillStyle = rnd() < 0.5 ? '#ffffff' : theme.gold;
-      g.beginPath();
-      g.moveTo(x, y - r);
-      g.quadraticCurveTo(x + r * 0.16, y - r * 0.16, x + r, y);
-      g.quadraticCurveTo(x + r * 0.16, y + r * 0.16, x, y + r);
-      g.quadraticCurveTo(x - r * 0.16, y + r * 0.16, x - r, y);
-      g.quadraticCurveTo(x - r * 0.16, y - r * 0.16, x, y - r);
-      g.fill();
-    }
-    g.globalAlpha = 1;
-  }
-
   /* ---------------- 🖼️ the inner background (pattern or my photo) ---------------- */
   var BG_TINT = 0.5;   /* how much of the acrylic colour stays over the background */
 
@@ -1231,7 +1297,8 @@ input[type=range]::-webkit-slider-thumb{
       g.fillStyle = rg;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
 
-      drawGlitter(g, 9137 + themeIdx * 77, clearOn ? (matteOn ? 0.3 : 0.45) : (matteOn ? 0.5 : 1));
+      /* a chosen acrylic colour stays a clean sheet of colour — no forced
+         glitter or gold specks (the user asked for that to go) */
     }, maskMain, null);
     b.drawImage(inner, 0, 0, VIEW.w, VIEW.h);
 
@@ -2423,6 +2490,21 @@ input[type=range]::-webkit-slider-thumb{
     }
     drawKeyring(g);
     drawDeco(g);
+    /* 🗑️ the part the user tapped gets a soft ring, so 선택 삭제 is clear */
+    if (selectedPart && parts.indexOf(selectedPart) >= 0) {
+      var sp = selectedPart;
+      var sxp = VIEW.cx + sp.x * VIEW.S, syp = VIEW.cy + sp.y * VIEW.S;
+      var sr = sp.r * VIEW.S * 1.16;
+      g.save();
+      g.strokeStyle = 'rgba(255,110,165,0.95)';
+      g.lineWidth = 2.4;
+      if (g.setLineDash) g.setLineDash([7, 5]);
+      g.beginPath(); g.arc(sxp, syp, sr, 0, TAU); g.stroke();
+      g.globalAlpha = 0.28;
+      g.fillStyle = '#ff9ec4';
+      g.beginPath(); g.arc(sxp, syp, sr, 0, TAU); g.fill();
+      g.restore();
+    }
   }
 
   var lastT = 0, acc = 0, running = false, rafId = 0, lastFrameAt = 0;
@@ -3026,6 +3108,7 @@ input[type=range]::-webkit-slider-thumb{
 
     /* 🎀 decoden charms sit on top of the case, so they get the first grab */
     var hitDeco = decoHit(n.x, n.y);
+    if (hitDeco) { selectedPart = null; syncPartSel(); }
     if (hitDeco) {
       if (Deco.del) { decoRemove(hitDeco); return; }
       Deco.drag = { it: hitDeco, ou: hitDeco.u - n.x, ov: hitDeco.v - n.y, pushed: false };
@@ -3035,6 +3118,8 @@ input[type=range]::-webkit-slider-thumb{
     if (Deco.place) { decoPlaceAt(n.x, n.y); return; }
     var p = findPart(n.x, n.y);
     if (p) {
+      selectedPart = p;
+      syncPartSel();
       drag.on = true;
       drag.part = p;
       drag.ox = p.x - n.x;
@@ -3046,6 +3131,8 @@ input[type=range]::-webkit-slider-thumb{
       p.vx = 0; p.vy = 0;
       try { if (canvasEl.setPointerCapture) canvasEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     } else {
+      selectedPart = null;
+      syncPartSel();
       /* poke: push nearby parts away from the tap */
       var i, q, dx, dy, dd;
       for (i = 0; i < parts.length; i++) {
@@ -3399,24 +3486,6 @@ input[type=range]::-webkit-slider-thumb{
     } else {
       fallback();
     }
-  }
-
-  /* ---------------- dock collapse ---------------- */
-  var dockEl = null, dockFabEl = null, dockCollapsed = false;
-
-  function setDockCollapsed(v) {
-    v = !!v;
-    if (!dockEl || dockCollapsed === v) return;
-    dockCollapsed = v;
-    dockEl.classList.toggle('collapsed', v);
-    document.getElementById('app').classList.toggle('dock-collapsed', v);
-    if (dockFabEl) {
-      dockFabEl.classList.toggle('on', v);
-      dockFabEl.setAttribute('aria-hidden', v ? 'false' : 'true');
-    }
-    /* the stage now owns the whole screen: re-fit the shaker */
-    setTimeout(layout, 20);
-    setTimeout(layout, 120);
   }
 
   /* ---------------- photo cutout ---------------- */
@@ -3943,7 +4012,7 @@ input[type=range]::-webkit-slider-thumb{
       if (p.kind === 'letter' || p.kind === 'word') { s.tx = p.txt; s.sty = p.sty; }
       list.push(s);
     }
-    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, fin: fin, holo: holoOn ? 1 : 0, pat: bgPattern, bgp: bgURL || '', ring: ringKey, parts: list, photos: photos, deco: decoSnapshot() };
+    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, fin: fin, holo: holoOn ? 1 : 0, pat: bgPattern, bgp: bgURL || '', ring: ringKey, oc: outerColor, op: outerPhoto || '', parts: list, photos: photos, deco: decoSnapshot() };
   }
 
   function flashSaved() {
@@ -3971,7 +4040,7 @@ input[type=range]::-webkit-slider-thumb{
       toast(quota ? '저장 공간이 가득 찼어요. 사진 파츠를 몇 개 줄여 주세요' : '자동 저장을 못 했어요');
     }
   }
-  function touchState() { saveState(false); }
+  function touchState() { pushHistory(); saveState(false); }
 
   function readState() {
     try {
@@ -3997,6 +4066,9 @@ input[type=range]::-webkit-slider-thumb{
     bgPattern = (st.pat && PAT_BY_ID[st.pat]) ? st.pat : 'none';
     ringKey = (st.ring && RING_BY_ID[st.ring]) ? st.ring : 'none';
     ringAng = 0; ringVel = 0; ringSpr = null;
+    outerColor = /^#[0-9a-f]{6}$/i.test(st.oc || '') ? st.oc : '#fdf5fa';
+    outerPhoto = (typeof st.op === 'string' && st.op.indexOf('data:image/') === 0) ? st.op : '';
+    applyOuter();
     if (st.bgp !== bgURL || !bgArt) loadBgPhoto(st.bgp || '');
     var m;
     for (m = 0; m < MODES.length; m++) if (MODES[m].id === st.mode) modeIdx = m;
@@ -4349,7 +4421,9 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   function shotFileName() {
-    return (shotTitle ? safeFileName(shotTitle) : '포켓쉐이커-인증샷') + '.png';
+    var product = shotMode === 'product';
+    var base = shotTitle ? safeFileName(shotTitle) : (product ? '포켓쉐이커-제품목업' : '포켓쉐이커-인증샷');
+    return base + (product && shotTitle ? '-제품목업' : '') + '.png';
   }
 
   function renderShot() {
@@ -4465,7 +4539,7 @@ input[type=range]::-webkit-slider-thumb{
 
   function makeShotImage() {
     var cv;
-    try { cv = renderShot(); } catch (e) { return false; }
+    try { cv = shotRenderCurrent(); } catch (e) { return false; }
     shotURL = cv.toDataURL('image/png');
     shotBlob = null;
     try { cv.toBlob(function (b) { shotBlob = b; }, 'image/png'); } catch (e) { shotBlob = null; }
@@ -4478,7 +4552,7 @@ input[type=range]::-webkit-slider-thumb{
     if (!makeShotImage()) { toast('인증샷을 만들지 못했어요'); return; }
     var nameEl = $('#shotName');
     if (nameEl) nameEl.value = shotTitle;
-    $('#shotSub').textContent = ENV.ios ? '길게 눌러 ‘사진에 저장’도 돼요' : '저장하면 PNG로 받아요';
+    syncShotModeUI();
     var sh = $('#shot');
     sh.hidden = false;
     requestAnimationFrame(function () { sh.classList.add('on'); });
@@ -4551,575 +4625,6 @@ input[type=range]::-webkit-slider-thumb{
       return;
     }
     downloadShot();
-  }
-
-  /* =========================================================
-     💌 쉐이커 공유 — 링크(#s=) · 파일(.shaker.json)
-     ========================================================= */
-  var SHARE_MAX_URL = 12000;
-  /* photo sizes tried in order, biggest that still fits the link wins */
-  var SHARE_PLANS = [
-    { ps: 64, bs: 72, bq: 0.62 },
-    { ps: 56, bs: 64, bq: 0.58 },
-    { ps: 48, bs: 56, bq: 0.54 },
-    { ps: 40, bs: 48, bq: 0.50 },
-    { ps: 34, bs: 40, bq: 0.46 }
-  ];
-  var SHARE_HINT = '링크를 열면 친구 화면에 이 쉐이커가 그대로 떠요. 사진 파츠는 작게 담겨요 · 파일(.shaker.json)은 사진까지 원본 크기로 담겨요';
-  var shareEl = null, shareURL = '', shareBusy = false;
-
-  function shareBaseURL() { return location.href.split('#')[0]; }
-
-  function bytesToB64url(bytes) {
-    var s = '', i, n = bytes.length;
-    for (i = 0; i < n; i += 0x8000) {
-      s += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(n, i + 0x8000)));
-    }
-    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-
-  function b64urlToBytes(str) {
-    var s = String(str || '').replace(/-/g, '+').replace(/_/g, '/');
-    while (s.length % 4) s += '=';
-    var bin = atob(s), out = new Uint8Array(bin.length), i;
-    for (i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
-  }
-
-  function deflateRawBytes(bytes) {
-    if (typeof CompressionStream !== 'function') return Promise.resolve(null);
-    try {
-      var cs = new CompressionStream('deflate-raw');
-      var stream = new Blob([bytes]).stream().pipeThrough(cs);
-      return new Response(stream).arrayBuffer().then(function (buf) {
-        return new Uint8Array(buf);
-      }, function () { return null; });
-    } catch (e) { return Promise.resolve(null); }
-  }
-
-  function inflateRawBytes(bytes) {
-    if (typeof DecompressionStream !== 'function') return Promise.resolve(null);
-    try {
-      var ds = new DecompressionStream('deflate-raw');
-      var stream = new Blob([bytes]).stream().pipeThrough(ds);
-      return new Response(stream).arrayBuffer().then(function (buf) {
-        return new Uint8Array(buf);
-      }, function () { return null; });
-    } catch (e) { return Promise.resolve(null); }
-  }
-
-  /* payload = 'z' + base64url(deflate-raw [pack|json]) or 'u' + base64url(json) */
-  function encodeSharePayload(st) {
-    var bytes;
-    try { bytes = new TextEncoder().encode(JSON.stringify(st)); }
-    catch (e) { return Promise.resolve(''); }
-    return deflateRawBytes(bytes).then(function (z) {
-      return z ? 'z' + bytesToB64url(z) : 'u' + bytesToB64url(bytes);
-    });
-  }
-
-  /* a tiny pack: version byte 3, 2-byte header length, the json, then raw blobs */
-  function encodeSharePack(pack) {
-    var header;
-    try { header = new TextEncoder().encode(JSON.stringify(pack.st)); }
-    catch (e) { return Promise.resolve(''); }
-    if (!header.length || header.length > 60000) return Promise.resolve('');
-    var total = 3 + header.length, i;
-    for (i = 0; i < pack.blobs.length; i++) total += pack.blobs[i].bytes.length;
-    var out = new Uint8Array(total);
-    out[0] = 3;
-    out[1] = (header.length >> 8) & 255;
-    out[2] = header.length & 255;
-    out.set(header, 3);
-    var o = 3 + header.length;
-    for (i = 0; i < pack.blobs.length; i++) {
-      out.set(pack.blobs[i].bytes, o);
-      o += pack.blobs[i].bytes.length;
-    }
-    return deflateRawBytes(out).then(function (z) {
-      return z ? 'z' + bytesToB64url(z) : '';
-    }, function () { return ''; });
-  }
-
-  function dataURLToBytes(url) {
-    var comma = String(url || '').indexOf(',');
-    if (comma < 0) return null;
-    var bin;
-    try { bin = atob(url.slice(comma + 1)); } catch (e) { return null; }
-    var out = new Uint8Array(bin.length), i;
-    for (i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
-  }
-
-  /* one blob back into an image: 4-bit rgba, or jpeg bytes as they came */
-  function blobToImageURL(bytes, w, h, f) {
-    if (f === 2) {
-      var s = '', i;
-      for (i = 0; i < bytes.length; i += 0x8000) {
-        s += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(bytes.length, i + 0x8000)));
-      }
-      try { return 'data:image/jpeg;base64,' + btoa(s); } catch (e) { return ''; }
-    }
-    var n = w * h;
-    if (bytes.length < n * 2) return '';
-    var cv = cutCanvas(w, h), g = cv.getContext('2d'), img, d = null, p, o, hi, lo;
-    try { img = g.createImageData(w, h); d = img.data; } catch (e) { return ''; }
-    for (p = 0, o = 0; p < n; p++, o += 2) {
-      hi = bytes[o]; lo = bytes[o + 1];
-      d[p * 4] = (hi >> 4) * 17;
-      d[p * 4 + 1] = (hi & 15) * 17;
-      d[p * 4 + 2] = (lo >> 4) * 17;
-      d[p * 4 + 3] = f === 1 ? (lo & 15) * 17 : 255;
-    }
-    try { g.putImageData(img, 0, 0); } catch (e) { return ''; }
-    var url = '';
-    try { url = cv.toDataURL('image/png'); } catch (e) { url = ''; }
-    return url;
-  }
-
-  function expandSharePack(bytes) {
-    if (!bytes || bytes.length < 4 || bytes[0] !== 3) return null;
-    var hl = (bytes[1] << 8) | bytes[2];
-    if (hl < 2 || 3 + hl > bytes.length) return null;
-    var st;
-    try { st = JSON.parse(new TextDecoder().decode(bytes.subarray(3, 3 + hl))); }
-    catch (e) { return null; }
-    if (!st || typeof st !== 'object' || !Array.isArray(st.bl) || !Array.isArray(st.parts)) return null;
-    var pos = 3 + hl, urls = [], i, meta, blob, url;
-    for (i = 0; i < st.bl.length; i++) {
-      meta = st.bl[i];
-      if (!Array.isArray(meta) || meta.length < 4) return null;
-      var w = meta[0] | 0, h = meta[1] | 0, f = meta[2] | 0, len = meta[3] | 0;
-      if (w < 1 || h < 1 || w > 512 || h > 512 || len < 0 || pos + len > bytes.length) return null;
-      blob = bytes.subarray(pos, pos + len);
-      pos += len;
-      url = blobToImageURL(blob, w, h, f);
-      urls.push(url || '');
-    }
-    var photos = {}, ph, v;
-    if (st.photos && typeof st.photos === 'object') {
-      for (ph in st.photos) {
-        if (!Object.prototype.hasOwnProperty.call(st.photos, ph)) continue;
-        v = st.photos[ph];
-        if (typeof v === 'number') { if (urls[v]) photos[ph] = urls[v]; }
-        else if (typeof v === 'string' && v) photos[ph] = v;
-      }
-    }
-    st.photos = photos;
-    st.bgp = (typeof st.bgq === 'number' && urls[st.bgq]) ? urls[st.bgq] : '';
-    if (!st.bgp && st.pat === 'photo') st.pat = 'none';
-    st.v = 3;
-    delete st.bl;
-    delete st.bgq;
-    return st;
-  }
-
-  function decodeSharePayload(payload) {
-    payload = String(payload || '');
-    if (payload.length < 4) return Promise.resolve(null);
-    var kind = payload.charAt(0), bytes;
-    if (kind !== 'z' && kind !== 'u') return Promise.resolve(null);
-    try { bytes = b64urlToBytes(payload.slice(1)); } catch (e) { return Promise.resolve(null); }
-    var work = kind === 'z' ? inflateRawBytes(bytes) : Promise.resolve(bytes);
-    return work.then(function (out) {
-      if (!out || !out.length) return null;
-      if (out[0] === 3) return expandSharePack(out);
-      try { return JSON.parse(new TextDecoder().decode(out)); } catch (e) { return null; }
-    }, function () { return null; });
-  }
-
-  /* draw any image source (canvas or data URL) into a small canvas, alpha kept */
-  function shrinkCanvas(src, maxS) {
-    return new Promise(function (resolve) {
-      function draw(img) {
-        try {
-          var iw = img.naturalWidth || img.width || 0, ih = img.naturalHeight || img.height || 0;
-          if (!iw || !ih) { resolve(null); return; }
-          var k = Math.min(1, maxS / Math.max(iw, ih));
-          var w = Math.max(1, Math.round(iw * k)), h = Math.max(1, Math.round(ih * k));
-          var cv = cutCanvas(w, h), g = cv.getContext('2d');
-          try { g.imageSmoothingQuality = 'high'; } catch (e) { /* older engines */ }
-          g.drawImage(img, 0, 0, w, h);
-          resolve(cv);
-        } catch (e) { resolve(null); }
-      }
-      if (!src) { resolve(null); return; }
-      if (src.getContext || src.naturalWidth) { draw(src); return; }
-      var im = new Image();
-      im.onload = function () { draw(im); };
-      im.onerror = function () { resolve(null); };
-      im.src = String(src);
-    });
-  }
-
-  /* 2 bytes a pixel, 4 bits a channel. A photo bead still looks crisp, the bytes
-     deflate to almost nothing, and it never asks for WebP — so iOS Safari, which
-     quietly hands back a fat PNG for every toDataURL('image/webp'), packs the
-     very same tiny photos as every other browser */
-  function quantizeCanvas(cv, keepAlpha) {
-    var w = cv.width, h = cv.height, n = w * h, d;
-    try { d = cv.getContext('2d').getImageData(0, 0, w, h).data; }
-    catch (e) { return null; }
-    var out = new Uint8Array(n * 2), i, o, off, a, qa;
-    for (i = 0, o = 0; i < n; i++, o += 2) {
-      off = i * 4;
-      a = d[off + 3];
-      if (keepAlpha && a < 24) { out[o] = 0; out[o + 1] = 0; continue; }
-      qa = keepAlpha ? Math.min(15, Math.max(1, (a * 15 + 127) / 255 | 0)) : 15;
-      out[o] = (((d[off] * 15 + 127) / 255 | 0) << 4) | ((d[off + 1] * 15 + 127) / 255 | 0);
-      out[o + 1] = (((d[off + 2] * 15 + 127) / 255 | 0) << 4) | qa;
-    }
-    return out;
-  }
-
-  /* the same shaker, with every photo squeezed into a pack of raw blobs */
-  function buildSharePack(st, plan) {
-    plan = plan || SHARE_PLANS[0];
-    var withBg = !!st.bgp && st.pat === 'photo' && !plan.noBg;
-    var order = [], jobs = [], id;
-    for (id in st.photos) {
-      if (Object.prototype.hasOwnProperty.call(st.photos, id)) order.push(id);
-    }
-    order.forEach(function (pid) {
-      var ent = photoStore[pid], src = ent && ent.cv ? ent.cv : st.photos[pid];
-      jobs.push(shrinkCanvas(src, plan.ps).then(function (cv) {
-        if (!cv) return null;
-        var q = quantizeCanvas(cv, true);
-        return q ? { w: cv.width, h: cv.height, f: 1, bytes: q } : null;
-      }));
-    });
-    var bgJob = Promise.resolve(null);
-    if (withBg) {
-      bgJob = shrinkCanvas(bgArt && bgArt.src ? bgArt.src : st.bgp, plan.bs).then(function (cv) {
-        if (!cv) return null;
-        var url = '';
-        try { url = cv.toDataURL('image/jpeg', plan.bq); } catch (e) { url = ''; }
-        var bytes = url.indexOf('data:image/jpeg') === 0 ? dataURLToBytes(url) : null;
-        if (bytes && bytes.length) return { w: cv.width, h: cv.height, f: 2, bytes: bytes };
-        var q = quantizeCanvas(cv, false);
-        return q ? { w: cv.width, h: cv.height, f: 0, bytes: q } : null;
-      });
-    }
-    return Promise.all(jobs.concat([bgJob])).then(function (list) {
-      var got = {}, k, i, bgItem = list[list.length - 1];
-      for (i = 0; i < order.length; i++) got[order[i]] = list[i];
-      /* a photo part whose photo never arrived would be an empty bead */
-      var parts = [], used = {}, p, j;
-      for (j = 0; j < st.parts.length; j++) {
-        p = st.parts[j];
-        if (p && p.k === 'photo') {
-          if (!p.p || !got[p.p]) continue;
-          used[p.p] = 1;
-        }
-        parts.push(p);
-      }
-      var blobs = [], photos = {};
-      for (k in used) {
-        if (!Object.prototype.hasOwnProperty.call(used, k)) continue;
-        photos[k] = blobs.length;
-        blobs.push(got[k]);
-      }
-      var out = {
-        v: 3,
-        shape: st.shape, theme: st.theme, snd: st.snd, mode: st.mode,
-        fin: st.fin, holo: st.holo, pat: st.pat, ring: st.ring,
-        bgp: '', parts: parts, photos: photos, deco: st.deco
-      };
-      if (withBg && bgItem) {
-        out.bgq = blobs.length;
-        blobs.push(bgItem);
-      } else if (st.pat === 'photo') {
-        out.pat = 'none';
-      }
-      out.bl = blobs.map(function (b) { return [b.w, b.h, b.f, b.bytes.length]; });
-      return { st: out, blobs: blobs };
-    });
-  }
-
-  function setShareHint(html) {
-    var el = $('#shareHint');
-    if (el) el.innerHTML = html;
-  }
-
-  function copyText(text, done, failMsg) {
-    function fallback() {
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        ta.style.top = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        done();
-      } catch (e) { toast(failMsg || '복사하지 못했어요'); }
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, fallback);
-    } else {
-      fallback();
-    }
-  }
-
-  function copyShareURL() {
-    if (!shareURL) { toast('먼저 링크를 만들어 주세요'); return; }
-    copyText(shareURL, function () { toast('공유 링크를 복사했어! 친구에게 붙여넣어 보내 💌'); }, '링크: ' + shareURL);
-  }
-
-  function countPhotos(st) {
-    var n = 0, i;
-    for (i = 0; i < st.parts.length; i++) if (st.parts[i] && st.parts[i].k === 'photo') n++;
-    return n;
-  }
-
-  function makeShareLink(auto) {
-    if (shareBusy) return;
-    shareBusy = true;
-    var btn = $('#shareMake'), input = $('#shareLink'), sizeEl = $('#shareSize');
-    if (btn) { btn.disabled = true; btn.textContent = '만드는 중…'; }
-    if (sizeEl && !auto) sizeEl.textContent = '만드는 중…';
-    var mine = stateSnapshot();
-    var heavy = countPhotos(mine) > 0 || (!!mine.bgp && mine.pat === 'photo');
-    var plans = [SHARE_PLANS[0]], i;
-    if (heavy) {
-      plans = SHARE_PLANS.slice();
-      /* if even the smallest size is too heavy, the photo parts matter more
-         than the case background: try again without it before giving up */
-      if (mine.bgp && mine.pat === 'photo') {
-        for (i = 0; i < SHARE_PLANS.length; i++) {
-          plans.push({ ps: SHARE_PLANS[i].ps, bs: SHARE_PLANS[i].bs, bq: SHARE_PLANS[i].bq, noBg: true });
-        }
-      }
-    }
-    var pi = 0;
-    /* biggest photo size first, step down until the link fits */
-    function attempt() {
-      if (pi >= plans.length) return Promise.resolve(null);
-      var plan = plans[pi++];
-      return buildSharePack(stateSnapshot(), plan).then(function (pack) {
-        return encodeSharePack(pack).then(function (payload) {
-          if (!payload) return null;
-          var url = shareBaseURL() + '#s=' + payload;
-          if (url.length <= SHARE_MAX_URL) {
-            return { url: url, dropped: 0, droppedBg: !!plan.noBg && !!mine.bgp };
-          }
-          return attempt();
-        });
-      });
-    }
-    /* too heavy even at the smallest size: a link without the photos still lets
-       the friend see the design */
-    function light() {
-      var st = stateSnapshot(), keep = [], i, p, n = 0;
-      for (i = 0; i < st.parts.length; i++) {
-        p = st.parts[i];
-        if (p.k === 'photo') { n++; continue; }
-        keep.push(p);
-      }
-      var droppedBg = !!st.bgp;
-      st.parts = keep;
-      st.photos = {};
-      st.bgp = '';
-      if (st.pat === 'photo') st.pat = 'none';
-      st.v = 2;
-      return encodeSharePayload(st).then(function (payload) {
-        var url = shareBaseURL() + '#s=' + payload;
-        return { url: url.length <= SHARE_MAX_URL ? url : '', dropped: n, droppedBg: droppedBg };
-      });
-    }
-    var run = (typeof CompressionStream === 'function') ? attempt : function () { return Promise.resolve(null); };
-    run().then(function (res) {
-      return res || light();
-    }).then(function (res) {
-      shareBusy = false;
-      if (btn) { btn.disabled = false; btn.textContent = '🔗 공유 링크 만들기'; }
-      if (!res || !res.url) {
-        shareURL = '';
-        if (input) input.value = '';
-        if (sizeEl) sizeEl.textContent = '링크로는 너무 커요';
-        setShareHint('이 쉐이커는 링크로 담기엔 너무 커요. <b>📦 파일로 보내기</b>를 써 주세요');
-        toast('링크가 너무 길어요. 📦 파일로 보내 주세요');
-        return;
-      }
-      shareURL = res.url;
-      if (input) input.value = res.url;
-      if (sizeEl) sizeEl.textContent = res.url.length.toLocaleString() + '자';
-      if (res.dropped || res.droppedBg) {
-        var what = [];
-        if (res.dropped) what.push('사진 파츠 ' + res.dropped + '개');
-        if (res.droppedBg) what.push('배경 사진');
-        setShareHint(what.join(' · ') + (/사진$/.test(what[what.length - 1]) ? '은' : '는') +
-          ' 링크에 담지 못했어요. 사진까지 그대로 보내려면 <b>📦 파일로 보내기</b>를 써 주세요');
-      } else {
-        setShareHint(SHARE_HINT);
-      }
-      if (!auto) copyShareURL();
-    }, function () {
-      shareBusy = false;
-      if (btn) { btn.disabled = false; btn.textContent = '🔗 공유 링크 만들기'; }
-      toast('링크를 만들지 못했어요');
-    });
-  }
-
-  function sendShareLink() {
-    if (!shareURL) { toast('먼저 링크를 만들어 주세요'); return; }
-    var data = { title: '포켓쉐이커', text: '내가 만든 포켓쉐이커야, 열어서 흔들어 봐 🪇', url: shareURL };
-    try {
-      if (navigator.share) {
-        navigator.share(data).catch(function () { copyShareURL(); });
-        return;
-      }
-    } catch (e) { /* fall through to copy */ }
-    copyShareURL();
-  }
-
-  function downloadBlob(blob, name) {
-    try {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () {
-        if (a.parentNode) a.parentNode.removeChild(a);
-        try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
-      }, 1500);
-      toast('「' + name + '」로 저장했어요');
-    } catch (e) { toast('파일을 저장하지 못했어요'); }
-  }
-
-  /* the full shaker, photos at their real size, as one small json file */
-  function shareFileOut() {
-    var st = stateSnapshot();
-    st.v = 2;
-    st.app = 'pocket-shaker';
-    st.name = shotTitle || '';
-    var name = safeFileName(shotTitle) + '.shaker.json';
-    var blob, file = null;
-    try { blob = new Blob([JSON.stringify(st)], { type: 'application/json' }); }
-    catch (e) { toast('파일을 만들지 못했어요'); return; }
-    try { file = new File([blob], name, { type: 'application/json' }); } catch (e) { file = null; }
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: '포켓쉐이커' }).catch(function () { downloadBlob(blob, name); });
-      return;
-    }
-    downloadBlob(blob, name);
-  }
-
-  function isImageData(v) {
-    return typeof v === 'string' && v.length < 3000000 &&
-      /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
-  }
-
-  /* never trust a friend's file with remote urls or absurd values */
-  function cleanShareState(st) {
-    if (!st || typeof st !== 'object' || !Array.isArray(st.parts)) return null;
-    var photos = {}, ph;
-    if (st.photos && typeof st.photos === 'object') {
-      for (ph in st.photos) {
-        if (!Object.prototype.hasOwnProperty.call(st.photos, ph)) continue;
-        if (/^p\d{1,6}$/.test(ph) && isImageData(st.photos[ph])) photos[ph] = st.photos[ph];
-      }
-    }
-    var bgp = isImageData(st.bgp) ? st.bgp : '';
-    var pat = String(st.pat || 'none');
-    if (!bgp && pat === 'photo') pat = 'none';
-    var out = {
-      v: 2,
-      shape: String(st.shape || ''),
-      theme: parseInt(st.theme, 10) || 0,
-      snd: parseInt(st.snd, 10) || 0,
-      mode: String(st.mode || ''),
-      fin: st.fin === 'matte' ? 'matte' : 'gloss',
-      holo: st.holo ? 1 : 0,
-      pat: pat,
-      bgp: bgp,
-      ring: String(st.ring || 'none'),
-      parts: [],
-      photos: photos,
-      deco: Array.isArray(st.deco) ? st.deco : []
-    };
-    var i, p;
-    for (i = 0; i < st.parts.length && out.parts.length < 60; i++) {
-      p = st.parts[i];
-      if (!p || typeof p !== 'object') continue;
-      out.parts.push(p);
-    }
-    return out;
-  }
-
-  function importShareFile(file) {
-    if (!file) return;
-    if (file.size > 16 * 1024 * 1024) { toast('파일이 너무 커요'); return; }
-    var rd = new FileReader();
-    rd.onload = function () {
-      var raw = null;
-      try { raw = JSON.parse(String(rd.result)); } catch (e) { raw = null; }
-      var st = cleanShareState(raw);
-      if (!st) { toast('쉐이커 파일이 아니에요 😢'); return; }
-      applyState(st, true);
-      closeShare();
-      Sound.unlock();
-      Sound.pop(true);
-      toast('친구 쉐이커를 불러왔어 💌 서랍에 저장해 내 께로!');
-    };
-    rd.onerror = function () { toast('파일을 읽지 못했어요'); };
-    rd.readAsText(file);
-  }
-
-  function openShare() {
-    if (!shareEl) return;
-    Sound.unlock();
-    shareEl.hidden = false;
-    requestAnimationFrame(function () { shareEl.classList.add('on'); });
-    var pv = $('#sharePrev');
-    if (pv) { try { renderMini(pv); } catch (e) { /* not ready yet */ } }
-    var factEl = $('#shareFacts');
-    if (factEl) factEl.textContent = THEMES[themeIdx].name + ' · ' + SHAPES[shapeKey].name + ' · ' + (fin === 'matte' ? '무광' : '유광') + (holoOn ? ' · 오로라' : '');
-    var cntEl = $('#shareCounts');
-    if (cntEl) cntEl.textContent = '파츠 ' + parts.length + ' · 데코 ' + Deco.items.length;
-    var input = $('#shareLink');
-    shareURL = '';
-    if (input) input.value = '';
-    var sizeEl = $('#shareSize');
-    if (sizeEl) sizeEl.textContent = '만드는 중…';
-    setShareHint(SHARE_HINT);
-    makeShareLink(true);
-    Sound.pop(true);
-  }
-
-  function closeShare() {
-    if (!shareEl) return;
-    shareEl.classList.remove('on');
-    setTimeout(function () { shareEl.hidden = true; }, 240);
-    var input = $('#shareLink');
-    if (input) { try { input.blur(); } catch (e) { /* ignore */ } }
-  }
-
-  function clearShareHash() {
-    try { history.replaceState(null, '', location.pathname + location.search); }
-    catch (e) { try { location.hash = ''; } catch (e2) { /* ignore */ } }
-  }
-
-  function loadSharedFromHash() {
-    var h = location.hash || '';
-    if (h.indexOf('#s=') !== 0) return Promise.resolve(false);
-    var payload = h.slice(3);
-    return decodeSharePayload(payload).then(function (raw) {
-      var st = cleanShareState(raw);
-      clearShareHash();
-      if (!st) { toast('공유 링크를 읽지 못했어요 😢'); return true; }
-      applyState(st, false);
-      if (shareEl && !shareEl.hidden) closeShare();
-      Sound.pop(true);
-      setTimeout(function () { toast('친구가 보낸 포켓쉐이커를 열었어 💌'); }, 380);
-      setTimeout(function () { toast('마음에 들면 🗂️ 서랍에 저장해 내 께로!'); }, 3400);
-      return true;
-    });
   }
 
   /* =========================================================
@@ -6065,9 +5570,9 @@ input[type=range]::-webkit-slider-thumb{
        enough margin for the top bar, the keyring loop and the bottom (where the
        ⌃ 메뉴 pill floats while the menu is collapsed) */
     var fit = caseFit();
-    var padX = clamp(w * 0.026, 8, 18);
-    var padTop = clamp(h * 0.014, 9, 16);
-    var padBot = dockCollapsed ? clamp(h * 0.08, 56, 78) : clamp(h * 0.10, 30, 44);
+    var padX = clamp(w * 0.075, 16, 34);
+    var padTop = clamp(h * 0.085, 34, 52);
+    var padBot = clamp(h * 0.055, 18, 34);
     var availW = Math.max(24, w - padX * 2);
     var availH = Math.max(24, h - padTop - padBot);
     var S = Math.min(availW / fit.w, availH / fit.h);
@@ -6690,36 +6195,10 @@ input[type=range]::-webkit-slider-thumb{
     });
     $('#shot').addEventListener('click', function (e) { if (e.target === this) closeShot(); });
 
-    /* 💌 share */
-    shareEl = $('#share');
-    $('#shareBtn').addEventListener('click', openShare);
-    $('#shareClose').addEventListener('click', closeShare);
-    shareEl.addEventListener('click', function (e) { if (e.target === this) closeShare(); });
-    $('#shareMake').addEventListener('click', function () { makeShareLink(false); });
-    $('#shareCopy').addEventListener('click', copyShareURL);
-    $('#shareSend').addEventListener('click', sendShareLink);
-    $('#shareFile').addEventListener('click', shareFileOut);
-    $('#shareLoad').addEventListener('click', function () {
-      Sound.unlock();
-      var fi = $('#shareFileIn');
-      if (fi) { fi.value = ''; fi.click(); }
-    });
-    $('#shareFileIn').addEventListener('change', function (e) {
-      importShareFile(e.target.files && e.target.files[0]);
-    });
-    if (navigator.share) { var ssend = $('#shareSend'); if (ssend) ssend.hidden = false; }
-
-    /* listeners */
+    /* listeners */    /* listeners */
     $('#shakeBtn').addEventListener('click', function () { shakeIt(1); });
     motionBtn = $('#motionBtn');
     motionBtn.addEventListener('click', enableMotion);
-
-    /* dock collapse / reopen */
-    dockEl = $('#dock');
-    dockFabEl = $('#dockFab');
-    $('#dockHandle').addEventListener('click', function () { setDockCollapsed(true); });
-    $('#dockOpen').addEventListener('click', function () { setDockCollapsed(false); });
-    $('#shakeFab').addEventListener('click', function () { shakeIt(1); });
 
     /* motion help sheet */
     guideEl = $('#guide');
@@ -6731,12 +6210,6 @@ input[type=range]::-webkit-slider-thumb{
       enableOrientation();
     });
     guideEl.addEventListener('click', function (e) { if (e.target === this) closeGuide(); });
-    $('#soundBtn').addEventListener('click', function () {
-      var m = !Sound.isMuted();
-      Sound.setMuted(m);
-      this.textContent = m ? '🔇' : '🔊';
-      if (!m) { Sound.unlock(); Sound.pop(true); }
-    });
     $('#clearBtn').addEventListener('click', function () {
       clearParts();
       Sound.pop(false);
@@ -6791,6 +6264,8 @@ input[type=range]::-webkit-slider-thumb{
     window.addEventListener('orientationchange', function () {
       setTimeout(function () { layout(); }, 220);
     });
+
+    buildV2UI();
   }
 
   function makeAppIcon() {
@@ -6831,6 +6306,1042 @@ input[type=range]::-webkit-slider-thumb{
     } catch (e) { /* icon is a nicety */ }
   }
 
+  /* =========================================================
+     ✨ v2 — 6메뉴 · 실행 취소/다시 실행 · 테마 프리셋
+     · 바깥 배경 · 나만의 파츠 보관함 · 제품 목업 사진
+     ========================================================= */
+
+  /* ---------------- 🌈 바깥 배경(앱 무대) ---------------- */
+  var OUTER_PASTELS = ['#fdf5fa', '#ffe9f2', '#f3ecff', '#e8f7ff', '#eafbf2', '#fff7e0', '#ffece2', '#eef0f6'];
+  var outerColor = '#fdf5fa', outerPhoto = '';
+
+  function applyOuter() {
+    var el = $('#outerBg');
+    if (!el) return;
+    if (outerPhoto) {
+      el.style.backgroundImage = 'url("' + outerPhoto + '")';
+      el.style.backgroundColor = outerColor;
+      el.classList.add('photo');
+    } else {
+      el.classList.remove('photo');
+      el.style.backgroundImage = 'linear-gradient(165deg,#ffffff 0%,' + outerColor + ' 38%,' + outerColor + ' 100%)';
+      el.style.backgroundColor = outerColor;
+    }
+    syncOuterUI();
+  }
+
+  function syncOuterUI() {
+    var dot = $('#outerDot');
+    if (dot) dot.style.background = outerPhoto ? 'linear-gradient(140deg,#fff,#ffd6e8)' : outerColor;
+    var inp = $('#outerColor');
+    if (inp && /^#[0-9a-f]{6}$/i.test(outerColor)) inp.value = outerColor;
+    var sw = document.querySelectorAll('#outerSwatches .pastel'), i;
+    for (i = 0; i < sw.length; i++) {
+      sw[i].classList.toggle('sel', !outerPhoto && sw[i].getAttribute('data-c') === outerColor);
+    }
+    var clr = $('#outerPhotoClear');
+    if (clr) clr.disabled = !outerPhoto;
+  }
+
+  function setOuterColor(hex) {
+    if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return;
+    outerColor = hex;
+    outerPhoto = '';
+    applyOuter();
+    touchState();
+  }
+
+  function handleOuterFile(file) {
+    if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
+    var im = new Image(), fr = new FileReader();
+    fr.onload = function () {
+      im.onload = function () {
+        var maxW = 1200;
+        var k = Math.min(1, maxW / (im.naturalWidth || maxW));
+        var cv = cutCanvas(Math.max(1, Math.round((im.naturalWidth || maxW) * k)),
+                           Math.max(1, Math.round((im.naturalHeight || maxW) * k)));
+        var g = cv.getContext('2d');
+        g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+        g.drawImage(im, 0, 0, cv.width, cv.height);
+        var url = '';
+        try { url = cv.toDataURL('image/jpeg', 0.84); } catch (e) { url = ''; }
+        if (!url) { toast('사진을 배경으로 올리지 못했어요'); return; }
+        outerPhoto = url;
+        applyOuter();
+        touchState();
+        Sound.unlock(); Sound.pop(true);
+        toast('🖼️ 바깥 배경에 사진을 깔았어!');
+      };
+      im.onerror = function () { toast('사진을 읽지 못했어요'); };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+
+  /* ---------------- ↩ 실행 취소 / ↪ 다시 실행 ---------------- */
+  var hist = [], histIdx = -1, histSig = '', HIST_MAX = 32, histLock = false;
+
+  function syncHistUI() {
+    var u = $('#undoBtn'), r = $('#redoBtn');
+    if (u) u.disabled = histIdx <= 0;
+    if (r) r.disabled = histIdx >= hist.length - 1;
+  }
+
+  function pushHistory() {
+    if (!booted || histLock) return;
+    var st = stateSnapshot();
+    var sig = JSON.stringify(st);
+    if (sig === histSig) return;
+    if (histIdx < hist.length - 1) hist = hist.slice(0, histIdx + 1);
+    hist.push(st);
+    if (hist.length > HIST_MAX) { hist.shift(); }
+    histIdx = hist.length - 1;
+    histSig = sig;
+    syncHistUI();
+  }
+
+  function histApply(st) {
+    histLock = true;
+    try { applyState(st, false); } catch (e) { /* keep the stage alive */ }
+    histLock = false;
+    saveState(true);
+    selectedPart = null;
+    syncPartSel();
+    syncHistUI();
+  }
+
+  function undoStep() {
+    if (histIdx <= 0) { toast('더 되돌릴 게 없어요'); return; }
+    histIdx--;
+    histSig = JSON.stringify(hist[histIdx]);
+    histApply(hist[histIdx]);
+    Sound.unlock(); Sound.pop(false);
+    toast('↩ 한 단계 되돌렸어요');
+  }
+
+  function redoStep() {
+    if (histIdx >= hist.length - 1) { toast('다시 실행할 게 없어요'); return; }
+    histIdx++;
+    histSig = JSON.stringify(hist[histIdx]);
+    histApply(hist[histIdx]);
+    Sound.unlock(); Sound.pop(true);
+    toast('↪ 다시 실행했어요');
+  }
+
+  function resetHistory() {
+    hist = []; histIdx = -1; histSig = ''; histLock = false;
+    pushHistory();
+  }
+
+  /* ---------------- 🗑️ 선택한 파츠 지우기 ---------------- */
+  var selectedPart = null;
+
+  function partIsSavable(p) {
+    if (!p) return false;
+    if (p.ph && photoStore[p.ph]) return true;
+    return (p.kind === 'letter' || p.kind === 'word') && !!p.txt;
+  }
+
+  function syncPartSel() {
+    var box = $('#partActs'), del = $('#partDel'), sv = $('#partSave');
+    var on = !!(selectedPart && parts.indexOf(selectedPart) >= 0);
+    if (box) box.hidden = !on;
+    if (del) del.hidden = !on;
+    if (sv) sv.hidden = !(on && partIsSavable(selectedPart));
+  }
+
+  function saveSelectedPart() {
+    var p = selectedPart;
+    if (!partIsSavable(p)) { toast('사진 누끼나 글자 비즈만 보관할 수 있어요'); return; }
+    Sound.unlock();
+    if (p.ph && photoStore[p.ph]) {
+      vaultSavePhoto(photoStore[p.ph].cv);
+      return;
+    }
+    vaultSaveLetter(p.txt, p.sty || 'white', p.kind === 'word');
+  }
+
+  function deleteSelectedPart() {
+    if (!selectedPart) return;
+    var i = parts.indexOf(selectedPart);
+    if (i < 0) { selectedPart = null; syncPartSel(); return; }
+    pushHistory();
+    parts.splice(i, 1);
+    selectedPart = null;
+    syncPartSel();
+    Sound.unlock(); Sound.pop(false);
+    touchState();
+    toast('파츠 하나를 지웠어요 🗑️');
+  }
+
+  /* ---------------- 🎲 랜덤 ---------------- */
+  function randomizeShaker() {
+    var rnd = Math.random, i, k;
+    shapeKey = SHAPE_KEYS[Math.floor(rnd() * SHAPE_KEYS.length)];
+    themeIdx = Math.floor(rnd() * THEMES.length);
+    theme = THEMES[themeIdx];
+    fin = rnd() < 0.3 ? 'matte' : 'gloss';
+    holoOn = rnd() < 0.45;
+    bgPattern = ['none', 'gingham', 'dot', 'stripe', 'heart'][Math.floor(rnd() * 5)];
+    ringKey = RINGS[Math.floor(rnd() * RINGS.length)].id;
+    ringAng = 0; ringVel = 0; ringSpr = null;
+    outerColor = OUTER_PASTELS[Math.floor(rnd() * OUTER_PASTELS.length)];
+    outerPhoto = '';
+    clearParts();
+    var n = 9 + Math.floor(rnd() * 5);
+    for (i = 0; i < n; i++) addDefaultPart(PART_TYPES[Math.floor(rnd() * PART_TYPES.length)]);
+    var deco = [], dn = Math.floor(rnd() * 3);
+    for (k = 0; k < dn; k++) {
+      var t = DECO_TYPES[Math.floor(rnd() * DECO_TYPES.length)];
+      var a = rnd() * TAU, rr = 0.16 + rnd() * 0.2;
+      deco.push({ k: t.id, u: Math.cos(a) * rr, v: Math.sin(a) * rr * 1.15, s: t.s, r: rand(-0.3, 0.3) });
+    }
+    restoreDeco(deco);
+    selectedPart = null;
+    syncPartSel();
+    layout();
+    syncCaseUI();
+    applyOuter();
+    draw();
+    Sound.unlock(); Sound.pop(true);
+    touchState();
+    toast('🎲 랜덤으로 새로 꾸몄어!');
+  }
+
+  /* ---------------- 🎀 테마 프리셋 6종 ---------------- */
+  var THEME_PRESETS = [
+    { id: 'blossom', name: '벚꽃', em: '🌸', shape: 'heart', theme: 'rose', fin: 'gloss', holo: true, pat: 'dot', ring: 'ball', outer: '#ffe9f2',
+      parts: ['heart', 'heart', 'star', 'marble', 'heart', 'star', 'marble'],
+      deco: [{ k: 'ribbon_pink', u: -0.30, v: -0.30 }, { k: 'pearl', u: 0.28, v: 0.10 }, { k: 'cherry', u: -0.26, v: 0.26 }] },
+    { id: 'strawberry', name: '딸기 우유', em: '🍓', shape: 'milk', theme: 'rose', fin: 'matte', holo: false, pat: 'heart', ring: 'heart', outer: '#ffe3ea',
+      parts: ['heart', 'jelly', 'marble', 'ribbon', 'heart', 'jelly', 'marble'],
+      deco: [{ k: 'cream', u: -0.26, v: -0.08 }, { k: 'pearl', u: -0.02, v: 0.30 }, { k: 'gem_heart', u: 0.28, v: 0.06 }] },
+    { id: 'magical', name: '마법소녀', em: '✨', shape: 'square', theme: 'lilac', fin: 'gloss', holo: true, pat: 'stripe', ring: 'star', outer: '#f0e8ff',
+      parts: ['star', 'star', 'marble', 'heart', 'cloud', 'star', 'marble'],
+      deco: [{ k: 'gem_star', u: 0.26, v: -0.26 }, { k: 'gem_heart', u: -0.24, v: 0.22 }, { k: 'pearl_chain', u: 0, v: 0.32 }] },
+    { id: 'sky', name: '하늘', em: '☁️', shape: 'capsule', theme: 'sky', fin: 'gloss', holo: false, pat: 'none', ring: 'silver', outer: '#e8f4ff',
+      parts: ['cloud', 'cloud', 'marble', 'star', 'jelly', 'cloud', 'star'],
+      deco: [{ k: 'pearl', u: -0.26, v: -0.20 }, { k: 'ribbon_white', u: 0.04, v: 0.26 }] },
+    { id: 'ocean', name: '바다', em: '🌊', shape: 'capsule', theme: 'mint', fin: 'gloss', holo: true, pat: 'stripe', ring: 'silver', outer: '#dff6f2',
+      parts: ['marble', 'marble', 'jelly', 'cloud', 'star', 'marble', 'jelly'],
+      deco: [{ k: 'pearl_chain', u: 0, v: -0.34 }, { k: 'pearl', u: 0.26, v: 0.14 }, { k: 'gem_heart', u: -0.24, v: 0.24 }] },
+    { id: 'xmas', name: '크리스마스', em: '🎄', shape: 'bear', theme: 'snow', fin: 'gloss', holo: true, pat: 'gingham', ring: 'gold', outer: '#eaf6ee',
+      parts: ['star', 'star', 'ribbon', 'heart', 'marble', 'star', 'heart'],
+      deco: [{ k: 'clover', u: -0.20, v: -0.24 }, { k: 'gem_star', u: 0.24, v: -0.14 }, { k: 'ribbon_white', u: 0.02, v: 0.30 }] }
+  ];
+
+  function themeIndexById(id) {
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return i;
+    return 0;
+  }
+
+  function applyPreset(P) {
+    if (!P) return;
+    shapeKey = SHAPES[P.shape] ? P.shape : 'capsule';
+    themeIdx = themeIndexById(P.theme);
+    theme = THEMES[themeIdx];
+    fin = P.fin === 'matte' ? 'matte' : 'gloss';
+    holoOn = !!P.holo;
+    holoGlintCache = {};
+    bgPattern = PAT_BY_ID[P.pat] ? P.pat : 'none';
+    ringKey = RING_BY_ID[P.ring] ? P.ring : 'none';
+    ringAng = 0; ringVel = 0; ringSpr = null;
+    outerColor = P.outer || '#fdf5fa';
+    outerPhoto = '';
+    clearParts();
+    (P.parts || []).forEach(function (id) {
+      var t = PART_BY_ID[id];
+      if (t) addDefaultPart(t);
+    });
+    var deco = [];
+    (P.deco || []).forEach(function (d) {
+      var t = DECO_BY_ID[d.k];
+      if (t) deco.push({ k: d.k, u: d.u, v: d.v, s: d.s || t.s, r: d.r || 0 });
+    });
+    restoreDeco(deco);
+    selectedPart = null;
+    syncPartSel();
+    layout();
+    syncCaseUI();
+    applyOuter();
+    draw();
+    Sound.unlock(); Sound.pop(true);
+    touchState();
+    toast(P.em + ' ' + P.name + ' 테마로 통째로 꾸몄어!');
+  }
+
+  function buildPresetChips() {
+    var box = $('#themeChips');
+    if (!box) return;
+    while (box.firstChild) box.removeChild(box.firstChild);
+    THEME_PRESETS.forEach(function (P) {
+      var b = document.createElement('button');
+      b.className = 'chip';
+      b.type = 'button';
+      b.setAttribute('data-preset', P.id);
+      b.setAttribute('aria-label', P.name + ' 테마');
+      var em = document.createElement('em');
+      em.textContent = P.em;
+      b.appendChild(em);
+      var sp = document.createElement('span');
+      sp.textContent = P.name;
+      b.appendChild(sp);
+      b.addEventListener('click', function () { applyPreset(P); });
+      box.appendChild(b);
+    });
+  }
+
+  /* ---------------- 🗃️ 나만의 파츠 보관함 ---------------- */
+  var VAULT_KEY = 'pocketShaker.myParts.v1';
+  var VAULT_MAX = 30;
+
+  function readVault() {
+    try {
+      var raw = localStorage.getItem(VAULT_KEY);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function writeVault(arr) {
+    try {
+      localStorage.setItem(VAULT_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) {
+      toast(quotaError(e)
+        ? '보관함 공간이 가득 찼어요. 몇 개 지우고 저장해 주세요 🗃️'
+        : '보관함에 저장하지 못했어요. 잠시 뒤 다시 해 볼까요?');
+      return false;
+    }
+  }
+
+  function vaultNewId() {
+    return 'v' + Date.now().toString(36) + Math.floor(Math.random() * 900 + 100).toString(36);
+  }
+
+  function vaultSavePhoto(cv) {
+    if (!cv) { toast('저장할 누끼가 아직 없어요'); return; }
+    var small = spriteShrink(cv, SHOT_SPRITE), url = '';
+    try { url = small.toDataURL('image/png'); } catch (e) { url = ''; }
+    if (!url) { toast('사진을 저장하지 못했어요'); return; }
+    var list = readVault(), i;
+    for (i = 0; i < list.length; i++) {
+      if (list[i].kind === 'photo' && list[i].url === url) { toast('이 누끼는 이미 보관함에 있어요 🗃️'); return; }
+    }
+    if (list.length >= VAULT_MAX) { toast('보관함이 가득 찼어요 (' + VAULT_MAX + '개). 하나 지워 주세요'); return; }
+    list.unshift({ id: vaultNewId(), kind: 'photo', url: url, at: Date.now() });
+    if (!writeVault(list)) return;
+    renderVault();
+    Sound.unlock(); Sound.pop(true);
+    toast('🗃️ 나만의 파츠 보관함에 저장했어!');
+  }
+
+  function vaultSaveLetter(txt, sty, word) {
+    txt = String(txt || '').slice(0, 10);
+    if (!txt) { toast('저장할 글자를 먼저 적어 주세요'); return; }
+    var list = readVault(), i;
+    for (i = 0; i < list.length; i++) {
+      var it = list[i];
+      if (it.kind === 'letter' && it.txt === txt && it.sty === sty && !!it.word === !!word) {
+        toast('이 비즈는 이미 보관함에 있어요 🗃️');
+        return;
+      }
+    }
+    if (list.length >= VAULT_MAX) { toast('보관함이 가득 찼어요 (' + VAULT_MAX + '개). 하나 지워 주세요'); return; }
+    list.unshift({
+      id: vaultNewId(), kind: 'letter', txt: txt, sty: sty, word: !!word,
+      multi: !word && Array.from(txt).length > 1, at: Date.now()
+    });
+    if (!writeVault(list)) return;
+    renderVault();
+    Sound.unlock(); Sound.pop(true);
+    toast('🗃️ 「' + txt + '」 비즈를 보관함에 저장했어!');
+  }
+
+  function vaultThumb(item, size) {
+    var cv = cutCanvas(size, size), g = cv.getContext('2d');
+    if (item.kind === 'photo') {
+      var im = new Image();
+      im.onload = function () {
+        var k = Math.min(size / im.naturalWidth, size / im.naturalHeight);
+        var w = im.naturalWidth * k, h = im.naturalHeight * k;
+        g.clearRect(0, 0, size, size);
+        g.drawImage(im, (size - w) / 2, (size - h) / 2, w, h);
+      };
+      im.src = item.url;
+      return cv;
+    }
+    var label = (!item.word && item.multi) ? (Array.from(String(item.txt))[0] || '?') : item.txt;
+    var spr = getLetterSprite(label, item.sty, !!item.word);
+    if (item.word) {
+      g.drawImage(spr, C - 112, C - 60, 224, 120, size * 0.04, size * 0.3, size * 0.92, size * 0.4);
+    } else {
+      var cp = beadCrop(item.sty);
+      g.drawImage(spr, C - cp / 2, C - cp / 2, cp, cp, size * 0.1, size * 0.1, size * 0.8, size * 0.8);
+    }
+    return cv;
+  }
+
+  function vaultLabel(item) {
+    return item.kind === 'photo' ? '누끼' : String(item.txt || '').slice(0, 4);
+  }
+
+  function vaultAdd(item) {
+    if (!item) return;
+    if (parts.length >= MAX_PARTS) { toast('파츠가 너무 많아요! 몇 개 지우고 다시 해 봐요'); return; }
+    Sound.unlock();
+    if (item.kind === 'photo') {
+      var im = new Image();
+      im.onload = function () {
+        var cv = cutCanvas(im.naturalWidth || SHOT_SPRITE, im.naturalHeight || SHOT_SPRITE);
+        cv.getContext('2d').drawImage(im, 0, 0);
+        var pid = registerPhoto(cv);
+        if (!pid || !photoStore[pid]) { toast('파츠를 넣지 못했어요'); return; }
+        var s = photoStore[pid].cv;
+        var p = spawnPart({
+          r: 0.072, sprite: s, art: 118 * (s.width / SPRITE), sc: s.width,
+          kind: 'photo', ph: pid
+        });
+        if (!p) { toast('파츠가 너무 많아요!'); return; }
+        Sound.pop(true);
+        touchState();
+        toast('🗃️ 보관함 파츠를 넣었어!');
+      };
+      im.onerror = function () { toast('보관한 사진을 열지 못했어요'); };
+      im.src = item.url;
+      return;
+    }
+    var st = BEAD_BY_ID[item.sty] || BEAD_STYLES[0];
+    var word = !!item.word;
+    var chars = word ? [item.txt] : Array.from(String(item.txt || ''));
+    var made = 0, k;
+    for (k = 0; k < chars.length; k++) {
+      if (parts.length >= MAX_PARTS) break;
+      var pp = spawnPart({
+        r: word ? WORD_R : st.r,
+        sprite: getLetterSprite(word ? item.txt : chars[k], st.id, word),
+        art: word ? WORD_ART : st.art,
+        kind: word ? 'word' : 'letter', txt: word ? item.txt : chars[k], sty: st.id
+      });
+      if (pp) made++;
+    }
+    if (!made) { toast('파츠가 너무 많아요!'); return; }
+    Sound.pop(true);
+    touchState();
+    toast('🗃️ 보관함 비즈 ' + made + '개를 넣었어!');
+  }
+
+  function vaultDelete(id) {
+    var list = readVault(), next = [], i;
+    for (i = 0; i < list.length; i++) { if (list[i].id !== id) next.push(list[i]); }
+    if (!writeVault(next)) return;
+    renderVault();
+    toast('보관함에서 지웠어요');
+  }
+
+  function renderVault() {
+    var list = readVault();
+    var strip = $('#vaultStrip');
+    if (strip) {
+      while (strip.firstChild) strip.removeChild(strip.firstChild);
+      for (var i = 0; i < list.length; i++) {
+        (function (item) {
+          var b = document.createElement('button');
+          b.className = 'vitem';
+          b.type = 'button';
+          b.setAttribute('aria-label', '보관한 파츠 넣기: ' + vaultLabel(item));
+          b.appendChild(vaultThumb(item, 60));
+          var nm = document.createElement('b');
+          nm.textContent = vaultLabel(item);
+          b.appendChild(nm);
+          b.addEventListener('click', function () { vaultAdd(item); });
+          strip.appendChild(b);
+        })(list[i]);
+      }
+    }
+    var hint = $('#vaultHint');
+    if (hint) hint.hidden = list.length > 0;
+
+    var grid = $('#vaultGrid');
+    if (grid) {
+      while (grid.firstChild) grid.removeChild(grid.firstChild);
+      for (var j = 0; j < list.length; j++) {
+        (function (item) {
+          var wrap = document.createElement('div');
+          wrap.className = 'vwrap';
+          var b = document.createElement('button');
+          b.className = 'vitem';
+          b.type = 'button';
+          b.setAttribute('aria-label', '보관한 파츠 넣기: ' + vaultLabel(item));
+          b.appendChild(vaultThumb(item, 96));
+          var nm = document.createElement('b');
+          nm.textContent = vaultLabel(item);
+          b.appendChild(nm);
+          b.addEventListener('click', function () { vaultAdd(item); });
+          wrap.appendChild(b);
+          var del = document.createElement('button');
+          del.className = 'vdel';
+          del.type = 'button';
+          del.textContent = '✕';
+          del.setAttribute('aria-label', '보관함에서 지우기');
+          del.addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            vaultDelete(item.id);
+          });
+          wrap.appendChild(del);
+          grid.appendChild(wrap);
+        })(list[j]);
+      }
+      var empty = $('#vaultEmpty');
+      if (empty) empty.hidden = list.length > 0;
+    }
+  }
+
+  /* ---------------- 📸 사진 저장: 일반 인증샷 / 제품 목업 ---------------- */
+  var shotMode = 'shot';
+
+  function shakerComposite() {
+    var SS = 2;
+    var cv = cutCanvas(Math.round(VIEW.w * SS), Math.round(VIEW.h * SS));
+    var g = cv.getContext('2d');
+    g.scale(SS, SS);
+    g.drawImage(layerBack, 0, 0, VIEW.w, VIEW.h);
+    g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
+    drawFluid(g);
+    g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    if (holoOn) {
+      paintHolo();
+      g.drawImage(holoLayer, 0, 0, VIEW.w, VIEW.h);
+    }
+    drawKeyring(g);
+    drawDeco(g);
+    return cv;
+  }
+
+  function shotRenderCurrent() {
+    return shotMode === 'product' ? renderProductShot() : renderShot();
+  }
+
+  function renderProductShot() {
+    var W = 1080, H = 1350;
+    var cv = cutCanvas(W, H), g = cv.getContext('2d');
+    var FONT = '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", system-ui, sans-serif';
+    var i, rnd = mulberry32(20261127);
+    var SPR = ['#ff9ec0', '#ffd166', '#9ad9ff', '#c3a8ff', '#8fe3c4', '#ffffff'];
+
+    /* ---- studio table: pale pink wall & tabletop with a soft horizon ---- */
+    var wall = g.createLinearGradient(0, 0, W * 0.4, H);
+    wall.addColorStop(0, '#ffe9f1');
+    wall.addColorStop(0.6, '#ffdbe8');
+    wall.addColorStop(1, '#ffcfe0');
+    g.fillStyle = wall;
+    g.fillRect(0, 0, W, H);
+
+    var horizon = Math.round(H * 0.72);
+    var tableTop = g.createLinearGradient(0, horizon - 20, 0, H);
+    tableTop.addColorStop(0, '#fff4f8');
+    tableTop.addColorStop(1, '#ffdde9');
+    g.fillStyle = tableTop;
+    g.fillRect(0, horizon, W, H - horizon);
+    g.fillStyle = 'rgba(198,120,160,0.10)';
+    g.fillRect(0, horizon - 6, W, 12);
+
+    var lite = g.createRadialGradient(W * 0.22, -H * 0.05, 0, W * 0.22, -H * 0.05, W * 1.05);
+    lite.addColorStop(0, 'rgba(255,255,255,0.92)');
+    lite.addColorStop(0.55, 'rgba(255,255,255,0.28)');
+    lite.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = lite;
+    g.fillRect(0, 0, W, H);
+
+    /* ---- confetti sprinkles on the studio set ---- */
+    for (i = 0; i < 110; i++) {
+      var sx = rnd() * W, sy = rnd() * H;
+      var sw = 6 + rnd() * 15, sh = 3 + rnd() * 5, rot = rnd() * TAU;
+      g.save();
+      g.translate(sx, sy); g.rotate(rot);
+      g.globalAlpha = 0.22 + rnd() * 0.4;
+      g.fillStyle = SPR[Math.floor(rnd() * SPR.length)];
+      roundRectPath(g, -sw / 2, -sh / 2, sw, sh, sh / 2);
+      g.fill();
+      g.restore();
+    }
+    for (i = 0; i < 14; i++) {
+      g.save();
+      g.globalAlpha = 0.35 + rnd() * 0.45;
+      g.fillStyle = rnd() < 0.55 ? '#ffffff' : '#ffe08a';
+      starPath(g, rnd() * W, rnd() * H * 0.95, 7 + rnd() * 12, 3 + rnd() * 5, 5, -Math.PI / 2);
+      g.fill();
+      g.restore();
+    }
+    g.globalAlpha = 1;
+
+    /* ---- the backing card, tilted like a product photo ---- */
+    var cardW = 720, cardH = 918, tilt = -0.075;
+    var cx0 = W / 2 + 6, cy0 = H * 0.53;
+    g.save();
+    g.translate(cx0, cy0);
+    g.rotate(tilt);
+
+    /* soft cast shadow of the card */
+    g.save();
+    g.shadowColor = 'rgba(150,85,122,0.38)';
+    g.shadowBlur = 70;
+    g.shadowOffsetY = 46;
+    g.fillStyle = '#ffc7db';
+    roundRectPath(g, -cardW / 2, -cardH / 2, cardW, cardH, 66);
+    g.fill();
+    g.restore();
+
+    /* card face */
+    var cg = g.createLinearGradient(-cardW / 2, -cardH / 2, cardW / 2, cardH / 2);
+    cg.addColorStop(0, '#ffe4ef');
+    cg.addColorStop(0.45, '#ffd3e4');
+    cg.addColorStop(1, '#ffbcd6');
+    g.fillStyle = cg;
+    roundRectPath(g, -cardW / 2, -cardH / 2, cardW, cardH, 66);
+    g.fill();
+
+    /* inner frame + top punch hole */
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.8)';
+    g.lineWidth = 7;
+    roundRectPath(g, -cardW / 2 + 26, -cardH / 2 + 26, cardW - 52, cardH - 52, 50);
+    g.stroke();
+    g.restore();
+
+    var holeY = -cardH / 2 + 66;
+    g.save();
+    g.globalCompositeOperation = 'destination-out';
+    g.beginPath(); g.arc(0, holeY, 23, 0, TAU); g.fill();
+    g.restore();
+    /* the card sits on the studio set: put the backdrop showing through the hole */
+    g.save();
+    g.beginPath(); g.arc(0, holeY, 23, 0, TAU); g.clip();
+    var hg = g.createLinearGradient(0, holeY - 23, 0, holeY + 23);
+    hg.addColorStop(0, '#ffe3ee');
+    hg.addColorStop(1, '#ffd2e2');
+    g.fillStyle = hg;
+    g.fillRect(-30, holeY - 30, 60, 60);
+    g.restore();
+    g.save();
+    g.strokeStyle = 'rgba(255,157,190,0.55)';
+    g.lineWidth = 6;
+    g.beginPath(); g.arc(0, holeY, 26, 0, TAU); g.stroke();
+    g.restore();
+
+    /* card sprinkles */
+    for (i = 0; i < 46; i++) {
+      var px = (rnd() - 0.5) * (cardW - 90);
+      var py = (rnd() - 0.5) * (cardH - 90);
+      /* keep the middle clear for the blister */
+      if (Math.abs(px) < cardW * 0.36 && Math.abs(py - 110) < 300) continue;
+      g.save();
+      g.translate(px, py); g.rotate(rnd() * TAU);
+      g.globalAlpha = 0.5 + rnd() * 0.45;
+      g.fillStyle = SPR[Math.floor(rnd() * SPR.length)];
+      roundRectPath(g, -8, -3, 16, 6, 3);
+      g.fill();
+      g.restore();
+    }
+    g.globalAlpha = 1;
+    for (i = 0; i < 7; i++) {
+      g.save();
+      g.globalAlpha = 0.55 + rnd() * 0.4;
+      g.fillStyle = rnd() < 0.6 ? '#fff7c9' : '#ffffff';
+      var sxp = (rnd() - 0.5) * (cardW - 120);
+      var syp = -cardH / 2 + 130 + rnd() * 90;
+      starPath(g, sxp, syp, 12 + rnd() * 10, 5 + rnd() * 4, 5, -Math.PI / 2);
+      g.fill();
+      g.restore();
+    }
+
+    /* ---- header typography ---- */
+    var title = shotTitle || 'POCKET SHAKER';
+    var title = shotTitle || 'POCKET SHAKER';
+    g.textAlign = 'center';
+    g.textBaseline = 'alphabetic';
+    var titleY = -cardH / 2 + 178;
+    g.font = '900 52px ' + FONT;
+    var tw = g.measureText(title).width, maxTw = cardW - 300;
+    if (tw > maxTw) g.font = '900 ' + Math.max(26, Math.floor(52 * maxTw / tw)) + 'px ' + FONT;
+    g.save();
+    g.lineJoin = 'round';
+    g.strokeStyle = 'rgba(255,255,255,0.95)';
+    g.lineWidth = 13;
+    g.strokeText(title, 0, titleY);
+    g.fillStyle = '#ff6fa5';
+    g.fillText(title, 0, titleY);
+    g.restore();
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.font = '800 19px ' + FONT;
+    g.fillText('HANDMADE ACRYLIC SHAKER', 0, titleY + 42);
+
+    /* ---- the shaker, packed in its blister ---- */
+    var fit = caseFit();
+    var caseHstage = VIEW.S * fit.h;
+    var targetH = 505;
+    var s2 = targetH / caseHstage;
+    var shiftY = 80;
+    var cxs = VIEW.cx + fit.uMid * VIEW.S;
+    var cys = VIEW.cy + fit.vMid * VIEW.S;
+
+    /* the soft shadow the blister drops on the card */
+    g.save();
+    g.translate(0, shiftY + 34);
+    g.scale(1, 0.28);
+    var bs = targetH * 0.62;
+    var bsg = g.createRadialGradient(0, 0, 10, 0, 0, bs);
+    bsg.addColorStop(0, 'rgba(146,78,116,0.40)');
+    bsg.addColorStop(0.62, 'rgba(146,78,116,0.15)');
+    bsg.addColorStop(1, 'rgba(146,78,116,0)');
+    g.fillStyle = bsg;
+    g.beginPath(); g.arc(0, 0, bs, 0, TAU); g.fill();
+    g.restore();
+
+    var comp = shakerComposite();
+    g.save();
+    g.translate(0, shiftY);
+    g.scale(s2, s2);
+    g.translate(-cxs, -cys);
+    g.drawImage(comp, 0, 0, VIEW.w, VIEW.h);
+    g.restore();
+
+    /* ---- the vacuum-formed plastic blister over the acrylic ---- */
+    var dBulge = getMask(shapeKey, -0.078, 300);
+    var dSeal = getMask(shapeKey, -0.052, 300);
+    var dBand = getMask(shapeKey, -0.044, 300);
+    var dInner = getMask(shapeKey, -0.030, 300);
+
+    var dome = maskLayer(function (gg) {
+      var lg = gg.createLinearGradient(
+        VIEW.cx - VIEW.S * 0.45, VIEW.cy - VIEW.S * 0.7,
+        VIEW.cx + VIEW.S * 0.35, VIEW.cy + VIEW.S * 0.6
+      );
+      lg.addColorStop(0, 'rgba(255,255,255,0.26)');
+      lg.addColorStop(0.34, 'rgba(255,255,255,0.035)');
+      lg.addColorStop(0.7, 'rgba(255,255,255,0.02)');
+      lg.addColorStop(1, 'rgba(255,255,255,0.17)');
+      gg.fillStyle = lg;
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+
+      /* broad soft highlight sweeping the raised top-left of the dome */
+      var rg = gg.createRadialGradient(
+        VIEW.cx - VIEW.S * 0.28, VIEW.cy - VIEW.S * 0.44, VIEW.S * 0.02,
+        VIEW.cx - VIEW.S * 0.16, VIEW.cy - VIEW.S * 0.3, VIEW.S * 0.6
+      );
+      rg.addColorStop(0, 'rgba(255,255,255,0.52)');
+      rg.addColorStop(1, 'rgba(255,255,255,0)');
+      gg.fillStyle = rg;
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+
+      /* crisp specular streaks a vacuum-formed blister throws; each one is a
+         small stack of ellipses so the falloff stays soft like real plastic */
+      gg.save();
+      gg.fillStyle = 'rgba(255,255,255,0.98)';
+      var st, kk, hx, hy, hw, hh;
+      var streaks = [
+        [VIEW.cx - VIEW.S * 0.285, VIEW.cy - VIEW.S * 0.355, VIEW.S * 0.115, VIEW.S * 0.026, -0.62, 3],
+        [VIEW.cx - VIEW.S * 0.075, VIEW.cy - VIEW.S * 0.515, VIEW.S * 0.045, VIEW.S * 0.014, -0.50, 2],
+        [VIEW.cx + VIEW.S * 0.235, VIEW.cy + VIEW.S * 0.315, VIEW.S * 0.075, VIEW.S * 0.018, -0.46, 2]
+      ];
+      for (st = 0; st < streaks.length; st++) {
+        hx = streaks[st][0]; hy = streaks[st][1];
+        hw = streaks[st][2]; hh = streaks[st][3];
+        for (kk = streaks[st][5]; kk >= 1; kk--) {
+          gg.globalAlpha = st === 0 ? 0.22 * kk : 0.14 * kk;
+          gg.beginPath();
+          gg.ellipse(hx, hy, hw * (0.55 + 0.24 * kk), hh * (0.55 + 0.24 * kk), streaks[st][4], 0, TAU);
+          gg.fill();
+        }
+      }
+      gg.restore();
+
+      /* the lower inner wall catches a little reflected light */
+      var low = gg.createLinearGradient(0, VIEW.cy + VIEW.S * 0.3, 0, VIEW.cy + VIEW.S * 0.6);
+      low.addColorStop(0, 'rgba(255,255,255,0)');
+      low.addColorStop(1, 'rgba(255,255,255,0.2)');
+      gg.fillStyle = low;
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+    }, dBulge, null);
+
+    /* the heat-sealed edge: a bright band with a thin pink crease inside it */
+    var sealBand = maskLayer(function (gg) {
+      gg.fillStyle = 'rgba(255,255,255,0.95)';
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+    }, dBulge, dSeal);
+    var sealCrease = maskLayer(function (gg) {
+      gg.fillStyle = 'rgba(212,138,178,0.45)';
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+    }, dSeal, dBand);
+    var innerShade = maskLayer(function (gg) {
+      gg.fillStyle = 'rgba(126,70,105,0.16)';
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+    }, dBand, dInner);
+
+    g.save();
+    g.translate(0, shiftY);
+    g.scale(s2, s2);
+    g.translate(-cxs, -cys);
+    g.save();
+    g.globalAlpha = 0.9;
+    g.shadowColor = 'rgba(120,60,100,0.3)';
+    g.shadowBlur = 24;
+    g.shadowOffsetY = 10;
+    g.drawImage(dome, 0, 0, VIEW.w, VIEW.h);
+    g.restore();
+    g.globalAlpha = 0.7;
+    g.drawImage(sealBand, 0, 0, VIEW.w, VIEW.h);
+    g.globalAlpha = 0.6;
+    g.drawImage(sealCrease, 0, 0, VIEW.w, VIEW.h);
+    g.globalAlpha = 0.85;
+    g.drawImage(innerShade, 0, 0, VIEW.w, VIEW.h);
+    g.globalAlpha = 1;
+    g.restore();
+
+    /* a metal grommet in the punch hole */
+    g.save();
+    g.translate(0, holeY);
+    g.strokeStyle = 'rgba(255,255,255,0.95)';
+    g.lineWidth = 8;
+    g.beginPath(); g.arc(0, 0, 27, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(214,140,180,0.5)';
+    g.lineWidth = 3;
+    g.beginPath(); g.arc(0, 0, 23, 0, TAU); g.stroke();
+    g.restore();
+
+    /* brand label at the foot of the card */
+    g.fillStyle = 'rgba(255,255,255,0.82)';
+    roundRectPath(g, -148, cardH / 2 - 92, 296, 46, 23);
+    g.fill();
+    g.fillStyle = 'rgba(198,80,132,0.9)';
+    g.font = '800 21px ' + FONT;
+    g.fillText('POCKET SHAKER', 0, cardH / 2 - 61);
+    g.restore();
+
+    /* small watermark outside the card */
+    g.textAlign = 'center';
+    g.fillStyle = 'rgba(198,95,145,0.5)';
+    g.font = '800 24px ' + FONT;
+    g.fillText('POCKET SHAKER', W / 2, H - 46);
+    g.fillStyle = 'rgba(150,90,130,0.42)';
+    g.font = '700 19px ' + FONT;
+    g.fillText(dateStamp(), W / 2, H - 18);
+
+    /* vignette to settle the edges */
+    var vg = g.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
+    vg.addColorStop(0, 'rgba(255,255,255,0)');
+    vg.addColorStop(1, 'rgba(196,110,150,0.14)');
+    g.fillStyle = vg;
+    g.fillRect(0, 0, W, H);
+    return cv;
+  }
+
+  /* ---------------- 6메뉴 시트 ---------------- */
+  var MENU_META = {
+    case: { t: '📦 케이스', s: '모양 · 테마 프리셋 · 안쪽 배경 · 키링' },
+    look: { t: '🔑 외형', s: '아크릴 색 · 표면 마감 · 바깥 배경' },
+    parts: { t: '🧩 파츠', s: '기본 파츠 · 사진 누끼 · 글자 비즈 · 보관함' },
+    deco: { t: '🎨 데코', s: '케이스 겉면 데코덴 꾸미기' },
+    fx: { t: '🎵 효과', s: '오일·워터 모드 · 소리 테마' }
+  };
+
+  function openMenu(name) {
+    if (name === 'drawer') { openDrawer(); return; }
+    var el = $('#menu');
+    if (!el) return;
+    var panels = el.querySelectorAll('.mpanel'), i;
+    for (i = 0; i < panels.length; i++) {
+      panels[i].hidden = panels[i].getAttribute('data-panel') !== name;
+    }
+    var M = MENU_META[name] || MENU_META.case;
+    var t = $('#menuTitle'), s = $('#menuSub');
+    if (t) t.textContent = M.t;
+    if (s) s.textContent = M.s;
+    el.hidden = false;
+    requestAnimationFrame(function () { el.classList.add('on'); });
+    var card = el.querySelector('.sheet-card');
+    if (card) card.scrollTop = 0;
+    Sound.unlock(); Sound.pop(false);
+  }
+
+  function closeMenu() {
+    var el = $('#menu');
+    if (!el) return;
+    el.classList.remove('on');
+    setTimeout(function () { el.hidden = true; }, 240);
+  }
+
+  /* ---------------- 사진 저장 모드 / 보관함 탭 ---------------- */
+  function syncShotModeUI() {
+    var box = $('#shotModeChips');
+    if (!box) return;
+    var bs = box.querySelectorAll('button'), i;
+    for (i = 0; i < bs.length; i++) {
+      bs[i].classList.toggle('sel', bs[i].getAttribute('data-mode') === shotMode);
+    }
+    var sub = $('#shotSub');
+    if (sub) {
+      sub.textContent = shotMode === 'product'
+        ? '블리스터 포장에 담긴 제품 사진처럼 담아요'
+        : (ENV.ios ? '길게 눌러 ‘사진에 저장’도 돼요' : '저장하면 PNG로 받아요');
+    }
+    var nt = $('#shotNotice');
+    if (nt) {
+      nt.innerHTML = shotMode === 'product'
+        ? '1080 × 1350 · 매장에 걸린 아크릴 키링처럼 <b>블리스터 포장</b>에 담아요'
+        : '사진 아래 이름과 저장 파일 이름에 쓰여요 · 최대 16자';
+    }
+  }
+
+  function setShotMode(m) {
+    if (m !== 'shot' && m !== 'product') return;
+    if (shotMode === m) return;
+    shotMode = m;
+    syncShotModeUI();
+    if (!makeShotImage()) toast('사진을 만들지 못했어요');
+    Sound.unlock(); Sound.pop(m === 'product');
+  }
+
+  function switchDrawerTab(tab) {
+    var tabs = document.querySelectorAll('#drawerTabs button'), i;
+    for (i = 0; i < tabs.length; i++) tabs[i].classList.toggle('sel', tabs[i].getAttribute('data-tab') === tab);
+    var a = $('#tabSlots'), b = $('#tabVault');
+    if (a) a.hidden = tab !== 'slots';
+    if (b) b.hidden = tab !== 'vault';
+    if (tab === 'vault') renderVault();
+  }
+
+  function syncMuteUI() {
+    var b = $('#soundBtn');
+    if (!b) return;
+    b.textContent = Sound.isMuted() ? '🔇 소리 꺼짐 (톡해서 켜기)' : '🔊 소리 켜짐 (톡해서 끄기)';
+  }
+
+  function toggleMute() {
+    var m = !Sound.isMuted();
+    Sound.setMuted(m);
+    syncMuteUI();
+    if (!m) { Sound.unlock(); Sound.pop(true); }
+  }
+
+  function buildV2UI() {
+    /* 6메뉴 */
+    var mb = document.querySelectorAll('#menuGrid .menu-btn'), i;
+    for (i = 0; i < mb.length; i++) {
+      (function (b) {
+        b.addEventListener('click', function () { openMenu(b.getAttribute('data-menu')); });
+      })(mb[i]);
+    }
+    var mc = $('#menuClose');
+    if (mc) mc.addEventListener('click', closeMenu);
+    var menuEl = $('#menu');
+    if (menuEl) menuEl.addEventListener('click', function (e) { if (e.target === this) closeMenu(); });
+
+    /* 퀵 버튼 */
+    var ub = $('#undoBtn'), rb = $('#redoBtn'), rndb = $('#randomBtn'), del = $('#partDel');
+    if (ub) ub.addEventListener('click', undoStep);
+    if (rb) rb.addEventListener('click', redoStep);
+    if (rndb) rndb.addEventListener('click', randomizeShaker);
+    if (del) del.addEventListener('click', deleteSelectedPart);
+    var svb = $('#partSave');
+    if (svb) svb.addEventListener('click', saveSelectedPart);
+
+    /* 테마 프리셋 */
+    buildPresetChips();
+
+    /* 바깥 배경 */
+    var sw = $('#outerSwatches');
+    if (sw) {
+      OUTER_PASTELS.forEach(function (c) {
+        var b = document.createElement('button');
+        b.className = 'pastel';
+        b.type = 'button';
+        b.setAttribute('data-c', c);
+        b.style.background = c;
+        b.setAttribute('aria-label', '바깥 배경 ' + c);
+        b.addEventListener('click', function () {
+          setOuterColor(c);
+          Sound.unlock(); Sound.pop(false);
+          toast('바깥 배경을 바꿨어');
+        });
+        sw.appendChild(b);
+      });
+    }
+    var oc = $('#outerColor');
+    if (oc) {
+      oc.addEventListener('input', function () {
+        if (!/^#[0-9a-f]{6}$/i.test(this.value)) return;
+        outerColor = this.value;
+        outerPhoto = '';
+        applyOuter();
+      });
+      oc.addEventListener('change', function () { touchState(); });
+    }
+    var opb = $('#outerPhotoBtn');
+    if (opb) opb.addEventListener('click', function () {
+      var f = $('#outerFile');
+      if (f) { f.value = ''; f.click(); }
+    });
+    var opc = $('#outerPhotoClear');
+    if (opc) opc.addEventListener('click', function () {
+      outerPhoto = '';
+      applyOuter();
+      touchState();
+      toast('바깥 배경을 기본색으로 돌렸어');
+    });
+    var of = $('#outerFile');
+    if (of) of.addEventListener('change', function (e) {
+      handleOuterFile(e.target.files && e.target.files[0]);
+    });
+
+    /* 나만의 파츠 보관함 */
+    renderVault();
+    var cs = $('#cutSave');
+    if (cs) cs.addEventListener('click', function () {
+      Sound.unlock();
+      if (!Cut.out) { toast('누끼를 만든 뒤에 저장할 수 있어요'); return; }
+      vaultSavePhoto(Cut.out);
+    });
+    var ls = $('#letterSave');
+    if (ls) ls.addEventListener('click', function () {
+      var chars = letterChars();
+      if (!chars.length) { toast('저장할 글자를 먼저 적어 주세요'); return; }
+      vaultSaveLetter(chars.join(''), beadStyle, beadWord);
+    });
+
+    /* 사진 저장 모드 */
+    var sm = $('#shotModeChips');
+    if (sm) {
+      var bs = sm.querySelectorAll('button');
+      for (i = 0; i < bs.length; i++) {
+        (function (b) {
+          b.addEventListener('click', function () { setShotMode(b.getAttribute('data-mode')); });
+        })(bs[i]);
+      }
+    }
+    syncShotModeUI();
+
+    /* 보관함 탭 */
+    var tabs = document.querySelectorAll('#drawerTabs button');
+    for (i = 0; i < tabs.length; i++) {
+      (function (b) {
+        b.addEventListener('click', function () {
+          switchDrawerTab(b.getAttribute('data-tab'));
+          if (b.getAttribute('data-tab') === 'slots') paintDrawerPreview();
+        });
+      })(tabs[i]);
+    }
+
+    /* 소리 */
+    var sb = $('#soundBtn');
+    if (sb) sb.addEventListener('click', toggleMute);
+    syncMuteUI();
+
+    applyOuter();
+    syncHistUI();
+  }
+
   /* ---------------- boot ---------------- */
   function boot() {
     stageEl = $('#stage');
@@ -6861,20 +7372,15 @@ input[type=range]::-webkit-slider-thumb{
     startLoop();
     bindReturnHandlers();
     booted = true;
+    applyOuter();
+    resetHistory();
 
     /* the last state is written when the page goes away, positions included */
     window.addEventListener('pagehide', function () { saveState(true); });
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) saveState(true);
     });
-    var viaShare = /^#s=/.test(location.hash || '');
-    if (restored && !viaShare) setTimeout(function () { toast('지난번 쉐이커를 그대로 꺼내왔어 🫧'); }, 420);
-
-    /* 💌 a friend's link: decode and put that shaker on the stage */
-    if (viaShare) loadSharedFromHash();
-    window.addEventListener('hashchange', function () {
-      if (/^#s=/.test(location.hash || '')) loadSharedFromHash();
-    });
+    if (restored) setTimeout(function () { toast('지난번 쉐이커를 그대로 꺼내왔어 🫧'); }, 420);
 
     /* iOS: block double-tap zoom & rubber band on the stage */
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
