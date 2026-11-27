@@ -998,13 +998,14 @@ input[type=range]::-webkit-slider-thumb{
       b.restore();
     }
 
-    /* pearl edge bed */
+    /* pearl edge bed — only the rim ring; the interior covers the middle, and
+       for a clear case the middle must stay see-through */
     var bed = maskLayer(function (g) {
       var gr = g.createLinearGradient(0, VIEW.cy - VIEW.S * 0.7, 0, VIEW.cy + VIEW.S * 0.7);
       if (clearOn) {
-        gr.addColorStop(0, 'rgba(255,255,255,0.94)');
-        gr.addColorStop(0.45, 'rgba(247,252,255,0.62)');
-        gr.addColorStop(1, 'rgba(224,237,249,0.78)');
+        gr.addColorStop(0, 'rgba(255,255,255,0.9)');
+        gr.addColorStop(0.45, 'rgba(247,252,255,0.55)');
+        gr.addColorStop(1, 'rgba(224,237,249,0.72)');
       } else {
         gr.addColorStop(0, '#ffffff');
         gr.addColorStop(0.45, '#fff8fc');
@@ -1012,7 +1013,7 @@ input[type=range]::-webkit-slider-thumb{
       }
       g.fillStyle = gr;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
-    }, maskEdge, null);
+    }, maskEdge, maskMain);
     b.drawImage(bed, 0, 0, VIEW.w, VIEW.h);
 
     /* glass interior */
