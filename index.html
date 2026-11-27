@@ -280,6 +280,48 @@ input[type=range]::-webkit-slider-thumb{
 #shotImg{display:block;width:min(340px,76vw);height:auto;border-radius:16px;box-shadow:0 10px 26px rgba(120,80,120,.22);}
 #shot .prev-wrap{background:#fff;background-image:none;border-color:rgba(235,225,240,.9);}
 .mini .chip.brush-wide{min-width:66px;}
+
+/* ---------- 🎀 데코덴 + 🗂️ 서랍 ---------- */
+.dchips .chip{width:52px;height:56px;}
+.dchips .chip canvas{width:31px;height:31px;}
+.dchips .chip span{font-size:8.6px;letter-spacing:-.4px;}
+.dchips .chip em{font-style:normal;font-size:19px;line-height:1;}
+#decoHint b{color:#c05a86;}
+.slot-save{display:flex;gap:10px;align-items:center;margin:2px 0 6px;}
+#drawerPrev{
+  flex:0 0 auto;width:72px;height:96px;border-radius:14px;display:block;
+  background:linear-gradient(160deg,#fff,#fdf0f8 60%,#f6ebff);
+  box-shadow:0 5px 14px rgba(180,130,165,.2), inset 0 1px 0 #fff;
+}
+.slot-form{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px;}
+#slotName{
+  width:100%;border:1.5px solid #f2e2ef;border-radius:13px;background:#fff;
+  padding:10px 12px;font:inherit;font-size:13px;font-weight:700;color:#6d5570;
+  -webkit-appearance:none;appearance:none;
+}
+#slotName::placeholder{color:#c9b0c2;font-weight:700;}
+#slotName:focus{outline:none;border-color:#ffb6d3;box-shadow:0 0 0 3px rgba(255,158,196,.18);}
+#slotSave{font-size:13.5px;padding:11px 12px;border-radius:13px;}
+.slot-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:10px 0 4px;}
+.slot{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 6px 7px;border-radius:16px;background:#fff;cursor:pointer;
+  box-shadow:0 4px 12px rgba(190,140,170,.16), inset 0 1px 0 #fff;
+  transition:transform .12s ease, box-shadow .18s;
+}
+.slot:active{transform:scale(.96);}
+.slot img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:11px;display:block;background:#fdf6fb;}
+.slot b{
+  font-size:10.5px;font-weight:800;color:#8a6a82;letter-spacing:-.3px;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.slot-del{
+  position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;padding:0;
+  background:rgba(255,255,255,.92);color:#c189aa;font-size:11px;font-weight:800;line-height:1;
+  display:grid;place-items:center;box-shadow:0 2px 6px rgba(150,110,140,.22);
+}
+.slot-del:active{transform:scale(.9);}
+#slotEmpty{text-align:center;padding:16px 4px 10px;}
 @media (prefers-reduced-motion: reduce){
   #stage.wob #cv{animation:none;}
 }
@@ -296,6 +338,7 @@ input[type=range]::-webkit-slider-thumb{
       </div>
     </div>
     <div class="top-btns">
+      <button id="drawerBtn" class="icon-btn" type="button" aria-label="내 서랍">🗂️</button>
       <button id="shotBtn" class="icon-btn" type="button" aria-label="인증샷 만들기">📸</button>
       <button id="soundBtn" class="icon-btn" aria-label="소리 켜기/끄기">🔊</button>
     </div>
@@ -336,6 +379,15 @@ input[type=range]::-webkit-slider-thumb{
         <div class="sec-head"><span>파츠 넣기</span><button id="clearBtn" class="link-btn">모두 지우기</button></div>
         <div class="chips pchips" id="partChips"></div>
         <button id="photoBtn" class="btn photo">📷 사진으로 누끼 파츠 만들기</button>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span>🎀 데코덴 꾸미기</span>
+          <span><button id="decoUndo" class="link-btn" type="button">되돌리기</button><button id="decoClear" class="link-btn" type="button">모두 떼기</button></span>
+        </div>
+        <div class="chips dchips" id="decoChips"></div>
+        <div class="notice" id="decoHint">마음에 드는 데코를 고르고 <b>케이스 위를 톡</b>! 붙인 데코는 흔들어도 그대로 있어요</div>
       </div>
     </div>
   </section>
@@ -423,6 +475,28 @@ input[type=range]::-webkit-slider-thumb{
       <button id="shotDownload" class="btn ghost" type="button">다운로드</button>
       <button id="shotSave" class="btn primary grow" type="button">사진에 저장</button>
     </div>
+  </div>
+</div>
+
+<div id="drawer" class="sheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <div>
+        <b>🗂️ 내 서랍</b>
+        <span class="sub" id="drawerSub">저장한 쉐이커를 톡 누르면 바로 꺼내요</span>
+      </div>
+      <button id="drawerClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div class="slot-save">
+      <canvas id="drawerPrev" width="144" height="192"></canvas>
+      <div class="slot-form">
+        <input id="slotName" type="text" maxlength="16" placeholder="이름 (비우면 자동)" autocomplete="off" enterkeyhint="done" />
+        <button id="slotSave" class="btn primary" type="button">지금 쉐이커 서랍에 저장</button>
+      </div>
+    </div>
+    <div class="notice" id="slotHint">지금 보이는 모양·색·파츠·데코덴을 통째로 저장해요 · 최대 14개</div>
+    <div id="slotGrid" class="slot-grid"></div>
+    <div id="slotEmpty" class="notice" hidden>아직 서랍이 비었어요. 지금 쉐이커를 하나 넣어 볼까요? 🎀</div>
   </div>
 </div>
 
@@ -1363,6 +1437,7 @@ input[type=range]::-webkit-slider-thumb{
     renderParts(g);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    drawDeco(g);
   }
 
   var lastT = 0, acc = 0, running = false, rafId = 0, lastFrameAt = 0;
@@ -1383,6 +1458,11 @@ input[type=range]::-webkit-slider-thumb{
     }
     if (guard >= 6) acc = 0;
     draw();
+    /* the drawer thumbnail follows the live shaker while it is open */
+    if (drawerEl && !drawerEl.hidden) {
+      var nowP = performance.now();
+      if (nowP - lastPreviewAt > 180) { lastPreviewAt = nowP; paintDrawerPreview(); }
+    }
     rafId = requestAnimationFrame(loop);
   }
   function startLoop() {
@@ -1752,8 +1832,19 @@ input[type=range]::-webkit-slider-thumb{
   function onDown(e) {
     if (e.isPrimary === false) return;
     var n = toNorm(e.clientX, e.clientY);
-    var p = findPart(n.x, n.y);
     Sound.unlock();
+
+    /* 🎀 decoden charms sit on top of the case, so they get the first grab */
+    var hitDeco = decoHit(n.x, n.y);
+    if (hitDeco) {
+      if (Deco.del) { decoRemove(hitDeco); return; }
+      Deco.drag = { it: hitDeco, ou: hitDeco.u - n.x, ov: hitDeco.v - n.y, pushed: false };
+      try { if (canvasEl.setPointerCapture) canvasEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      return;
+    }
+    if (Deco.place) { decoPlaceAt(n.x, n.y); return; }
+
+    var p = findPart(n.x, n.y);
     if (p) {
       drag.on = true;
       drag.part = p;
@@ -1784,6 +1875,19 @@ input[type=range]::-webkit-slider-thumb{
     }
   }
   function onMove(e) {
+    if (Deco.drag) {
+      var nd = toNorm(e.clientX, e.clientY);
+      var it = Deco.drag.it;
+      var du = nd.x + Deco.drag.ou, dv = nd.y + Deco.drag.ov;
+      if (normSdf(du, dv) > 0.01) {
+        var dp = decoPull(du, dv, 0.01);
+        du = dp.u; dv = dp.v;
+      }
+      if (!Deco.drag.pushed) { decoPushUndo(); Deco.drag.pushed = true; }
+      it.u = du; it.v = dv;
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
     if (!drag.on || !drag.part) return;
     var n = toNorm(e.clientX, e.clientY);
     var p = drag.part;
@@ -1804,6 +1908,11 @@ input[type=range]::-webkit-slider-thumb{
     if (e.cancelable) e.preventDefault();
   }
   function onUp() {
+    if (Deco.drag) {
+      if (Deco.drag.pushed) touchState();
+      Deco.drag = null;
+      return;
+    }
     if (!drag.on) return;
     var p = drag.part;
     if (p) {
@@ -2644,7 +2753,7 @@ input[type=range]::-webkit-slider-thumb{
       }
       list.push(s);
     }
-    return { v: 1, shape: shapeKey, theme: themeIdx, mode: MODES[modeIdx].id, parts: list, photos: photos };
+    return { v: 1, shape: shapeKey, theme: themeIdx, mode: MODES[modeIdx].id, parts: list, photos: photos, deco: decoSnapshot() };
   }
 
   function flashSaved() {
@@ -2814,6 +2923,7 @@ input[type=range]::-webkit-slider-thumb{
     g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
     drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    drawDeco(g);
     g.restore();
 
     var capY = H - 148;
@@ -2878,6 +2988,889 @@ input[type=range]::-webkit-slider-thumb{
       return;
     }
     downloadShot();
+  }
+
+  /* =========================================================
+     🎀 데코덴 — 케이스 겉면에 붙이는 리본·진주 장식
+     ========================================================= */
+  var DECO_SP = 160, DECO_C = 80, DECO_R = 62;
+  var decoSpriteCache = {};
+  var Deco = { items: [], place: '', del: false, drag: null, undo: [], uid: 1 };
+
+  /* a little 4-point sparkle */
+  function decoSparkle(g, x, y, r) {
+    g.save();
+    g.globalAlpha = 0.96;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.moveTo(x, y - r);
+    g.quadraticCurveTo(x + r * 0.18, y - r * 0.18, x + r, y);
+    g.quadraticCurveTo(x + r * 0.18, y + r * 0.18, x, y + r);
+    g.quadraticCurveTo(x - r * 0.18, y + r * 0.18, x - r, y);
+    g.quadraticCurveTo(x - r * 0.18, y - r * 0.18, x, y - r);
+    g.fill();
+    g.restore();
+  }
+
+  /* a single glossy pearl */
+  function decoPearl(g, x, y, r, warm) {
+    var gr = g.createRadialGradient(x - r * 0.36, y - r * 0.42, r * 0.06, x, y, r * 1.04);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(0.4, warm ? '#fff5fa' : '#f9f4ff');
+    gr.addColorStop(0.78, warm ? '#ffd9e9' : '#e8dcff');
+    gr.addColorStop(1, warm ? '#f4a9c9' : '#c3addf');
+    g.beginPath();
+    g.arc(x, y, r, 0, TAU);
+    g.fillStyle = gr;
+    g.fill();
+    g.save();
+    g.globalAlpha = 0.92;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(x - r * 0.3, y - r * 0.36, r * 0.28, r * 0.18, -0.62, 0, TAU);
+    g.fill();
+    g.globalAlpha = 0.3;
+    g.beginPath();
+    g.arc(x + r * 0.42, y + r * 0.36, r * 0.11, 0, TAU);
+    g.fill();
+    g.restore();
+  }
+
+  var RIBBON_PINK = {
+    top: '#ffe4f0', mid: '#ffa8ca', bot: '#f878ae',
+    line: 'rgba(255,110,166,0.55)', glow: 'rgba(232,110,165,0.42)', knot: '#ff8fbb'
+  };
+  var RIBBON_WHITE = {
+    top: '#ffffff', mid: '#fdf4fb', bot: '#e6d5ee',
+    line: 'rgba(198,166,214,0.6)', glow: 'rgba(170,140,190,0.32)', knot: '#fbf2fa'
+  };
+
+  function decoArtRibbon(g, c) {
+    var C = DECO_C, R = DECO_R * 0.97;
+    var gr = g.createLinearGradient(C, C - R, C, C + R);
+    gr.addColorStop(0, c.top);
+    gr.addColorStop(0.5, c.mid);
+    gr.addColorStop(1, c.bot);
+
+    function loops() {
+      g.beginPath();
+      g.moveTo(C - 5, C + 9);
+      g.bezierCurveTo(C - R * 0.5, C - R * 0.92, C - R * 1.2, C - R * 0.8, C - R * 1.02, C - R * 0.02);
+      g.bezierCurveTo(C - R * 0.9, C + R * 0.44, C - R * 0.32, C + R * 0.38, C - 5, C + 13);
+      g.closePath();
+      g.moveTo(C + 5, C + 9);
+      g.bezierCurveTo(C + R * 0.5, C - R * 0.92, C + R * 1.2, C - R * 0.8, C + R * 1.02, C - R * 0.02);
+      g.bezierCurveTo(C + R * 0.9, C + R * 0.44, C + R * 0.32, C + R * 0.38, C + 5, C + 13);
+      g.closePath();
+    }
+    function tails() {
+      g.beginPath();
+      g.moveTo(C - 6, C + 8);
+      g.lineTo(C - R * 0.44, C + R * 0.97);
+      g.lineTo(C - R * 0.14, C + R * 0.9);
+      g.lineTo(C - 1, C + R * 0.3);
+      g.closePath();
+      g.moveTo(C + 6, C + 8);
+      g.lineTo(C + R * 0.44, C + R * 0.97);
+      g.lineTo(C + R * 0.14, C + R * 0.9);
+      g.lineTo(C + 1, C + R * 0.3);
+      g.closePath();
+    }
+    /* soft drop shadow first, then the clean shape on top */
+    g.save();
+    g.shadowColor = c.glow;
+    g.shadowBlur = 10;
+    g.shadowOffsetY = 4;
+    g.fillStyle = gr;
+    tails();
+    g.fill();
+    loops();
+    g.fill();
+    g.restore();
+    g.save();
+    g.fillStyle = gr;
+    tails();
+    g.fill();
+    loops();
+    g.fill();
+    g.lineWidth = 2.4;
+    g.lineJoin = 'round';
+    g.strokeStyle = c.line;
+    tails();
+    g.stroke();
+    loops();
+    g.stroke();
+    g.restore();
+    /* knot */
+    var kg = g.createLinearGradient(C - 18, C - 12, C + 16, C + 20);
+    kg.addColorStop(0, c.top);
+    kg.addColorStop(0.5, c.knot);
+    kg.addColorStop(1, c.bot);
+    g.save();
+    g.shadowColor = c.glow;
+    g.shadowBlur = 8;
+    g.shadowOffsetY = 3;
+    g.fillStyle = kg;
+    g.beginPath();
+    g.ellipse(C, C + 8, 17, 15, 0, 0, TAU);
+    g.fill();
+    g.restore();
+    g.save();
+    g.globalAlpha = 0.85;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(C - 5, C + 2, 6, 3.8, -0.5, 0, TAU);
+    g.fill();
+    g.globalAlpha = 0.42;
+    g.beginPath();
+    g.ellipse(C - R * 0.62, C - R * 0.3, 13, 5.5, -0.75, 0, TAU);
+    g.fill();
+    g.beginPath();
+    g.ellipse(C + R * 0.56, C - R * 0.28, 11, 4.6, 0.7, 0, TAU);
+    g.fill();
+    g.restore();
+  }
+
+  function decoArtPearl(g) {
+    g.save();
+    g.shadowColor = 'rgba(176,138,192,0.4)';
+    g.shadowBlur = 10;
+    g.shadowOffsetY = 4;
+    decoPearl(g, DECO_C, DECO_C, DECO_R * 0.82, true);
+    g.restore();
+    decoSparkle(g, DECO_C + DECO_R * 0.42, DECO_C - DECO_R * 0.46, DECO_R * 0.2);
+  }
+
+  function decoArtPearlChain(g) {
+    var C = DECO_C, R = DECO_R, i, t, x, y, r = R * 0.28;
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.9)';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(C - R * 0.8, C - R * 0.02);
+    g.quadraticCurveTo(C, C - R * 0.34, C + R * 0.8, C - R * 0.02);
+    g.stroke();
+    g.restore();
+    g.save();
+    g.shadowColor = 'rgba(178,140,194,0.34)';
+    g.shadowBlur = 8;
+    g.shadowOffsetY = 3;
+    for (i = 0; i < 5; i++) {
+      t = i / 4;
+      x = C - R * 0.76 + t * R * 1.52;
+      y = C - R * 0.02 - Math.sin(t * Math.PI) * R * 0.26;
+      decoPearl(g, x, y, r * (i % 2 ? 0.9 : 1.06), i % 2 === 0);
+    }
+    g.restore();
+  }
+
+  function decoArtGemHeart(g) {
+    var C = DECO_C, R = DECO_R;
+    var gr = g.createLinearGradient(C, C - R * 0.95, C, C + R * 0.95);
+    gr.addColorStop(0, '#ffe3f0');
+    gr.addColorStop(0.42, '#ffa3cb');
+    gr.addColorStop(1, '#ef5c9c');
+    g.save();
+    softShadow(g, 'rgba(226,90,150,0.38)', 11, 5);
+    heartPath(g, C, C - 1, R * 0.86);
+    g.fillStyle = gr;
+    g.fill();
+    g.restore();
+    /* facets */
+    g.save();
+    heartPath(g, C, C - 1, R * 0.86);
+    g.clip();
+    g.globalAlpha = 0.45;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.moveTo(C, C - R * 0.6);
+    g.lineTo(C - R * 0.74, C - R * 0.04);
+    g.lineTo(C, C + R * 0.72);
+    g.lineTo(C + R * 0.74, C - R * 0.04);
+    g.closePath();
+    g.fill();
+    g.globalAlpha = 0.6;
+    g.strokeStyle = 'rgba(255,255,255,0.9)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(C, C - R * 0.6);
+    g.lineTo(C - R * 0.74, C - R * 0.04);
+    g.lineTo(C, C + R * 0.72);
+    g.lineTo(C + R * 0.74, C - R * 0.04);
+    g.closePath();
+    g.stroke();
+    g.restore();
+    g.save();
+    g.fillStyle = 'rgba(255,255,255,0.94)';
+    g.beginPath();
+    g.ellipse(C - R * 0.34, C - R * 0.42, R * 0.19, R * 0.11, -0.6, 0, TAU);
+    g.fill();
+    g.restore();
+    decoSparkle(g, C + R * 0.42, C - R * 0.52, R * 0.24);
+  }
+
+  function decoArtGemStar(g) {
+    var C = DECO_C, R = DECO_R;
+    var gr = g.createLinearGradient(C, C - R, C, C + R);
+    gr.addColorStop(0, '#fffbe8');
+    gr.addColorStop(0.42, '#ffdc8a');
+    gr.addColorStop(1, '#f0ab3d');
+    g.save();
+    softShadow(g, 'rgba(210,160,70,0.4)', 11, 5);
+    starPath(g, C, C + 3, R * 0.96, R * 0.44, 5, -Math.PI / 2);
+    g.fillStyle = gr;
+    g.fill();
+    g.restore();
+    g.save();
+    starPath(g, C, C + 3, R * 0.96, R * 0.44, 5, -Math.PI / 2);
+    g.clip();
+    g.globalAlpha = 0.4;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.moveTo(C, C + 3);
+    g.lineTo(C - R, C - R);
+    g.lineTo(C + R, C - R);
+    g.closePath();
+    g.fill();
+    g.restore();
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.65)';
+    g.lineWidth = 2.2;
+    g.lineJoin = 'round';
+    starPath(g, C, C + 3, R * 0.96, R * 0.44, 5, -Math.PI / 2);
+    g.stroke();
+    g.restore();
+    g.save();
+    g.globalAlpha = 0.9;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(C - R * 0.28, C - R * 0.02, R * 0.13, R * 0.075, -0.5, 0, TAU);
+    g.fill();
+    g.restore();
+    decoSparkle(g, C + R * 0.46, C - R * 0.5, R * 0.2);
+  }
+
+  function decoArtCherry(g) {
+    var C = DECO_C, R = DECO_R;
+    function ball(x, y, r) {
+      var gr = g.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.08, x, y, r * 1.05);
+      gr.addColorStop(0, '#ffa2b7');
+      gr.addColorStop(0.45, '#f0476e');
+      gr.addColorStop(1, '#bd2449');
+      g.beginPath();
+      g.arc(x, y, r, 0, TAU);
+      g.fillStyle = gr;
+      g.fill();
+      g.save();
+      g.globalAlpha = 0.86;
+      g.fillStyle = '#ffffff';
+      g.beginPath();
+      g.ellipse(x - r * 0.32, y - r * 0.36, r * 0.3, r * 0.17, -0.6, 0, TAU);
+      g.fill();
+      g.restore();
+    }
+    g.save();
+    g.strokeStyle = '#5f9a4e';
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(C - R * 0.32, C + R * 0.1);
+    g.quadraticCurveTo(C - R * 0.2, C - R * 0.55, C + R * 0.16, C - R * 0.8);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(C + R * 0.36, C + R * 0.26);
+    g.quadraticCurveTo(C + R * 0.34, C - R * 0.34, C + R * 0.16, C - R * 0.8);
+    g.stroke();
+    g.restore();
+    g.save();
+    var lg = g.createLinearGradient(C + R * 0.2, C - R * 0.9, C + R * 0.9, C - R * 0.35);
+    lg.addColorStop(0, '#c6eda4');
+    lg.addColorStop(1, '#5aa858');
+    g.fillStyle = lg;
+    g.beginPath();
+    g.moveTo(C + R * 0.18, C - R * 0.78);
+    g.bezierCurveTo(C + R * 0.62, C - R * 1.02, C + R * 1.0, C - R * 0.7, C + R * 0.86, C - R * 0.34);
+    g.bezierCurveTo(C + R * 0.58, C - R * 0.38, C + R * 0.32, C - R * 0.56, C + R * 0.18, C - R * 0.78);
+    g.closePath();
+    g.fill();
+    g.restore();
+    g.save();
+    g.shadowColor = 'rgba(198,38,78,0.34)';
+    g.shadowBlur = 10;
+    g.shadowOffsetY = 4;
+    ball(C - R * 0.34, C + R * 0.32, R * 0.42);
+    ball(C + R * 0.38, C + R * 0.44, R * 0.44);
+    g.restore();
+  }
+
+  function decoArtClover(g) {
+    var C = DECO_C, R = DECO_R, i, a, x, y;
+    var gr = g.createLinearGradient(C, C - R, C, C + R);
+    gr.addColorStop(0, '#ccf4ac');
+    gr.addColorStop(0.5, '#79d46e');
+    gr.addColorStop(1, '#3f9e52');
+    g.save();
+    g.strokeStyle = '#4f9b4f';
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(C, C + R * 0.3);
+    g.quadraticCurveTo(C + R * 0.22, C + R * 0.72, C + R * 0.06, C + R * 0.98);
+    g.stroke();
+    g.restore();
+    g.save();
+    g.shadowColor = 'rgba(60,140,80,0.34)';
+    g.shadowBlur = 10;
+    g.shadowOffsetY = 4;
+    g.fillStyle = gr;
+    for (i = 0; i < 4; i++) {
+      a = -Math.PI / 2 + i * Math.PI / 2;
+      x = C + Math.cos(a) * R * 0.4;
+      y = C - R * 0.04 + Math.sin(a) * R * 0.4;
+      heartPath(g, x, y, R * 0.38);
+      g.fill();
+    }
+    g.restore();
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.5)';
+    g.lineWidth = 2;
+    g.lineCap = 'round';
+    for (i = 0; i < 4; i++) {
+      a = -Math.PI / 2 + i * Math.PI / 2;
+      g.beginPath();
+      g.moveTo(C, C - R * 0.04);
+      g.lineTo(C + Math.cos(a) * R * 0.58, C - R * 0.04 + Math.sin(a) * R * 0.58);
+      g.stroke();
+    }
+    g.globalAlpha = 0.82;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(C - R * 0.2, C - R * 0.52, R * 0.17, R * 0.09, -0.6, 0, TAU);
+    g.fill();
+    g.restore();
+  }
+
+  function decoArtCream(g) {
+    var C = DECO_C, R = DECO_R;
+    var gr = g.createLinearGradient(C, C - R, C, C + R);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(0.55, '#fff4f9');
+    gr.addColorStop(1, '#ffdcea');
+    g.save();
+    g.shadowColor = 'rgba(200,120,165,0.34)';
+    g.shadowBlur = 10;
+    g.shadowOffsetY = 4;
+    g.fillStyle = gr;
+    g.beginPath();
+    g.moveTo(C - R * 0.82, C + R * 0.62);
+    g.bezierCurveTo(C - R * 0.96, C + R * 0.1, C - R * 0.52, C - R * 0.1, C - R * 0.26, C + R * 0.04);
+    g.bezierCurveTo(C - R * 0.5, C - R * 0.3, C - R * 0.3, C - R * 0.62, C - R * 0.02, C - R * 0.4);
+    g.bezierCurveTo(C - R * 0.1, C - R * 0.78, C + R * 0.3, C - R * 0.92, C + R * 0.3, C - R * 0.48);
+    g.bezierCurveTo(C + R * 0.56, C - R * 0.6, C + R * 0.68, C - R * 0.18, C + R * 0.34, C - R * 0.04);
+    g.bezierCurveTo(C + R * 0.8, C + R * 0.02, C + R * 0.94, C + R * 0.5, C + R * 0.68, C + R * 0.64);
+    g.closePath();
+    g.fill();
+    g.restore();
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.92)';
+    g.lineWidth = 3.4;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(C - R * 0.42, C + R * 0.2);
+    g.quadraticCurveTo(C, C + R * 0.5, C + R * 0.44, C + R * 0.16);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(C - R * 0.18, C - R * 0.18);
+    g.quadraticCurveTo(C + R * 0.1, C + R * 0.12, C + R * 0.3, C - R * 0.22);
+    g.stroke();
+    g.restore();
+    /* a tiny strawberry on top */
+    g.save();
+    var sg = g.createLinearGradient(C + R * 0.02, C - R * 0.92, C + R * 0.2, C - R * 0.4);
+    sg.addColorStop(0, '#ff97ad');
+    sg.addColorStop(1, '#e23357');
+    g.fillStyle = sg;
+    g.beginPath();
+    g.moveTo(C + R * 0.14, C - R * 0.92);
+    g.bezierCurveTo(C + R * 0.42, C - R * 0.84, C + R * 0.4, C - R * 0.44, C + R * 0.14, C - R * 0.36);
+    g.bezierCurveTo(C - R * 0.12, C - R * 0.44, C - R * 0.14, C - R * 0.84, C + R * 0.14, C - R * 0.92);
+    g.closePath();
+    g.fill();
+    g.fillStyle = '#6cb45c';
+    g.beginPath();
+    g.ellipse(C + R * 0.14, C - R * 0.94, R * 0.16, R * 0.06, 0, 0, TAU);
+    g.fill();
+    g.globalAlpha = 0.8;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(C + R * 0.04, C - R * 0.76, R * 0.05, R * 0.03, -0.5, 0, TAU);
+    g.fill();
+    g.restore();
+  }
+
+  function decoArtLace(g) {
+    var C = DECO_C, R = DECO_R, n = 5, i, w = R * 1.9 / n, x;
+    g.save();
+    g.shadowColor = 'rgba(170,130,190,0.3)';
+    g.shadowBlur = 9;
+    g.shadowOffsetY = 4;
+    var gr = g.createLinearGradient(C, C - R * 0.5, C, C + R * 0.6);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(1, '#f2e4f8');
+    g.fillStyle = gr;
+    g.beginPath();
+    g.moveTo(C - R * 0.95, C - R * 0.44);
+    g.lineTo(C + R * 0.95, C - R * 0.44);
+    g.lineTo(C + R * 0.95, C + R * 0.1);
+    g.lineTo(C - R * 0.95, C + R * 0.1);
+    g.closePath();
+    g.fill();
+    for (i = 0; i < n; i++) {
+      x = C - R * 0.95 + w * (i + 0.5);
+      g.beginPath();
+      g.arc(x, C + R * 0.08, w * 0.52, 0, Math.PI);
+      g.fill();
+    }
+    g.restore();
+    g.save();
+    g.fillStyle = 'rgba(206,176,220,0.5)';
+    for (i = 0; i < n; i++) {
+      x = C - R * 0.95 + w * (i + 0.5);
+      g.beginPath();
+      g.arc(x, C - R * 0.32, R * 0.052, 0, TAU);
+      g.fill();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.95)';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(C - R * 0.86, C - R * 0.14);
+    g.lineTo(C + R * 0.86, C - R * 0.14);
+    g.stroke();
+    g.restore();
+  }
+
+  var DECO_TYPES = [
+    { id: 'ribbon_pink', name: '핑크리본', s: 0.27, draw: function (g) { decoArtRibbon(g, RIBBON_PINK); } },
+    { id: 'ribbon_white', name: '화이트리본', s: 0.27, draw: function (g) { decoArtRibbon(g, RIBBON_WHITE); } },
+    { id: 'pearl', name: '진주', s: 0.13, draw: decoArtPearl },
+    { id: 'pearl_chain', name: '진주라인', s: 0.42, draw: decoArtPearlChain },
+    { id: 'gem_heart', name: '하트보석', s: 0.22, draw: decoArtGemHeart },
+    { id: 'gem_star', name: '별보석', s: 0.22, draw: decoArtGemStar },
+    { id: 'cherry', name: '체리', s: 0.22, draw: decoArtCherry },
+    { id: 'clover', name: '클로버', s: 0.21, draw: decoArtClover },
+    { id: 'cream', name: '생크림', s: 0.25, draw: decoArtCream },
+    { id: 'lace', name: '레이스', s: 0.34, draw: decoArtLace }
+  ];
+  var DECO_BY_ID = {};
+  DECO_TYPES.forEach(function (t) { DECO_BY_ID[t.id] = t; });
+  var DECO_MAX = 60;
+
+  function getDecoSprite(id) {
+    if (decoSpriteCache[id]) return decoSpriteCache[id];
+    var t = DECO_BY_ID[id];
+    if (!t) return null;
+    var cv = cutCanvas(DECO_SP, DECO_SP);
+    t.draw(cv.getContext('2d'));
+    decoSpriteCache[id] = cv;
+    return cv;
+  }
+
+  function decoSnapshot() {
+    var out = [], i, it;
+    for (i = 0; i < Deco.items.length; i++) {
+      it = Deco.items[i];
+      out.push({
+        k: it.k,
+        u: Math.round(it.u * 1000) / 1000,
+        v: Math.round(it.v * 1000) / 1000,
+        s: Math.round(it.s * 1000) / 1000,
+        r: Math.round(it.r * 100) / 100
+      });
+    }
+    return out;
+  }
+
+  function restoreDeco(list, keepUndo) {
+    var keep = keepUndo ? Deco.undo : null;
+    Deco.items = [];
+    Deco.place = '';
+    Deco.del = false;
+    Deco.drag = null;
+    var i, s, t;
+    if (list && list.length) {
+      for (i = 0; i < list.length && Deco.items.length < DECO_MAX; i++) {
+        s = list[i];
+        if (!s || !DECO_BY_ID[s.k]) continue;
+        t = DECO_BY_ID[s.k];
+        Deco.items.push({
+          id: Deco.uid++,
+          k: s.k,
+          u: clamp(parseFloat(s.u) || 0, -0.85, 0.85),
+          v: clamp(parseFloat(s.v) || 0, -0.95, 0.95),
+          s: clamp(parseFloat(s.s) || t.s, 0.04, 0.9),
+          r: parseFloat(s.r) || 0
+        });
+      }
+    }
+    Deco.undo = keep || [];
+  }
+
+  function decoPushUndo() {
+    Deco.undo.push(JSON.stringify(decoSnapshot()));
+    if (Deco.undo.length > 24) Deco.undo.shift();
+  }
+
+  function decoUndo() {
+    if (!Deco.undo.length) { toast('되돌릴 데코가 없어요'); return; }
+    var raw = Deco.undo.pop(), back = [];
+    try { back = JSON.parse(raw) || []; } catch (e) { back = []; }
+    restoreDeco(back, true);
+    Sound.pop(false);
+    touchState();
+    toast('데코를 한 단계 되돌렸어요');
+  }
+
+  function decoClearAll() {
+    if (!Deco.items.length) { toast('떼어낼 데코가 없어요'); return; }
+    decoPushUndo();
+    Deco.items = [];
+    Sound.pop(false);
+    touchState();
+    toast('데코덴을 모두 떼었어요');
+  }
+
+  function drawDeco(g) {
+    var i, it, spr, sz;
+    for (i = 0; i < Deco.items.length; i++) {
+      it = Deco.items[i];
+      spr = getDecoSprite(it.k);
+      if (!spr) continue;
+      sz = it.s * VIEW.S;
+      g.save();
+      g.translate(VIEW.cx + it.u * VIEW.S, VIEW.cy + it.v * VIEW.S);
+      if (it.r) g.rotate(it.r);
+      g.drawImage(spr, -sz / 2, -sz / 2, sz, sz);
+      g.restore();
+    }
+  }
+
+  function decoHit(u, v) {
+    var i, it, du, dv, lim;
+    for (i = Deco.items.length - 1; i >= 0; i--) {
+      it = Deco.items[i];
+      du = it.u - u;
+      dv = it.v - v;
+      lim = it.s * 0.52;
+      if (du * du + dv * dv <= lim * lim) return it;
+    }
+    return null;
+  }
+
+  /* pull a point back onto the case outline */
+  function decoPull(u, v, margin) {
+    var guard = 0, gr;
+    while (normSdf(u, v) > margin && guard < 40) {
+      gr = gradAt(u, v);
+      u -= gr.x * 0.015;
+      v -= gr.y * 0.015;
+      guard++;
+    }
+    return { u: u, v: v };
+  }
+
+  function decoPlaceAt(u, v) {
+    var t = DECO_BY_ID[Deco.place];
+    if (!t) return;
+    if (Deco.items.length >= DECO_MAX) { toast('데코가 너무 많아요!'); return; }
+    if (normSdf(u, v) > 0.02) {
+      var p = decoPull(u, v, -0.004);
+      u = p.u; v = p.v;
+    }
+    if (normSdf(u, v) > 0.04) { toast('케이스 위에 붙여 주세요 🎀'); return; }
+    decoPushUndo();
+    Deco.items.push({ id: Deco.uid++, k: t.id, u: u, v: v, s: t.s, r: rand(-0.2, 0.2) });
+    Sound.unlock();
+    Sound.pop(true);
+    touchState();
+  }
+
+  function decoRemove(it) {
+    var i;
+    for (i = 0; i < Deco.items.length; i++) {
+      if (Deco.items[i] === it) {
+        decoPushUndo();
+        Deco.items.splice(i, 1);
+        Sound.pop(false);
+        touchState();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function syncDecoChips() {
+    var chips = document.querySelectorAll('#decoChips .chip'), i, c, id;
+    for (i = 0; i < chips.length; i++) {
+      c = chips[i];
+      id = c.getAttribute('data-deco');
+      if (id) c.classList.toggle('sel', Deco.place === id);
+      else c.classList.toggle('sel', !!Deco.del);
+    }
+  }
+
+  var decoHintBase = '마음에 드는 데코를 고르고 <b>케이스 위를 톡</b>! 붙인 데코는 흔들어도 그대로 있어요';
+  function setDecoPlace(id) {
+    Sound.unlock();
+    if (Deco.place === id) {
+      Deco.place = '';
+    } else {
+      Deco.place = id;
+      Deco.del = false;
+      Sound.pop(true);
+    }
+    syncDecoChips();
+    var hint = $('#decoHint');
+    if (hint) {
+      hint.innerHTML = Deco.place
+        ? '케이스 위를 톡 누르면 <b>' + DECO_BY_ID[Deco.place].name + '</b>이 붙어요 · 끄려면 같은 데코를 한 번 더'
+        : decoHintBase;
+    }
+    if (Deco.place) toast(DECO_BY_ID[id].name + ' 골랐어! 케이스 위를 톡 눌러 붙여 🎀');
+    else toast('데코 붙이기 끝!');
+  }
+
+  function toggleDecoDelete() {
+    Deco.del = !Deco.del;
+    if (Deco.del) Deco.place = '';
+    syncDecoChips();
+    Sound.unlock();
+    Sound.pop(false);
+    var hint = $('#decoHint');
+    if (hint) {
+      hint.innerHTML = Deco.del
+        ? '떼고 싶은 데코를 <b>톡</b> 눌러 주세요'
+        : decoHintBase;
+    }
+    toast(Deco.del ? '떼고 싶은 데코를 톡 눌러 주세요' : '데코 떼기 끝!');
+  }
+
+  /* =========================================================
+     🗂️ 서랍 — 쉐이커를 여러 개 저장해두고 바꿔 쓰기
+     ========================================================= */
+  var SLOT_KEY = 'shakaShaker.slots.v1';
+  var SLOT_MAX = 14;
+  var THUMB_W = 144, THUMB_H = 192;
+  var drawerEl = null, slotGridEl = null, drawerPrevEl = null, lastPreviewAt = 0;
+
+  function readSlots() {
+    try {
+      var raw = localStorage.getItem(SLOT_KEY);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function quotaError(e) {
+    return !!(e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      e.code === 22 || e.code === 1014));
+  }
+
+  function writeSlots(arr) {
+    try {
+      localStorage.setItem(SLOT_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) {
+      toast(quotaError(e)
+        ? '서랍 공간이 가득 찼어요. 안 쓰는 쉐이커를 지워 주세요 🗂️'
+        : '서랍에 저장하지 못했어요. 잠시 뒤에 다시 해 볼까요?');
+      return false;
+    }
+  }
+
+  /* the live view of the current shaker, drawn small */
+  function renderMini(cv) {
+    if (!cv) return;
+    var W = cv.width, H = cv.height;
+    var g = cv.getContext('2d');
+    g.clearRect(0, 0, W, H);
+    var bg = g.createLinearGradient(0, 0, W * 0.6, H);
+    bg.addColorStop(0, '#ffffff');
+    bg.addColorStop(0.5, theme.top);
+    bg.addColorStop(1, theme.mid);
+    g.fillStyle = bg;
+    g.fillRect(0, 0, W, H);
+    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * FRAME_UH;
+    var s = Math.min(W / caseW, H / caseH) * 0.92;
+    g.save();
+    g.translate(W / 2 - VIEW.cx * s, H / 2 - VIEW.cy * s);
+    g.scale(s, s);
+    g.drawImage(layerBack, 0, 0, VIEW.w, VIEW.h);
+    g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
+    drawFluid(g);
+    g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    drawDeco(g);
+    g.restore();
+  }
+
+  function currentThumb() {
+    try {
+      var cv = cutCanvas(THUMB_W, THUMB_H);
+      renderMini(cv);
+      return cv.toDataURL('image/png');
+    } catch (e) { return ''; }
+  }
+
+  function autoSlotName(list) {
+    var base = THEMES[themeIdx].name + ' ' + SHAPES[shapeKey].name;
+    var used = {}, i, n = 1;
+    for (i = 0; i < list.length; i++) used[list[i].name] = 1;
+    while (used[base + ' #' + n]) n++;
+    return base + ' #' + n;
+  }
+
+  function saveSlot() {
+    var list = readSlots();
+    if (list.length >= SLOT_MAX) {
+      toast('서랍이 가득 찼어요 (' + SLOT_MAX + '개). 하나 지우고 저장해 주세요');
+      return;
+    }
+    var nameEl = $('#slotName');
+    var typed = nameEl && nameEl.value ? nameEl.value.replace(/\s+/g, ' ').trim() : '';
+    var nm = typed.slice(0, 16) || autoSlotName(list);
+    var slot = {
+      id: 's' + Date.now().toString(36) + Math.floor(Math.random() * 900 + 100).toString(36),
+      name: nm,
+      at: Date.now(),
+      thumb: currentThumb(),
+      st: stateSnapshot()
+    };
+    var next = list.slice();
+    next.unshift(slot);
+    if (!writeSlots(next)) return;
+    if (nameEl) nameEl.value = '';
+    renderSlotGrid(next);
+    Sound.unlock();
+    Sound.pop(true);
+    toast('「' + nm + '」을 서랍에 넣었어! 🗂️');
+  }
+
+  function applyState(st, save) {
+    if (!st) return;
+    clearParts();
+    restoreSettings(st);
+    restoreDeco(st.deco);
+    if (isOil()) seedFluid(); else { bubbles.length = 0; sparkles.length = 0; }
+    restoreParts(st);
+    syncCaseUI();
+    draw();
+    if (save !== false) touchState();
+  }
+
+  function syncCaseUI() {
+    maskMain = getMask(shapeKey, 0, 300);
+    maskEdge = getMask(shapeKey, -0.034, 300);
+    buildCaseLayers();
+    var nm = $('#shapeName');
+    if (nm) nm.textContent = SHAPES[shapeKey].name;
+    var i;
+    var chips = document.querySelectorAll('#shapeChips .chip');
+    for (i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle('sel', chips[i].getAttribute('data-key') === shapeKey);
+    }
+    var sw = document.querySelectorAll('#swatches .sw');
+    for (i = 0; i < sw.length; i++) sw[i].classList.toggle('sel', i === themeIdx);
+    var mc = document.querySelectorAll('#modeChips .chip');
+    for (i = 0; i < mc.length; i++) mc[i].classList.toggle('sel', i === modeIdx);
+    for (i = 0; i < parts.length; i++) parts[i].bounce = modeCfg().bounce;
+  }
+
+  function loadSlot(id) {
+    var list = readSlots(), i, slot = null;
+    for (i = 0; i < list.length; i++) { if (list[i].id === id) slot = list[i]; }
+    if (!slot || !slot.st) { toast('이 쉐이커를 찾지 못했어요'); return; }
+    applyState(slot.st, true);
+    closeDrawer();
+    Sound.unlock();
+    Sound.pop(true);
+    toast('「' + slot.name + '」을 꺼냈어! 🎀');
+  }
+
+  function delSlot(id, name) {
+    var ok = true;
+    try { ok = window.confirm('「' + name + '」을 서랍에서 지울까요?'); } catch (e) { ok = true; }
+    if (!ok) return;
+    var list = readSlots(), next = [], i;
+    for (i = 0; i < list.length; i++) { if (list[i].id !== id) next.push(list[i]); }
+    if (!writeSlots(next)) return;
+    renderSlotGrid(next);
+    toast('서랍에서 지웠어요');
+  }
+
+  function renderSlotGrid(list) {
+    if (!slotGridEl) return;
+    list = list || readSlots();
+    while (slotGridEl.firstChild) slotGridEl.removeChild(slotGridEl.firstChild);
+    var empty = $('#slotEmpty');
+    if (empty) empty.hidden = list.length > 0;
+    var i;
+    for (i = 0; i < list.length; i++) {
+      (function (slot) {
+        var card = document.createElement('div');
+        card.className = 'slot';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+
+        var img = document.createElement('img');
+        img.alt = slot.name;
+        img.src = slot.thumb || '';
+        card.appendChild(img);
+
+        var nm = document.createElement('b');
+        nm.textContent = slot.name;
+        card.appendChild(nm);
+
+        var del = document.createElement('button');
+        del.className = 'slot-del';
+        del.type = 'button';
+        del.setAttribute('aria-label', slot.name + ' 지우기');
+        del.textContent = '✕';
+        del.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          delSlot(slot.id, slot.name);
+        });
+        card.appendChild(del);
+
+        card.addEventListener('click', function () { loadSlot(slot.id); });
+        card.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); loadSlot(slot.id); }
+        });
+        slotGridEl.appendChild(card);
+      })(list[i]);
+    }
+  }
+
+  function paintDrawerPreview() {
+    if (!drawerPrevEl || !drawerEl || drawerEl.hidden) return;
+    try { renderMini(drawerPrevEl); } catch (e) { /* not ready yet */ }
+  }
+
+  function openDrawer() {
+    if (!drawerEl) return;
+    Sound.unlock();
+    renderSlotGrid();
+    drawerEl.hidden = false;
+    requestAnimationFrame(function () { drawerEl.classList.add('on'); });
+    paintDrawerPreview();
+    Sound.pop(true);
+  }
+
+  function closeDrawer() {
+    if (!drawerEl) return;
+    drawerEl.classList.remove('on');
+    setTimeout(function () { drawerEl.hidden = true; }, 240);
+    var inp = $('#slotName');
+    if (inp) { try { inp.blur(); } catch (e) { /* ignore */ } }
   }
 
   /* ---------------- layout ---------------- */
@@ -3184,6 +4177,56 @@ input[type=range]::-webkit-slider-thumb{
     pvEl.addEventListener('pointerleave', editUp);
     $('#editUndo').addEventListener('click', undoEdit);
 
+    /* 🎀 decoden charm chips */
+    var dcc = $('#decoChips');
+    DECO_TYPES.forEach(function (t) {
+      var b = document.createElement('button');
+      b.className = 'chip';
+      b.type = 'button';
+      b.setAttribute('data-deco', t.id);
+      b.setAttribute('aria-label', t.name);
+      var spr = getDecoSprite(t.id);
+      var cv = cutCanvas(62, 62);
+      if (spr) cv.getContext('2d').drawImage(spr, 0, 0, 62, 62);
+      b.appendChild(cv);
+      var s = document.createElement('span');
+      s.textContent = t.name;
+      b.appendChild(s);
+      b.addEventListener('click', function () { setDecoPlace(t.id); });
+      dcc.appendChild(b);
+    });
+    var delChip = document.createElement('button');
+    delChip.className = 'chip';
+    delChip.type = 'button';
+    delChip.id = 'decoDelChip';
+    delChip.setAttribute('aria-label', '데코 떼기');
+    var em = document.createElement('em');
+    em.textContent = '🗑';
+    delChip.appendChild(em);
+    var dspan = document.createElement('span');
+    dspan.textContent = '떼기';
+    delChip.appendChild(dspan);
+    delChip.addEventListener('click', toggleDecoDelete);
+    dcc.appendChild(delChip);
+    $('#decoUndo').addEventListener('click', decoUndo);
+    $('#decoClear').addEventListener('click', decoClearAll);
+
+    /* 🗂️ drawer */
+    drawerEl = $('#drawer');
+    slotGridEl = $('#slotGrid');
+    drawerPrevEl = $('#drawerPrev');
+    $('#drawerBtn').addEventListener('click', openDrawer);
+    $('#drawerClose').addEventListener('click', closeDrawer);
+    drawerEl.addEventListener('click', function (e) { if (e.target === this) closeDrawer(); });
+    $('#slotSave').addEventListener('click', saveSlot);
+    $('#slotName').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        saveSlot();
+      }
+    });
+    renderSlotGrid();
+
     /* snapshot */
     $('#shotBtn').addEventListener('click', function () { Sound.unlock(); openShot(); });
     $('#shotClose').addEventListener('click', closeShot);
@@ -3335,6 +4378,7 @@ input[type=range]::-webkit-slider-thumb{
 
     layout();
     if (saved) restoreParts(saved); else fillDefault();
+    restoreDeco(saved ? saved.deco : null);
     if (isOil()) seedFluid();
     buildUI();
     draw();
