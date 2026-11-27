@@ -4400,6 +4400,7 @@ input[type=range]::-webkit-slider-thumb{
     restoreDeco(saved ? saved.deco : null);
     if (isOil()) seedFluid();
     buildUI();
+    syncCaseUI();
     draw();
     startLoop();
     bindReturnHandlers();
