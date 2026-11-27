@@ -135,6 +135,46 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
 .menu-btn:active{transform:scale(.955);}
 .menu-btn em{font-style:normal;font-size:19px;line-height:1.05;}
 .menu-btn span{font-size:12.5px;font-weight:800;letter-spacing:-.3px;}
+/* ⌄ 메뉴 숨기기 — 접으면 무대가 그만큼 커진다 */
+#menuGrid{
+  max-height:170px;overflow:hidden;
+  transition:max-height .34s cubic-bezier(.34,.84,.3,1),opacity .2s ease,padding .34s ease,gap .34s ease;
+}
+#app.menumini #menuGrid{max-height:0;opacity:0;padding-top:0;padding-bottom:0;gap:0;}
+#menuBar{flex:0 0 auto;display:flex;justify-content:center;width:100%;max-width:560px;margin:0 auto;padding:0 12px 4px;}
+#menuBar.hide{display:none;}
+.menu-toggle{
+  border:0;border-radius:999px;font:inherit;font-size:11px;font-weight:800;letter-spacing:-.2px;
+  color:#ab8da4;background:rgba(255,255,255,.7);padding:5px 14px 6px;
+  display:inline-flex;align-items:center;gap:5px;
+  box-shadow:0 2px 8px rgba(190,140,170,.13), inset 0 1px 0 #fff;
+  transition:transform .12s ease;
+}
+.menu-toggle:active{transform:scale(.94);}
+.menu-toggle em{font-style:normal;font-size:12px;line-height:1;color:#c78fae;}
+#menuOpenBtn{flex:0 0 auto;padding:13px 14px;font-size:13.5px;background:rgba(255,255,255,.86);}
+
+/* ---------- 🎁 제품 목업 스타일 · 색 ---------- */
+#mockBar{display:flex;flex-direction:column;gap:7px;margin:0 0 10px;animation:popIn .18s ease-out;}
+#mockStyles{display:flex;gap:6px;overflow-x:auto;padding:2px;scrollbar-width:none;}
+#mockStyles::-webkit-scrollbar{display:none;}
+#mockStyles button{
+  flex:0 0 auto;border:0;border-radius:999px;font:inherit;font-size:11.5px;font-weight:800;letter-spacing:-.3px;
+  padding:7px 11px;background:#f7eef5;color:#a488a0;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);
+  transition:background .15s,color .15s,box-shadow .15s,transform .12s;
+}
+#mockStyles button.sel{background:linear-gradient(180deg,#fff,#ffe3ef);color:#c05a86;
+  box-shadow:0 3px 10px rgba(200,120,165,.22),inset 0 0 0 1px #ffd0e4;}
+#mockStyles button:active{transform:scale(.95);}
+#mockColors{display:flex;align-items:center;gap:7px;}
+#mockColors .msw{
+  width:26px;height:26px;border-radius:50%;border:2px solid #fff;padding:0;
+  box-shadow:0 2px 7px rgba(160,120,150,.2);transition:transform .12s ease;
+}
+#mockColors .msw:active{transform:scale(.92);}
+#mockColors .msw.sel{box-shadow:0 0 0 2px #ff9ec4,0 2px 7px rgba(160,120,150,.2);}
+#mockColors .mname{font-size:11px;font-weight:800;color:#b59aae;margin-left:3px;letter-spacing:-.2px;}
 #actionBar{
   flex:0 0 auto;display:flex;width:100%;max-width:560px;margin:0 auto;gap:8px;align-items:center;
   padding:1px 12px calc(env(safe-area-inset-bottom) + 10px);
@@ -419,6 +459,14 @@ input[type=range]::-webkit-slider-thumb{
 #tolRow.dim{opacity:.42;}
 #shotImg{display:block;width:min(340px,76vw);height:auto;border-radius:16px;box-shadow:0 10px 26px rgba(120,80,120,.22);}
 #shot .prev-wrap{background:#fff;background-image:none;border-color:rgba(235,225,240,.9);}
+#shot.mock .prev-wrap{padding:9px;}
+#shot.mock #shotImg{width:min(306px,68vw);}
+@media (max-height:760px){
+  #shot.mock #shotImg{width:min(246px,56vw);}
+  #shot.mock #shotNameRow{margin:0 0 4px;}
+  #shot.mock #shotName{padding:9px 12px;}
+  #shot.mock .sheet-actions{margin-top:9px;}
+}
 .mini .chip.brush-wide{min-width:66px;}
 
 /* ---------- 🖼️ 케이스 배경 · 🔑 키링 고리 ---------- */
@@ -535,6 +583,10 @@ input[type=range]::-webkit-slider-thumb{
     <button id="randomBtn" class="qbtn" type="button">🎲 랜덤</button>
   </div>
 
+  <div id="menuBar">
+    <button id="menuToggle" class="menu-toggle" type="button" aria-expanded="true" aria-controls="menuGrid"><em>⌄</em>메뉴 숨기기</button>
+  </div>
+
   <nav id="menuGrid" aria-label="꾸미기 메뉴">
     <button class="menu-btn" type="button" data-menu="case"><em>📦</em><span>케이스</span></button>
     <button class="menu-btn" type="button" data-menu="look"><em>🔑</em><span>외형</span></button>
@@ -547,6 +599,7 @@ input[type=range]::-webkit-slider-thumb{
   <div id="actionBar">
     <button id="shakeBtn" class="btn primary grow" type="button">🪇 흔들기!</button>
     <button id="motionBtn" class="btn ghost" type="button">📳 모션 센서</button>
+    <button id="menuOpenBtn" class="btn ghost" type="button" hidden aria-controls="menuGrid">⌃ 메뉴</button>
   </div>
 </div>
 
@@ -724,6 +777,10 @@ input[type=range]::-webkit-slider-thumb{
     <div class="seg" id="shotModeChips">
       <button type="button" data-mode="shot" class="sel">📸 일반 인증샷</button>
       <button type="button" data-mode="product">🎁 제품 목업 모드</button>
+    </div>
+    <div id="mockBar" hidden>
+      <div id="mockStyles" role="group" aria-label="목업 스타일"></div>
+      <div id="mockColors" role="group" aria-label="목업 색"></div>
     </div>
     <div class="prev-wrap">
       <img id="shotImg" alt="포켓쉐이커 인증샷" />
@@ -4552,6 +4609,8 @@ input[type=range]::-webkit-slider-thumb{
     if (!makeShotImage()) { toast('인증샷을 만들지 못했어요'); return; }
     var nameEl = $('#shotName');
     if (nameEl) nameEl.value = shotTitle;
+    buildMockUI();
+    loadSlotThumbs();
     syncShotModeUI();
     var sh = $('#shot');
     sh.hidden = false;
@@ -5570,9 +5629,9 @@ input[type=range]::-webkit-slider-thumb{
        enough margin for the top bar, the keyring loop and the bottom (where the
        ⌃ 메뉴 pill floats while the menu is collapsed) */
     var fit = caseFit();
-    var padX = clamp(w * 0.075, 16, 34);
-    var padTop = clamp(h * 0.085, 34, 52);
-    var padBot = clamp(h * 0.055, 18, 34);
+    var padX = menuCollapsed ? clamp(w * 0.02, 4, 12) : clamp(w * 0.075, 16, 34);
+    var padTop = menuCollapsed ? clamp(h * 0.05, 20, 34) : clamp(h * 0.085, 34, 52);
+    var padBot = menuCollapsed ? clamp(h * 0.03, 12, 24) : clamp(h * 0.055, 18, 34);
     var availW = Math.max(24, w - padX * 2);
     var availH = Math.max(24, h - padTop - padBot);
     var S = Math.min(availW / fit.w, availH / fit.h);
@@ -6836,109 +6895,368 @@ input[type=range]::-webkit-slider-thumb{
     return shotMode === 'product' ? renderProductShot() : renderShot();
   }
 
-  function renderProductShot() {
-    var W = 1080, H = 1350;
-    var cv = cutCanvas(W, H), g = cv.getContext('2d');
-    var FONT = '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", system-ui, sans-serif';
-    var i, rnd = mulberry32(20261127);
-    var SPR = ['#ff9ec0', '#ffd166', '#9ad9ff', '#c3a8ff', '#8fe3c4', '#ffffff'];
+  /* =========================================================
+     🎁 제품 목업 — 4 styles
+     ① 블리스터 포장 · ② 단독 제품컷 · ③ 감성 소품 배경 · ④ 매장 진열컷
+     ========================================================= */
+  var MOCK_PREF_KEY = 'shakaShaker.mockup.v1';
+  var MOCK_STYLES = [
+    { id: 'blister', short: '① 블리스터', name: '블리스터 포장' },
+    { id: 'solo', short: '② 단독 컷', name: '단독 제품컷' },
+    { id: 'props', short: '③ 감성 소품', name: '감성 소품 배경' },
+    { id: 'display', short: '④ 매장 진열', name: '매장 진열컷' }
+  ];
+  var MOCK_COLORS = [
+    {
+      id: 'pink', name: '핑크', dot: '#ffb3d1',
+      wall1: '#fff0f7', wall2: '#ffc7dd', table1: '#fff8fb', table2: '#ffdcea',
+      card1: '#ffe7f2', card2: '#ffbcd6', tint: '#ffeaf4', desk: '#ffd8e8',
+      accent: '#ff6fa5', ink: '#b8477b'
+    },
+    {
+      id: 'butter', name: '버터옐로우', dot: '#ffe08a',
+      wall1: '#fffdf1', wall2: '#ffedb6', table1: '#fffef8', table2: '#fff5d2',
+      card1: '#fffbe4', card2: '#ffe79f', tint: '#fffbe6', desk: '#ffeeb4',
+      accent: '#d99a1f', ink: '#a97d10'
+    },
+    {
+      id: 'sky', name: '스카이', dot: '#a8d8ff',
+      wall1: '#f3fbff', wall2: '#cfe9ff', table1: '#f9fdff', table2: '#e2f2ff',
+      card1: '#eef9ff', card2: '#c5e6ff', tint: '#f1faff', desk: '#cfe9ff',
+      accent: '#2f95d6', ink: '#1c76a8'
+    },
+    {
+      id: 'lavender', name: '라벤더', dot: '#c7b4ff',
+      wall1: '#f9f5ff', wall2: '#e3d7ff', table1: '#fcf9ff', table2: '#eee5ff',
+      card1: '#f4edff', card2: '#dbcdff', tint: '#f6f0ff', desk: '#e3d8ff',
+      accent: '#8b6ee0', ink: '#6c50bd'
+    },
+    {
+      id: 'mint', name: '민트', dot: '#9fe6d2',
+      wall1: '#f2fffb', wall2: '#cff4e8', table1: '#f8fffc', table2: '#e0faf1',
+      card1: '#eefffa', card2: '#c4f0e2', tint: '#f2fffb', desk: '#cdf0e3',
+      accent: '#22a884', ink: '#17836a'
+    },
+    {
+      id: 'white', name: '화이트', dot: '#efeaf4',
+      wall1: '#f8f5fa', wall2: '#ece6f1', table1: '#fffdfe', table2: '#f4f0f8',
+      card1: '#ffffff', card2: '#efe9f5', tint: '#fbfaff', desk: '#eeeaf4',
+      accent: '#8f7a9e', ink: '#6f5d7d'
+    }
+  ];
+  var mockStyle = 'blister', mockColor = 'pink';
+  var mockSprites = {}, slotThumbCache = {};
+  var MOCK_SPR = ['#ff9ec0', '#ffd166', '#9ad9ff', '#c3a8ff', '#8fe3c4', '#ffffff'];
 
-    /* ---- studio table: pale pink wall & tabletop with a soft horizon ---- */
+  function readMockPrefs() {
+    try {
+      var s = JSON.parse(localStorage.getItem(MOCK_PREF_KEY) || 'null'), i;
+      if (s && s.style) {
+        for (i = 0; i < MOCK_STYLES.length; i++) if (MOCK_STYLES[i].id === s.style) mockStyle = s.style;
+      }
+      if (s && s.color) {
+        for (i = 0; i < MOCK_COLORS.length; i++) if (MOCK_COLORS[i].id === s.color) mockColor = s.color;
+      }
+    } catch (e) { /* first run */ }
+  }
+  function writeMockPrefs() {
+    try { localStorage.setItem(MOCK_PREF_KEY, JSON.stringify({ style: mockStyle, color: mockColor })); }
+    catch (e) { /* ignore */ }
+  }
+  function mockPalette() {
+    for (var i = 0; i < MOCK_COLORS.length; i++) if (MOCK_COLORS[i].id === mockColor) return MOCK_COLORS[i];
+    return MOCK_COLORS[0];
+  }
+  function mockFont(w, size) {
+    return w + ' ' + size + 'px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", system-ui, sans-serif';
+  }
+
+  /* a soft elliptical contact shadow */
+  function mockBlobShadow(g, x, y, rx, ry, color, alpha) {
+    g.save();
+    g.translate(x, y);
+    g.scale(1, ry / rx);
+    var rg = g.createRadialGradient(0, 0, rx * 0.04, 0, 0, rx);
+    rg.addColorStop(0, hexA(color, alpha));
+    rg.addColorStop(0.52, hexA(color, alpha * 0.42));
+    rg.addColorStop(1, hexA(color, 0));
+    g.fillStyle = rg;
+    g.beginPath(); g.arc(0, 0, rx, 0, TAU); g.fill();
+    g.restore();
+  }
+
+  /* run a callback in the shot's shaker coordinate space; caseH is the case
+     box height in shot pixels, k maps stage pixels to shot pixels */
+  function mockShakerSpace(g, cx, cy, caseH, rot, fn) {
+    var fit = caseFit();
+    var k = caseH / (VIEW.S * fit.h);
+    var cxs = VIEW.cx + fit.uMid * VIEW.S;
+    var cys = VIEW.cy + fit.vMid * VIEW.S;
+    g.save();
+    g.translate(cx, cy);
+    if (rot) g.rotate(rot);
+    g.scale(k, k);
+    g.translate(-cxs, -cys);
+    fn(k);
+    g.restore();
+  }
+  /* the case outline as a low-res plate: stretched up it gives a soft, reliable
+     shadow on every engine (ctx.shadowBlur is device-space and blows up under
+     the shot's own scale) */
+  var mockShadowPlate = null;
+  function mockSilhouetteSprite() {
+    var key = shapeKey + '|' + VIEW.S.toFixed(1);
+    if (mockShadowPlate && mockShadowPlate.key === key) return mockShadowPlate.cv;
+    var down = 6;
+    var w = Math.max(8, Math.round(VIEW.w / down)), h = Math.max(8, Math.round(VIEW.h / down));
+    var cv = cutCanvas(w, h), g = cv.getContext('2d');
+    try {
+      g.drawImage(maskMain.cv, 0, 0, w, h);
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = '#6b5568';
+      g.fillRect(0, 0, w, h);
+    } catch (e) { return null; }
+    mockShadowPlate = { key: key, cv: cv };
+    return cv;
+  }
+  function mockDrawShaker(g, cx, cy, caseH, rot, shadow) {
+    var comp = shakerComposite();
+    mockShakerSpace(g, cx, cy, caseH, rot, function (k) {
+      if (shadow) {
+        var sp = mockSilhouetteSprite();
+        if (sp) {
+          var mx = VIEW.cx - FRAME_UW / 2 * VIEW.S, my = VIEW.cy - FRAME_UH / 2 * VIEW.S;
+          var mw = FRAME_UW * VIEW.S, mh = FRAME_UH * VIEW.S;
+          g.save();
+          g.globalAlpha = shadow.a2 === undefined ? 0.12 : shadow.a2;
+          g.translate(15, 34);
+          g.drawImage(sp, mx, my, mw, mh);
+          g.globalAlpha = shadow.a === undefined ? 0.24 : shadow.a;
+          g.translate(-9, -20);
+          g.drawImage(sp, mx, my, mw, mh);
+          g.restore();
+        }
+      }
+      g.drawImage(comp, 0, 0, VIEW.w, VIEW.h);
+    });
+  }
+
+  /* the studio softbox reflected on the acrylic */
+  function mockSheenLayer() {
+    return maskLayer(function (gg) {
+      var lg = gg.createLinearGradient(
+        VIEW.cx - VIEW.S * 0.55, VIEW.cy - VIEW.S * 0.78,
+        VIEW.cx + VIEW.S * 0.45, VIEW.cy + VIEW.S * 0.78
+      );
+      lg.addColorStop(0, 'rgba(255,255,255,0)');
+      lg.addColorStop(0.20, 'rgba(255,255,255,0.12)');
+      lg.addColorStop(0.33, 'rgba(255,255,255,0.60)');
+      lg.addColorStop(0.39, 'rgba(255,255,255,0.14)');
+      lg.addColorStop(0.62, 'rgba(255,255,255,0.03)');
+      lg.addColorStop(0.87, 'rgba(255,255,255,0.28)');
+      lg.addColorStop(1, 'rgba(255,255,255,0)');
+      gg.fillStyle = lg;
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+
+      /* one crisp specular streak, the way a softbox lands on polished acrylic */
+      gg.save();
+      gg.fillStyle = 'rgba(255,255,255,0.95)';
+      var i;
+      for (i = 3; i >= 1; i--) {
+        gg.globalAlpha = 0.15 * i;
+        gg.beginPath();
+        gg.ellipse(VIEW.cx - VIEW.S * 0.27, VIEW.cy - VIEW.S * 0.30,
+          VIEW.S * 0.125 * (0.5 + 0.17 * i), VIEW.S * 0.026 * (0.5 + 0.17 * i), -0.7, 0, TAU);
+        gg.fill();
+      }
+      gg.restore();
+
+      /* light bouncing back up along the bottom edge */
+      var low = gg.createLinearGradient(0, VIEW.cy + VIEW.S * 0.26, 0, VIEW.cy + VIEW.S * 0.58);
+      low.addColorStop(0, 'rgba(255,255,255,0)');
+      low.addColorStop(1, 'rgba(255,255,255,0.32)');
+      gg.fillStyle = low;
+      gg.fillRect(0, 0, VIEW.w, VIEW.h);
+    }, maskMain, null);
+  }
+
+  /* chrome keyring hardware for a product-only shot */
+  function mockChromeRing(g, x, y, r) {
+    g.save();
+    g.shadowColor = 'rgba(110,90,105,0.22)';
+    g.shadowBlur = 14;
+    g.shadowOffsetY = 5;
+    var gr = g.createLinearGradient(x - r, y - r, x + r, y + r);
+    gr.addColorStop(0, '#fdfdff');
+    gr.addColorStop(0.32, '#c8cdd6');
+    gr.addColorStop(0.52, '#ffffff');
+    gr.addColorStop(0.76, '#a9b1bd');
+    gr.addColorStop(1, '#e9ecf2');
+    g.strokeStyle = gr;
+    g.lineWidth = r * 0.36;
+    g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke();
+    g.restore();
+    g.save();
+    g.strokeStyle = 'rgba(255,255,255,0.9)';
+    g.lineWidth = r * 0.1;
+    g.beginPath(); g.arc(x, y, r * 1.04, -2.6, -1.5); g.stroke();
+    g.strokeStyle = 'rgba(120,120,135,0.28)';
+    g.beginPath(); g.arc(x, y, r * 0.96, 0.5, 1.5); g.stroke();
+    g.restore();
+  }
+
+  /* a strip of washi tape */
+  function mockTape(g, x, y, w, h, rot, P, alpha) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(rot);
+    g.globalAlpha = alpha === undefined ? 0.62 : alpha;
+    g.shadowColor = hexA(P.ink, 0.16);
+    g.shadowBlur = 12;
+    g.shadowOffsetY = 4;
+    var gr = g.createLinearGradient(0, -h / 2, 0, h / 2);
+    gr.addColorStop(0, 'rgba(255,255,255,0.92)');
+    gr.addColorStop(0.5, hexA(P.card1, 0.88));
+    gr.addColorStop(1, hexA(P.card2, 0.86));
+    g.fillStyle = gr;
+    var n = Math.max(5, Math.round(w / 16)), step = w / n, k;
+    g.beginPath();
+    g.moveTo(-w / 2, -h / 2);
+    for (k = 1; k <= n; k++) g.lineTo(-w / 2 + step * k, -h / 2 + (k % 2 ? 2 : 0));
+    for (k = n; k >= 0; k--) g.lineTo(-w / 2 + step * k, h / 2 - (k % 2 ? 2 : 0));
+    g.closePath();
+    g.fill();
+    g.save();
+    g.clip();
+    g.shadowColor = 'transparent';
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    for (k = -w / 2 + 10; k < w / 2; k += 17) {
+      g.beginPath(); g.arc(k, 0, 1.7, 0, TAU); g.fill();
+    }
+    g.restore();
+    g.restore();
+  }
+
+  /* the small print block under every mockup */
+  function mockFooter(g, W, H, P, light, skipName) {
+    var name = shotCaption();
+    var baseY = skipName ? H - 44 : H - 96;
+    g.textAlign = 'center';
+    g.textBaseline = 'alphabetic';
+    if (!skipName) {
+      g.font = mockFont(900, 56);
+      var tw = g.measureText(name).width, max = W - 280;
+      if (tw > max) g.font = mockFont(900, Math.max(26, Math.floor(56 * max / tw)));
+      g.save();
+      if (light) { g.shadowColor = 'rgba(90,60,80,0.35)'; g.shadowBlur = 20; g.shadowOffsetY = 4; }
+      g.fillStyle = light ? '#ffffff' : P.ink;
+      g.fillText(name, W / 2, baseY);
+      g.restore();
+    }
+    g.fillStyle = light ? 'rgba(255,255,255,0.85)' : hexA(P.ink, 0.55);
+    g.font = mockFont(800, skipName ? 19 : 20);
+    g.fillText('P O C K E T   S H A K E R', W / 2, baseY + (skipName ? 0 : 38));
+    g.fillStyle = light ? 'rgba(255,255,255,0.66)' : hexA(P.ink, 0.4);
+    g.font = mockFont(700, 18);
+    g.fillText(dateStamp(), W / 2, baseY + (skipName ? 26 : 68));
+  }
+
+  /* ---------------- ① 블리스터 포장 ---------------- */
+  function mockSceneBlister(g, W, H, P) {
+    var i, rnd = mulberry32(20261127), SPR = MOCK_SPR;
+
     var wall = g.createLinearGradient(0, 0, W * 0.4, H);
-    wall.addColorStop(0, '#ffe9f1');
-    wall.addColorStop(0.6, '#ffdbe8');
-    wall.addColorStop(1, '#ffcfe0');
+    wall.addColorStop(0, P.wall1);
+    wall.addColorStop(0.6, P.wall2);
+    wall.addColorStop(1, P.wall2);
     g.fillStyle = wall;
     g.fillRect(0, 0, W, H);
 
     var horizon = Math.round(H * 0.72);
-    var tableTop = g.createLinearGradient(0, horizon - 20, 0, H);
-    tableTop.addColorStop(0, '#fff4f8');
-    tableTop.addColorStop(1, '#ffdde9');
-    g.fillStyle = tableTop;
+    var tt = g.createLinearGradient(0, horizon - 20, 0, H);
+    tt.addColorStop(0, P.table1);
+    tt.addColorStop(1, P.table2);
+    g.fillStyle = tt;
     g.fillRect(0, horizon, W, H - horizon);
-    g.fillStyle = 'rgba(198,120,160,0.10)';
+    g.fillStyle = hexA(P.ink, 0.1);
     g.fillRect(0, horizon - 6, W, 12);
 
     var lite = g.createRadialGradient(W * 0.22, -H * 0.05, 0, W * 0.22, -H * 0.05, W * 1.05);
     lite.addColorStop(0, 'rgba(255,255,255,0.92)');
-    lite.addColorStop(0.55, 'rgba(255,255,255,0.28)');
+    lite.addColorStop(0.55, 'rgba(255,255,255,0.26)');
     lite.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = lite;
     g.fillRect(0, 0, W, H);
 
-    /* ---- confetti sprinkles on the studio set ---- */
-    for (i = 0; i < 110; i++) {
-      var sx = rnd() * W, sy = rnd() * H;
-      var sw = 6 + rnd() * 15, sh = 3 + rnd() * 5, rot = rnd() * TAU;
+    /* sparkles and confetti on the studio set */
+    for (i = 0; i < 120; i++) {
+      var sx = rnd() * W, sy = rnd() * H, sw = 6 + rnd() * 15, sh = 3 + rnd() * 5;
       g.save();
-      g.translate(sx, sy); g.rotate(rot);
-      g.globalAlpha = 0.22 + rnd() * 0.4;
+      g.translate(sx, sy); g.rotate(rnd() * TAU);
+      g.globalAlpha = 0.2 + rnd() * 0.4;
       g.fillStyle = SPR[Math.floor(rnd() * SPR.length)];
       roundRectPath(g, -sw / 2, -sh / 2, sw, sh, sh / 2);
       g.fill();
       g.restore();
     }
-    for (i = 0; i < 14; i++) {
+    for (i = 0; i < 18; i++) {
       g.save();
-      g.globalAlpha = 0.35 + rnd() * 0.45;
-      g.fillStyle = rnd() < 0.55 ? '#ffffff' : '#ffe08a';
-      starPath(g, rnd() * W, rnd() * H * 0.95, 7 + rnd() * 12, 3 + rnd() * 5, 5, -Math.PI / 2);
+      g.globalAlpha = 0.3 + rnd() * 0.45;
+      g.fillStyle = rnd() < 0.5 ? '#ffffff' : P.card2;
+      starPath(g, rnd() * W, rnd() * H * 0.96, 7 + rnd() * 13, 3 + rnd() * 5, 5, -Math.PI / 2);
       g.fill();
       g.restore();
     }
     g.globalAlpha = 1;
 
-    /* ---- the backing card, tilted like a product photo ---- */
+    /* ---- the backing card ---- */
     var cardW = 720, cardH = 918, tilt = -0.075;
     var cx0 = W / 2 + 6, cy0 = H * 0.53;
     g.save();
     g.translate(cx0, cy0);
     g.rotate(tilt);
 
-    /* soft cast shadow of the card */
     g.save();
-    g.shadowColor = 'rgba(150,85,122,0.38)';
+    g.shadowColor = hexA(P.ink, 0.3);
     g.shadowBlur = 70;
     g.shadowOffsetY = 46;
-    g.fillStyle = '#ffc7db';
+    g.fillStyle = P.card2;
     roundRectPath(g, -cardW / 2, -cardH / 2, cardW, cardH, 66);
     g.fill();
     g.restore();
 
-    /* card face */
     var cg = g.createLinearGradient(-cardW / 2, -cardH / 2, cardW / 2, cardH / 2);
-    cg.addColorStop(0, '#ffe4ef');
-    cg.addColorStop(0.45, '#ffd3e4');
-    cg.addColorStop(1, '#ffbcd6');
+    cg.addColorStop(0, P.card1);
+    cg.addColorStop(0.35, P.card1);
+    cg.addColorStop(1, P.card2);
     g.fillStyle = cg;
     roundRectPath(g, -cardW / 2, -cardH / 2, cardW, cardH, 66);
     g.fill();
 
-    /* inner frame + top punch hole */
+    /* inner frame */
     g.save();
-    g.strokeStyle = 'rgba(255,255,255,0.8)';
+    g.strokeStyle = 'rgba(255,255,255,0.82)';
     g.lineWidth = 7;
     roundRectPath(g, -cardW / 2 + 26, -cardH / 2 + 26, cardW - 52, cardH - 52, 50);
     g.stroke();
     g.restore();
 
+    /* punched hole, with the set showing through */
     var holeY = -cardH / 2 + 66;
     g.save();
     g.globalCompositeOperation = 'destination-out';
     g.beginPath(); g.arc(0, holeY, 23, 0, TAU); g.fill();
     g.restore();
-    /* the card sits on the studio set: put the backdrop showing through the hole */
     g.save();
     g.beginPath(); g.arc(0, holeY, 23, 0, TAU); g.clip();
     var hg = g.createLinearGradient(0, holeY - 23, 0, holeY + 23);
-    hg.addColorStop(0, '#ffe3ee');
-    hg.addColorStop(1, '#ffd2e2');
+    hg.addColorStop(0, P.table1);
+    hg.addColorStop(1, P.table2);
     g.fillStyle = hg;
     g.fillRect(-30, holeY - 30, 60, 60);
     g.restore();
     g.save();
-    g.strokeStyle = 'rgba(255,157,190,0.55)';
+    g.strokeStyle = hexA(P.ink, 0.3);
     g.lineWidth = 6;
     g.beginPath(); g.arc(0, holeY, 26, 0, TAU); g.stroke();
     g.restore();
@@ -6947,7 +7265,6 @@ input[type=range]::-webkit-slider-thumb{
     for (i = 0; i < 46; i++) {
       var px = (rnd() - 0.5) * (cardW - 90);
       var py = (rnd() - 0.5) * (cardH - 90);
-      /* keep the middle clear for the blister */
       if (Math.abs(px) < cardW * 0.36 && Math.abs(py - 110) < 300) continue;
       g.save();
       g.translate(px, py); g.rotate(rnd() * TAU);
@@ -6958,39 +7275,38 @@ input[type=range]::-webkit-slider-thumb{
       g.restore();
     }
     g.globalAlpha = 1;
-    for (i = 0; i < 7; i++) {
+    for (i = 0; i < 9; i++) {
       g.save();
-      g.globalAlpha = 0.55 + rnd() * 0.4;
-      g.fillStyle = rnd() < 0.6 ? '#fff7c9' : '#ffffff';
-      var sxp = (rnd() - 0.5) * (cardW - 120);
-      var syp = -cardH / 2 + 130 + rnd() * 90;
-      starPath(g, sxp, syp, 12 + rnd() * 10, 5 + rnd() * 4, 5, -Math.PI / 2);
+      g.globalAlpha = 0.5 + rnd() * 0.45;
+      g.fillStyle = rnd() < 0.55 ? '#fff7c9' : '#ffffff';
+      starPath(g, (rnd() - 0.5) * (cardW - 120), -cardH / 2 + 124 + rnd() * 104,
+        11 + rnd() * 11, 5 + rnd() * 4, 5, -Math.PI / 2);
       g.fill();
       g.restore();
     }
+    g.globalAlpha = 1;
 
-    /* ---- header typography ---- */
-    var title = shotTitle || 'POCKET SHAKER';
+    /* header type */
     var title = shotTitle || 'POCKET SHAKER';
     g.textAlign = 'center';
     g.textBaseline = 'alphabetic';
     var titleY = -cardH / 2 + 178;
-    g.font = '900 52px ' + FONT;
+    g.font = mockFont(900, 52);
     var tw = g.measureText(title).width, maxTw = cardW - 300;
-    if (tw > maxTw) g.font = '900 ' + Math.max(26, Math.floor(52 * maxTw / tw)) + 'px ' + FONT;
+    if (tw > maxTw) g.font = mockFont(900, Math.max(26, Math.floor(52 * maxTw / tw)));
     g.save();
     g.lineJoin = 'round';
-    g.strokeStyle = 'rgba(255,255,255,0.95)';
+    g.strokeStyle = 'rgba(255,255,255,0.96)';
     g.lineWidth = 13;
     g.strokeText(title, 0, titleY);
-    g.fillStyle = '#ff6fa5';
+    g.fillStyle = P.accent;
     g.fillText(title, 0, titleY);
     g.restore();
-    g.fillStyle = 'rgba(255,255,255,0.9)';
-    g.font = '800 19px ' + FONT;
+    g.fillStyle = hexA(P.ink, 0.45);
+    g.font = mockFont(800, 19);
     g.fillText('HANDMADE ACRYLIC SHAKER', 0, titleY + 42);
 
-    /* ---- the shaker, packed in its blister ---- */
+    /* ---- the shaker packed in its blister ---- */
     var fit = caseFit();
     var caseHstage = VIEW.S * fit.h;
     var targetH = 505;
@@ -6999,15 +7315,14 @@ input[type=range]::-webkit-slider-thumb{
     var cxs = VIEW.cx + fit.uMid * VIEW.S;
     var cys = VIEW.cy + fit.vMid * VIEW.S;
 
-    /* the soft shadow the blister drops on the card */
     g.save();
     g.translate(0, shiftY + 34);
     g.scale(1, 0.28);
     var bs = targetH * 0.62;
     var bsg = g.createRadialGradient(0, 0, 10, 0, 0, bs);
-    bsg.addColorStop(0, 'rgba(146,78,116,0.40)');
-    bsg.addColorStop(0.62, 'rgba(146,78,116,0.15)');
-    bsg.addColorStop(1, 'rgba(146,78,116,0)');
+    bsg.addColorStop(0, hexA(P.ink, 0.38));
+    bsg.addColorStop(0.62, hexA(P.ink, 0.14));
+    bsg.addColorStop(1, hexA(P.ink, 0));
     g.fillStyle = bsg;
     g.beginPath(); g.arc(0, 0, bs, 0, TAU); g.fill();
     g.restore();
@@ -7020,7 +7335,7 @@ input[type=range]::-webkit-slider-thumb{
     g.drawImage(comp, 0, 0, VIEW.w, VIEW.h);
     g.restore();
 
-    /* ---- the vacuum-formed plastic blister over the acrylic ---- */
+    /* the vacuum-formed plastic blister over the acrylic */
     var dBulge = getMask(shapeKey, -0.078, 300);
     var dSeal = getMask(shapeKey, -0.052, 300);
     var dBand = getMask(shapeKey, -0.044, 300);
@@ -7038,7 +7353,6 @@ input[type=range]::-webkit-slider-thumb{
       gg.fillStyle = lg;
       gg.fillRect(0, 0, VIEW.w, VIEW.h);
 
-      /* broad soft highlight sweeping the raised top-left of the dome */
       var rg = gg.createRadialGradient(
         VIEW.cx - VIEW.S * 0.28, VIEW.cy - VIEW.S * 0.44, VIEW.S * 0.02,
         VIEW.cx - VIEW.S * 0.16, VIEW.cy - VIEW.S * 0.3, VIEW.S * 0.6
@@ -7048,8 +7362,6 @@ input[type=range]::-webkit-slider-thumb{
       gg.fillStyle = rg;
       gg.fillRect(0, 0, VIEW.w, VIEW.h);
 
-      /* crisp specular streaks a vacuum-formed blister throws; each one is a
-         small stack of ellipses so the falloff stays soft like real plastic */
       gg.save();
       gg.fillStyle = 'rgba(255,255,255,0.98)';
       var st, kk, hx, hy, hw, hh;
@@ -7070,7 +7382,6 @@ input[type=range]::-webkit-slider-thumb{
       }
       gg.restore();
 
-      /* the lower inner wall catches a little reflected light */
       var low = gg.createLinearGradient(0, VIEW.cy + VIEW.S * 0.3, 0, VIEW.cy + VIEW.S * 0.6);
       low.addColorStop(0, 'rgba(255,255,255,0)');
       low.addColorStop(1, 'rgba(255,255,255,0.2)');
@@ -7078,17 +7389,16 @@ input[type=range]::-webkit-slider-thumb{
       gg.fillRect(0, 0, VIEW.w, VIEW.h);
     }, dBulge, null);
 
-    /* the heat-sealed edge: a bright band with a thin pink crease inside it */
     var sealBand = maskLayer(function (gg) {
       gg.fillStyle = 'rgba(255,255,255,0.95)';
       gg.fillRect(0, 0, VIEW.w, VIEW.h);
     }, dBulge, dSeal);
     var sealCrease = maskLayer(function (gg) {
-      gg.fillStyle = 'rgba(212,138,178,0.45)';
+      gg.fillStyle = hexA(P.ink, 0.24);
       gg.fillRect(0, 0, VIEW.w, VIEW.h);
     }, dSeal, dBand);
     var innerShade = maskLayer(function (gg) {
-      gg.fillStyle = 'rgba(126,70,105,0.16)';
+      gg.fillStyle = hexA(P.ink, 0.12);
       gg.fillRect(0, 0, VIEW.w, VIEW.h);
     }, dBand, dInner);
 
@@ -7098,7 +7408,7 @@ input[type=range]::-webkit-slider-thumb{
     g.translate(-cxs, -cys);
     g.save();
     g.globalAlpha = 0.9;
-    g.shadowColor = 'rgba(120,60,100,0.3)';
+    g.shadowColor = hexA(P.ink, 0.28);
     g.shadowBlur = 24;
     g.shadowOffsetY = 10;
     g.drawImage(dome, 0, 0, VIEW.w, VIEW.h);
@@ -7112,41 +7422,579 @@ input[type=range]::-webkit-slider-thumb{
     g.globalAlpha = 1;
     g.restore();
 
-    /* a metal grommet in the punch hole */
+    /* grommet */
     g.save();
     g.translate(0, holeY);
     g.strokeStyle = 'rgba(255,255,255,0.95)';
     g.lineWidth = 8;
     g.beginPath(); g.arc(0, 0, 27, 0, TAU); g.stroke();
-    g.strokeStyle = 'rgba(214,140,180,0.5)';
+    g.strokeStyle = hexA(P.ink, 0.3);
     g.lineWidth = 3;
     g.beginPath(); g.arc(0, 0, 23, 0, TAU); g.stroke();
     g.restore();
 
     /* brand label at the foot of the card */
-    g.fillStyle = 'rgba(255,255,255,0.82)';
+    g.fillStyle = 'rgba(255,255,255,0.84)';
     roundRectPath(g, -148, cardH / 2 - 92, 296, 46, 23);
     g.fill();
-    g.fillStyle = 'rgba(198,80,132,0.9)';
-    g.font = '800 21px ' + FONT;
+    g.fillStyle = hexA(P.ink, 0.92);
+    g.font = mockFont(800, 21);
     g.fillText('POCKET SHAKER', 0, cardH / 2 - 61);
+
     g.restore();
 
-    /* small watermark outside the card */
-    g.textAlign = 'center';
-    g.fillStyle = 'rgba(198,95,145,0.5)';
-    g.font = '800 24px ' + FONT;
-    g.fillText('POCKET SHAKER', W / 2, H - 46);
-    g.fillStyle = 'rgba(150,90,130,0.42)';
-    g.font = '700 19px ' + FONT;
-    g.fillText(dateStamp(), W / 2, H - 18);
+    /* sparkles over the set */
+    for (i = 0; i < 9; i++) {
+      g.save();
+      g.globalAlpha = 0.3 + rnd() * 0.45;
+      g.fillStyle = rnd() < 0.5 ? '#ffffff' : P.card2;
+      starPath(g, 70 + rnd() * (W - 140), 90 + rnd() * (H - 300), 11 + rnd() * 15, 4 + rnd() * 6, 4, -Math.PI / 2);
+      g.fill();
+      g.restore();
+    }
 
-    /* vignette to settle the edges */
+    mockFooter(g, W, H, P, false, true);
+
     var vg = g.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
     vg.addColorStop(0, 'rgba(255,255,255,0)');
-    vg.addColorStop(1, 'rgba(196,110,150,0.14)');
+    vg.addColorStop(1, hexA(P.ink, 0.12));
     g.fillStyle = vg;
     g.fillRect(0, 0, W, H);
+  }
+
+  /* ---------------- ② 단독 제품컷 ---------------- */
+  function mockSceneSolo(g, W, H, P) {
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, W, H);
+
+    /* a soft tint behind the product, like a seamless studio sweep */
+    var glow = g.createRadialGradient(W * 0.5, H * 0.4, W * 0.04, W * 0.5, H * 0.5, W * 0.82);
+    glow.addColorStop(0, hexA(P.tint, 0.95));
+    glow.addColorStop(0.42, hexA(P.tint, 0.5));
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = glow;
+    g.fillRect(0, 0, W, H);
+
+    var floorY = H * 0.78;
+    var fl = g.createLinearGradient(0, floorY, 0, H);
+    fl.addColorStop(0, 'rgba(255,255,255,0)');
+    fl.addColorStop(1, hexA(P.wall2, 0.5));
+    g.fillStyle = fl;
+    g.fillRect(0, floorY, W, H - floorY);
+
+    var cx = W / 2, caseH = 900, cy = H * 0.455;
+
+    /* the crisp shadow the acrylic drops on the sweep */
+    mockBlobShadow(g, cx + 30, cy + caseH * 0.47, 320, 86, '#6b5568', 0.16);
+    mockDrawShaker(g, cx, cy, caseH, 0.014, { a: 0.3, a2: 0.15 });
+
+    /* polished acrylic: a softbox reflection and one crisp streak */
+    var sheen = mockSheenLayer();
+    mockShakerSpace(g, cx, cy, caseH, 0.014, function () {
+      g.drawImage(sheen, 0, 0, VIEW.w, VIEW.h);
+    });
+
+    /* the keyring hardware on top */
+    var fit = caseFit();
+    var sc = caseH / fit.h;
+    var caseTop = cy + (shapeBounds(shapeKey).v0 - fit.vMid) * sc;
+    if (ringKey === 'none') {
+      g.save();
+      var tg = g.createLinearGradient(cx - 10, caseTop - 26, cx + 10, caseTop + 8);
+      tg.addColorStop(0, '#ffffff');
+      tg.addColorStop(0.5, '#e6e9ef');
+      tg.addColorStop(1, '#c3c9d3');
+      g.fillStyle = tg;
+      roundRectPath(g, cx - 11, caseTop - 30, 22, 40, 9);
+      g.fill();
+      g.restore();
+      mockChromeRing(g, cx, caseTop - 58, 30);
+    }
+
+    mockFooter(g, W, H, P, false);
+
+    /* very light vignette so the whites don't blow out */
+    var vg = g.createRadialGradient(W / 2, H * 0.46, W * 0.42, W / 2, H * 0.46, W * 1.0);
+    vg.addColorStop(0, 'rgba(255,255,255,0)');
+    vg.addColorStop(1, hexA(P.ink, 0.07));
+    g.fillStyle = vg;
+    g.fillRect(0, 0, W, H);
+  }
+
+  /* ---- cute charms that live on the desk / pegboard ---- */
+  function mockCharmPath(g, kind, r) {
+    if (kind === 'heart') {
+      heartPath(g, 0, r * 0.06, r * 0.82, 0.42, 0.76, 1.02);
+      return;
+    }
+    if (kind === 'star') {
+      starPath(g, 0, 0, r, r * 0.45, 5, -Math.PI / 2);
+      return;
+    }
+    if (kind === 'bear') {
+      g.beginPath();
+      g.moveTo(-r * 0.34, -r * 0.44);
+      g.arc(-r * 0.56, -r * 0.52, r * 0.28, Math.PI * 0.78, Math.PI * 2.05);
+      g.moveTo(r * 0.34, -r * 0.44);
+      g.arc(r * 0.56, -r * 0.52, r * 0.28, Math.PI * 0.95, Math.PI * 2.22);
+      g.moveTo(r * 0.86, r * 0.1);
+      g.arc(0, r * 0.1, r * 0.86, 0, TAU);
+      g.closePath();
+      return;
+    }
+    if (kind === 'cloud') {
+      g.beginPath();
+      g.moveTo(-r * 0.62, r * 0.34);
+      g.arc(-r * 0.4, r * 0.06, r * 0.4, Math.PI * 0.6, Math.PI * 1.9);
+      g.arc(r * 0.02, -r * 0.16, r * 0.46, Math.PI * 0.92, Math.PI * 2.1);
+      g.arc(r * 0.5, r * 0.1, r * 0.34, Math.PI * 1.05, Math.PI * 2.25);
+      g.closePath();
+      return;
+    }
+    g.beginPath();
+    g.arc(0, 0, r * 0.9, 0, TAU);
+    g.closePath();
+  }
+
+  function mockAcrylicCharm(g, kind, x, y, r, P, tint, rot) {
+    tint = tint || P.card2;
+    g.save();
+    g.translate(x, y);
+    if (rot) g.rotate(rot);
+    g.save();
+    g.shadowColor = hexA(P.ink, 0.22);
+    g.shadowBlur = r * 0.5;
+    g.shadowOffsetY = r * 0.22;
+    g.fillStyle = hexA(tint, 0.8);
+    mockCharmPath(g, kind, r);
+    g.fill();
+    g.restore();
+
+    var grd = g.createLinearGradient(-r, -r, r, r);
+    grd.addColorStop(0, 'rgba(255,255,255,0.94)');
+    grd.addColorStop(0.52, hexA(tint, 0.66));
+    grd.addColorStop(1, hexA(tint, 0.4));
+    g.fillStyle = grd;
+    mockCharmPath(g, kind, r);
+    g.fill();
+    g.lineWidth = Math.max(3, r * 0.11);
+    g.strokeStyle = 'rgba(255,255,255,0.92)';
+    g.stroke();
+
+    /* a small catchlight so it reads as acrylic, not paper */
+    g.save();
+    g.globalAlpha = 0.8;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(-r * 0.3, -r * 0.34, r * 0.2, r * 0.1, -0.6, 0, TAU);
+    g.fill();
+    g.restore();
+    g.restore();
+  }
+
+  /* a tiny printed motif for the sticker sheet */
+  function mockTinyMotif(g, x, y, r, i, P) {
+    var tints = [P.card2, '#ffe9a8', '#cfe8ff', '#dccdff'];
+    var t = tints[i % tints.length];
+    g.save();
+    g.translate(x, y);
+    if (i % 4 === 0) mockCharmPath(g, 'heart', r * 0.9);
+    else if (i % 4 === 1) mockCharmPath(g, 'star', r);
+    else if (i % 4 === 2) mockCharmPath(g, 'bear', r * 0.85);
+    else mockCharmPath(g, 'cloud', r * 0.9);
+    g.fillStyle = t;
+    g.fill();
+    g.lineWidth = 2;
+    g.strokeStyle = 'rgba(255,255,255,0.9)';
+    g.stroke();
+    g.restore();
+  }
+
+  function mockStickerSheet(g, cx, cy, w, h, rot, P, rnd) {
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(rot);
+    g.save();
+    g.shadowColor = hexA(P.ink, 0.18);
+    g.shadowBlur = 30;
+    g.shadowOffsetY = 12;
+    g.fillStyle = '#ffffff';
+    roundRectPath(g, -w / 2, -h / 2, w, h, 16);
+    g.fill();
+    g.restore();
+
+    g.save();
+    roundRectPath(g, -w / 2, -h / 2, w, h, 16);
+    g.clip();
+    g.fillStyle = '#ffffff';
+    g.fillRect(-w / 2, -h / 2, w, h);
+    var cols = 3, rows = 4, i, j, kw = w / cols, kh = h / rows;
+    for (j = 0; j < rows; j++) {
+      for (i = 0; i < cols; i++) {
+        mockTinyMotif(g, -w / 2 + kw * (i + 0.5), -h / 2 + kh * (j + 0.5),
+          Math.min(kw, kh) * 0.3, i + j + (rnd ? Math.floor(rnd() * 2) : 0), P);
+      }
+    }
+    /* a dusty edge where the sheet was peeled off */
+    var eg = g.createLinearGradient(0, h / 2 - 46, 0, h / 2);
+    eg.addColorStop(0, 'rgba(255,255,255,0)');
+    eg.addColorStop(1, 'rgba(190,170,200,0.18)');
+    g.fillStyle = eg;
+    g.fillRect(-w / 2, h / 2 - 46, w, 46);
+    g.restore();
+    g.restore();
+  }
+
+  /* ---------------- ③ 감성 소품 배경 (flat lay) ---------------- */
+  function mockSceneProps(g, W, H, P) {
+    var rnd = mulberry32(88231), i, x, y;
+
+    g.fillStyle = '#fffdfb';
+    g.fillRect(0, 0, W, H);
+
+    /* the desk mat */
+    var pad = 26;
+    g.save();
+    g.shadowColor = hexA(P.ink, 0.2);
+    g.shadowBlur = 44;
+    g.shadowOffsetY = 18;
+    var mg = g.createLinearGradient(pad, pad, W - pad, H - pad);
+    mg.addColorStop(0, P.table1);
+    mg.addColorStop(0.5, P.desk);
+    mg.addColorStop(1, P.table2);
+    g.fillStyle = mg;
+    roundRectPath(g, pad, pad, W - pad * 2, H - pad * 2, 44);
+    g.fill();
+    g.restore();
+
+    /* soft cloth dots */
+    g.save();
+    g.fillStyle = hexA(P.ink, 0.085);
+    var row = 0;
+    for (y = pad + 42; y < H - pad; y += 56, row++) {
+      for (x = pad + 42 + (row % 2 ? 28 : 0); x < W - pad; x += 56) {
+        g.beginPath(); g.arc(x, y, 2.1, 0, TAU); g.fill();
+      }
+    }
+    g.restore();
+
+    /* light falling from the top left */
+    var lite = g.createRadialGradient(W * 0.2, H * 0.05, 0, W * 0.2, H * 0.05, W * 1.0);
+    lite.addColorStop(0, 'rgba(255,255,255,0.5)');
+    lite.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = lite;
+    g.fillRect(0, 0, W, H);
+
+    /* ---- props behind the shaker ---- */
+    /* a glossy ribbon, top left */
+    var rib = mockRibbonSprite(P);
+    if (rib) {
+      g.save();
+      g.translate(232, 322);
+      g.rotate(-0.38);
+      mockBlobShadow(g, 12, 68, 96, 34, P.ink, 0.16);
+      g.drawImage(rib, -108, -108, 216, 216);
+      g.restore();
+    }
+    /* washi tape slipped under the corner */
+    mockTape(g, 770, 206, 210, 54, 0.58, P, 0.58);
+    /* mini sticker sheet, bottom left */
+    mockStickerSheet(g, 250, 1010, 300, 392, -0.24, P, rnd);
+    /* acrylic charms scattered around */
+    mockAcrylicCharm(g, 'heart', 902, 300, 56, P, P.card2, 0.16);
+    mockAcrylicCharm(g, 'star', 812, 470, 42, P, '#ffe9a8', -0.2);
+    mockAcrylicCharm(g, 'bear', 982, 690, 60, P, '#dccdff', 0.1);
+    mockAcrylicCharm(g, 'cloud', 196, 700, 52, P, '#cfe8ff', -0.12);
+    mockAcrylicCharm(g, 'star', 968, 178, 30, P, P.card2, 0.3);
+    mockAcrylicCharm(g, 'heart', 930, 1030, 40, P, '#ffd7e6', -0.22);
+
+    /* ---- the shaker, slightly angled ---- */
+    var cx = W * 0.52, caseH = 780, cy = H * 0.455;
+    mockBlobShadow(g, cx + 34, cy + caseH * 0.5, 300, 84, P.ink, 0.18);
+    mockDrawShaker(g, cx, cy, caseH, -0.085, { a: 0.3, a2: 0.16 });
+
+    /* ---- a prop in front, so the layering feels real ---- */
+    mockAcrylicCharm(g, 'heart', 372, 1112, 34, P, '#ffd7e6', 0.34);
+
+    mockFooter(g, W, H, P, false);
+
+    var vg = g.createRadialGradient(W / 2, H * 0.46, W * 0.42, W / 2, H * 0.46, W * 1.0);
+    vg.addColorStop(0, 'rgba(255,255,255,0)');
+    vg.addColorStop(1, hexA(P.ink, 0.12));
+    g.fillStyle = vg;
+    g.fillRect(0, 0, W, H);
+  }
+
+  function mockRibbonSprite(P) {
+    var key = 'ribbon|' + P.id;
+    if (mockSprites[key]) return mockSprites[key];
+    try {
+      var S = 200, cv = cutCanvas(S, S), gg = cv.getContext('2d');
+      gg.translate(S / 2 - DECO_C, S / 2 - DECO_C);
+      decoArtRibbon(gg, {
+        top: '#ffffff', mid: P.card2, bot: P.accent,
+        line: hexA(P.ink, 0.32), glow: hexA(P.accent, 0.4), knot: P.card2
+      });
+      mockSprites[key] = cv;
+      return cv;
+    } catch (e) { return null; }
+  }
+
+  /* ---------------- ④ 매장 진열컷 (pegboard) ---------------- */
+  function mockPegHole(g, x, y) {
+    var hg = g.createLinearGradient(0, y - 13, 0, y + 13);
+    hg.addColorStop(0, 'rgba(176,142,106,0.55)');
+    hg.addColorStop(0.55, 'rgba(199,168,133,0.42)');
+    hg.addColorStop(1, 'rgba(238,219,190,0.5)');
+    g.fillStyle = hg;
+    roundRectPath(g, x - 5, y - 13, 10, 26, 5);
+    g.fill();
+    g.save();
+    g.strokeStyle = 'rgba(255,252,244,0.8)';
+    g.lineWidth = 1.8;
+    g.beginPath();
+    g.moveTo(x - 4.4, y + 11);
+    g.quadraticCurveTo(x, y + 14.4, x + 4.4, y + 11);
+    g.stroke();
+    g.restore();
+  }
+
+  function mockHook(g, x, yTop, yLen, warm) {
+    var gr = g.createLinearGradient(x - 6, 0, x + 7, 0);
+    if (warm) {
+      gr.addColorStop(0, '#c9b391');
+      gr.addColorStop(0.4, '#f7efdd');
+      gr.addColorStop(0.72, '#d8c19c');
+      gr.addColorStop(1, '#b59a75');
+    } else {
+      gr.addColorStop(0, '#b6bcc6');
+      gr.addColorStop(0.4, '#f8f9fc');
+      gr.addColorStop(0.72, '#cbd0d8');
+      gr.addColorStop(1, '#a5acb7');
+    }
+    g.save();
+    g.shadowColor = 'rgba(120,95,70,0.22)';
+    g.shadowBlur = 8;
+    g.shadowOffsetX = 3;
+    g.fillStyle = gr;
+    roundRectPath(g, x - 5, yTop, 10, yLen, 5);
+    g.fill();
+    /* the little knob the keyring rests on */
+    g.beginPath();
+    g.arc(x, yTop + yLen, 7.5, 0, TAU);
+    g.fill();
+    g.restore();
+  }
+
+  /* cut a saved shaker's drawer thumbnail down to its acrylic outline */
+  function slotCutSprite(st) {
+    if (!st || !st.thumb) return null;
+    var ent = slotThumbCache[st.id];
+    if (!ent || ent.url !== st.thumb || !ent.ok) return null;
+    var key = 'slot|' + st.id + '|' + ent.url.length + '|' + (st.st ? (st.st.shape + '|' + st.st.ring) : '');
+    if (mockSprites[key]) return mockSprites[key];
+
+    var W = THUMB_W, H = THUMB_H;
+    var shapeK = (st.st && SHAPES[st.st.shape]) ? st.st.shape : 'capsule';
+    var ringK = (st.st && RING_BY_ID[st.st.ring]) ? st.st.ring : 'none';
+    var saveShape = shapeKey, saveRing = ringKey;
+    shapeKey = shapeK; ringKey = ringK;
+    var fit = caseFit(), b = shapeBounds(shapeK);
+    shapeKey = saveShape; ringKey = saveRing;
+
+    var sc = Math.min(W / fit.w, H / fit.h) * 0.94;
+    var ox = W / 2 - fit.uMid * sc, oy = H / 2 - fit.vMid * sc;
+
+    var cv = cutCanvas(W, H), g = cv.getContext('2d');
+    try {
+      g.drawImage(ent.img, 0, 0, W, H);
+      var m = getMask(shapeK, -0.032, 240);
+      g.globalCompositeOperation = 'destination-in';
+      g.drawImage(m.cv,
+        ox - (FRAME_UW / 2) * sc, oy - (FRAME_UH / 2) * sc,
+        (m.w / m.pxl) * sc, (m.h / m.pxl) * sc);
+      g.globalCompositeOperation = 'source-over';
+    } catch (e) { return null; }
+
+    var spr = {
+      cv: cv, w: W, h: H, cx: W / 2,
+      top: oy + b.v0 * sc,                 /* visible case top, in sprite px */
+      caseH: (b.v1 - b.v0) * sc,
+      caseW: (b.u1 - b.u0) * sc
+    };
+    mockSprites[key] = spr;
+    return spr;
+  }
+
+  function loadSlotThumbs(cachedList) {
+    var list = cachedList || readSlots(), i, s, ent;
+    for (i = 0; i < list.length; i++) {
+      s = list[i];
+      if (!s || !s.thumb) continue;
+      ent = slotThumbCache[s.id];
+      if (ent && ent.url === s.thumb) continue;
+      ent = slotThumbCache[s.id] = { url: s.thumb, img: new Image(), ok: false };
+      (function (e) {
+        e.img.onload = function () { e.ok = true; refreshMockSoon(); };
+        e.img.onerror = function () { e.ok = false; };
+      })(ent);
+      try { ent.img.src = s.thumb; } catch (e2) { ent.ok = false; }
+    }
+  }
+
+  var mockRefreshTimer = 0;
+  function refreshMockSoon() {
+    var sh = $('#shot');
+    if (!sh || sh.hidden || shotMode !== 'product') return;
+    clearTimeout(mockRefreshTimer);
+    mockRefreshTimer = setTimeout(function () {
+      var el = $('#shot');
+      if (el && !el.hidden) { try { makeShotImage(); } catch (e) { /* ignore */ } }
+    }, 60);
+  }
+
+  /* one item hanging on the board */
+  function mockHangSaved(g, st, cx, hookY, box, rot, P) {
+    var spr = slotCutSprite(st);
+    if (!spr) return false;
+    var k = Math.min(box.w / Math.max(1, spr.caseW), box.h / Math.max(1, spr.caseH));
+    var w = spr.w * k, h = spr.h * k, topOff = spr.top * k;
+    var ringR = clamp(spr.caseH * k * 0.055, 10, 22);
+    var drawTop = hookY + ringR * 1.9;
+    mockHook(g, cx, hookY, ringR * 1.4, true);
+    mockChromeRing(g, cx, hookY + ringR * 1.5, ringR);
+    g.save();
+    g.translate(cx, drawTop);
+    g.rotate(rot || 0);
+    g.shadowColor = hexA(P.ink, 0.28);
+    g.shadowBlur = 20;
+    g.shadowOffsetY = 10;
+    g.drawImage(spr.cv, -spr.cx * k, -topOff, w, h);
+    g.restore();
+    return true;
+  }
+
+  /* a filler charm on the board (when the drawer has nothing to show) */
+  function mockHangFiller(g, kind, cx, hookY, box, rot, P, tint) {
+    var r = Math.min(box.w, box.h) * 0.44;
+    var ringR = clamp(r * 0.2, 10, 20);
+    mockHook(g, cx, hookY, ringR * 1.4, true);
+    mockChromeRing(g, cx, hookY + ringR * 1.5, ringR);
+    var top = hookY + ringR * 1.9;
+    mockAcrylicCharm(g, kind, cx, top + r * 1.0, r, P, tint, rot || 0);
+  }
+
+  function mockSceneDisplay(g, W, H, P) {
+    var rnd = mulberry32(70117), i, x, y;
+
+    /* the cream pegboard panel */
+    var bg = g.createLinearGradient(0, 0, W * 0.55, H);
+    bg.addColorStop(0, '#fcf3e6');
+    bg.addColorStop(0.45, '#f7ead6');
+    bg.addColorStop(1, '#efdfc7');
+    g.fillStyle = bg;
+    g.fillRect(0, 0, W, H);
+
+    /* fibre speckles so the board isn't flat */
+    g.save();
+    for (i = 0; i < 260; i++) {
+      g.globalAlpha = 0.04 + rnd() * 0.07;
+      g.fillStyle = rnd() < 0.5 ? '#ffffff' : '#d9c1a0';
+      g.beginPath();
+      g.arc(rnd() * W, rnd() * H, 2 + rnd() * 7, 0, TAU);
+      g.fill();
+    }
+    g.restore();
+
+    /* the hole grid */
+    var stepX = 78, stepY = 80;
+    for (y = 62; y < H - 6; y += stepY) {
+      for (x = 40; x < W - 6; x += stepX) mockPegHole(g, x, y);
+    }
+
+    /* warm light from the top left, then a soft inner shadow at the edges */
+    var lite = g.createRadialGradient(W * 0.18, H * 0.02, 0, W * 0.18, H * 0.02, W * 1.1);
+    lite.addColorStop(0, 'rgba(255,255,255,0.55)');
+    lite.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = lite;
+    g.fillRect(0, 0, W, H);
+
+    /* ---- the neighbours hanging on the board ---- */
+    var list = readSlots(), picked = [], j;
+    loadSlotThumbs(list);
+    for (j = 0; j < list.length && picked.length < 4; j++) {
+      if (list[j] && list[j].thumb) picked.push(list[j]);
+    }
+    var spots = [
+      { x: 196, hook: 250, w: 300, h: 330, rot: -0.05 },
+      { x: 190, hook: 806, w: 300, h: 260, rot: 0.06 },
+      { x: 884, hook: 250, w: 300, h: 330, rot: 0.05 },
+      { x: 890, hook: 806, w: 300, h: 260, rot: -0.06 }
+    ];
+    var fillers = [
+      { kind: 'heart', tint: '#ffd7e6' },
+      { kind: 'bear', tint: '#dccdff' },
+      { kind: 'star', tint: '#ffe9a8' },
+      { kind: 'cloud', tint: '#cfe8ff' }
+    ];
+    for (i = 0; i < spots.length; i++) {
+      var sp = spots[i];
+      if (picked[i] && mockHangSaved(g, picked[i], sp.x, sp.hook, sp, sp.rot, P)) continue;
+      mockHangFiller(g, fillers[i].kind, sp.x, sp.hook, sp, sp.rot, P, fillers[i].tint);
+    }
+
+    /* ---- my shaker, front and centre ---- */
+    var hasRing = ringKey !== 'none';
+    var hookY = 196;
+    var fit = caseFit(), bb = shapeBounds(shapeKey);
+    var kf = Math.min(700 / Math.max(0.1, bb.u1 - bb.u0), 620 / fit.h);
+    var caseH = fit.h * kf;
+    var boxTop = hookY + (hasRing ? 24 : 62);
+    var cy = boxTop + caseH / 2;
+    mockHook(g, W / 2, hookY, 44, false);
+    if (!hasRing) mockChromeRing(g, W / 2, hookY + 54, 30);
+    mockDrawShaker(g, W / 2, cy, caseH, 0, { a: 0.32, a2: 0.18 });
+
+    /* a small store tag under the featured item */
+    var tagW = 250, tagH = 62, tagY = Math.min(H - 210, boxTop + caseH + 40);
+    g.save();
+    g.shadowColor = hexA(P.ink, 0.2);
+    g.shadowBlur = 18;
+    g.shadowOffsetY = 8;
+    g.fillStyle = 'rgba(255,253,248,0.96)';
+    roundRectPath(g, W / 2 - tagW / 2, tagY, tagW, tagH, 16);
+    g.fill();
+    g.restore();
+    g.strokeStyle = hexA(P.ink, 0.16);
+    g.lineWidth = 2;
+    roundRectPath(g, W / 2 - tagW / 2, tagY, tagW, tagH, 16);
+    g.stroke();
+    g.textAlign = 'center';
+    g.fillStyle = hexA(P.ink, 0.8);
+    g.font = mockFont(800, 21);
+    g.fillText('POCKET SHAKER', W / 2, tagY + 34);
+    g.fillStyle = hexA(P.ink, 0.45);
+    g.font = mockFont(700, 15);
+    g.fillText('HANDMADE ACRYLIC', W / 2, tagY + 54);
+
+    mockFooter(g, W, H, P, false);
+
+    /* vignette, so the board feels lit from above */
+    var vg = g.createRadialGradient(W / 2, H * 0.42, W * 0.4, W / 2, H * 0.42, W * 1.05);
+    vg.addColorStop(0, 'rgba(255,255,255,0)');
+    vg.addColorStop(1, hexA('#8a6a45', 0.22));
+    g.fillStyle = vg;
+    g.fillRect(0, 0, W, H);
+  }
+
+  function renderProductShot() {
+    var W = 1080, H = 1350;
+    var cv = cutCanvas(W, H), g = cv.getContext('2d');
+    var P = mockPalette();
+    if (mockStyle === 'solo') mockSceneSolo(g, W, H, P);
+    else if (mockStyle === 'props') mockSceneProps(g, W, H, P);
+    else if (mockStyle === 'display') mockSceneDisplay(g, W, H, P);
+    else mockSceneBlister(g, W, H, P);
     return cv;
   }
 
@@ -7186,6 +8034,19 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   /* ---------------- 사진 저장 모드 / 보관함 탭 ---------------- */
+  var MOCK_SUB = {
+    blister: '포장 카드에 담긴 제품 사진처럼 담아요',
+    solo: '제품만 깔끔하게, 스튜디오 컷처럼 담아요',
+    props: '파스텔 책상 위 감성 사진처럼 담아요',
+    display: '매장 진열판에 걸린 키링처럼 담아요'
+  };
+  var MOCK_NOTICE = {
+    blister: '1080 × 1350 · 고른 색으로 카드와 배경을 맞춰 <b>블리스터 포장</b>에 담아요',
+    solo: '1080 × 1350 · 하얀 스튜디오에서 <b>제품만</b> 깔끔하게 담아요',
+    props: '1080 × 1350 · 파스텔 책상 위에 <b>소품과 함께</b> 담아요',
+    display: '1080 × 1350 · 매장 진열판에 내 쉐이커를 <b>걸어서</b> 담아요'
+  };
+
   function syncShotModeUI() {
     var box = $('#shotModeChips');
     if (!box) return;
@@ -7193,18 +8054,89 @@ input[type=range]::-webkit-slider-thumb{
     for (i = 0; i < bs.length; i++) {
       bs[i].classList.toggle('sel', bs[i].getAttribute('data-mode') === shotMode);
     }
+    var bar = $('#mockBar');
+    if (bar) bar.hidden = shotMode !== 'product';
+    var shEl = $('#shot');
+    if (shEl) shEl.classList.toggle('mock', shotMode === 'product');
+    var ms = document.querySelectorAll('#mockStyles button');
+    for (i = 0; i < ms.length; i++) {
+      ms[i].classList.toggle('sel', ms[i].getAttribute('data-style') === mockStyle);
+    }
+    var cs = document.querySelectorAll('#mockColors .msw');
+    for (i = 0; i < cs.length; i++) {
+      cs[i].classList.toggle('sel', cs[i].getAttribute('data-color') === mockColor);
+    }
+    var cn = $('#mockColorName');
+    if (cn) cn.textContent = mockPalette().name;
     var sub = $('#shotSub');
     if (sub) {
       sub.textContent = shotMode === 'product'
-        ? '블리스터 포장에 담긴 제품 사진처럼 담아요'
+        ? (MOCK_SUB[mockStyle] || MOCK_SUB.blister)
         : (ENV.ios ? '길게 눌러 ‘사진에 저장’도 돼요' : '저장하면 PNG로 받아요');
     }
     var nt = $('#shotNotice');
     if (nt) {
       nt.innerHTML = shotMode === 'product'
-        ? '1080 × 1350 · 매장에 걸린 아크릴 키링처럼 <b>블리스터 포장</b>에 담아요'
+        ? (MOCK_NOTICE[mockStyle] || MOCK_NOTICE.blister)
         : '사진 아래 이름과 저장 파일 이름에 쓰여요 · 최대 16자';
     }
+  }
+
+  function buildMockUI() {
+    var st = $('#mockStyles');
+    if (st && !st.firstChild) {
+      MOCK_STYLES.forEach(function (m) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('data-style', m.id);
+        b.textContent = m.short;
+        b.setAttribute('aria-label', m.name);
+        b.addEventListener('click', function () { setMockStyle(m.id); });
+        st.appendChild(b);
+      });
+    }
+    var cl = $('#mockColors');
+    if (cl && !cl.firstChild) {
+      MOCK_COLORS.forEach(function (c) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'msw';
+        b.setAttribute('data-color', c.id);
+        b.style.background = c.dot;
+        b.setAttribute('aria-label', c.name);
+        b.addEventListener('click', function () { setMockColor(c.id); });
+        cl.appendChild(b);
+      });
+      var nm = document.createElement('span');
+      nm.className = 'mname';
+      nm.id = 'mockColorName';
+      cl.appendChild(nm);
+    }
+    syncShotModeUI();
+  }
+
+  function setMockStyle(id) {
+    var ok = false, i;
+    for (i = 0; i < MOCK_STYLES.length; i++) if (MOCK_STYLES[i].id === id) ok = true;
+    if (!ok || mockStyle === id) return;
+    mockStyle = id;
+    writeMockPrefs();
+    syncShotModeUI();
+    if (shotMode !== 'product') setShotMode('product');
+    else if (!makeShotImage()) toast('사진을 만들지 못했어요');
+    Sound.unlock();
+    Sound.pop(id === 'blister');
+  }
+
+  function setMockColor(id) {
+    var ok = false, i;
+    for (i = 0; i < MOCK_COLORS.length; i++) if (MOCK_COLORS[i].id === id) ok = true;
+    if (!ok || mockColor === id) return;
+    mockColor = id;
+    writeMockPrefs();
+    syncShotModeUI();
+    if (!makeShotImage()) toast('사진을 만들지 못했어요');
+    Sound.unlock();
   }
 
   function setShotMode(m) {
@@ -7231,6 +8163,21 @@ input[type=range]::-webkit-slider-thumb{
     b.textContent = Sound.isMuted() ? '🔇 소리 꺼짐 (톡해서 켜기)' : '🔊 소리 켜짐 (톡해서 끄기)';
   }
 
+  /* ⌄ 메뉴 숨기기 / ⌃ 메뉴 — the stage takes the freed space */
+  var menuCollapsed = false, menuFitTimer = 0;
+  function setMenuCollapsed(v) {
+    menuCollapsed = !!v;
+    var app = $('#app'), bar = $('#menuBar'), open = $('#menuOpenBtn'), tog = $('#menuToggle');
+    if (app) app.classList.toggle('menumini', menuCollapsed);
+    if (bar) bar.classList.toggle('hide', menuCollapsed);
+    if (open) open.hidden = !menuCollapsed;
+    if (tog) tog.setAttribute('aria-expanded', menuCollapsed ? 'false' : 'true');
+    /* the grid slides, so re-fit the case once it has settled */
+    requestAnimationFrame(function () { layout(); });
+    clearTimeout(menuFitTimer);
+    menuFitTimer = setTimeout(function () { layout(); }, 380);
+  }
+
   function toggleMute() {
     var m = !Sound.isMuted();
     Sound.setMuted(m);
@@ -7246,6 +8193,9 @@ input[type=range]::-webkit-slider-thumb{
         b.addEventListener('click', function () { openMenu(b.getAttribute('data-menu')); });
       })(mb[i]);
     }
+    var mt = $('#menuToggle'), mo = $('#menuOpenBtn');
+    if (mt) mt.addEventListener('click', function () { Sound.unlock(); Sound.pop(false); setMenuCollapsed(true); });
+    if (mo) mo.addEventListener('click', function () { Sound.unlock(); Sound.pop(true); setMenuCollapsed(false); });
     var mc = $('#menuClose');
     if (mc) mc.addEventListener('click', closeMenu);
     var menuEl = $('#menu');
@@ -7333,7 +8283,8 @@ input[type=range]::-webkit-slider-thumb{
         })(bs[i]);
       }
     }
-    syncShotModeUI();
+    readMockPrefs();
+    buildMockUI();
 
     /* 보관함 탭 */
     var tabs = document.querySelectorAll('#drawerTabs button');
