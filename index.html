@@ -744,8 +744,7 @@ input[type=range]::-webkit-slider-thumb{
   function ringTabDown(key) {
     key = key || shapeKey;
     return Math.max(0.052, ringTopV(key) - ringAnchorV(key) + 0.045);
-  }
-  /* how much extra room the frame needs above the case for the ring */
+  }  /* how much extra room the frame needs above the case for the ring */
   function frameRoom() {
     if (ringKey === 'none') return 0;
     return Math.max(0, (-FRAME_UH / 2) - (ringAnchorV() - RING_H - 0.015));
@@ -1646,36 +1645,41 @@ input[type=range]::-webkit-slider-thumb{
 
   /* the little acrylic tab glued onto the top of the case, with its hole */
   function drawKeyTab(g, x, yTop, S, down) {
-    var hw = 0.048 * S, top = yTop - 0.060 * S, bot = yTop + (down || 0.052) * S;
-    var hh = bot - top;
+    var hw = 0.037 * S, top = yTop - 0.085 * S, bot = yTop + (down || 0.052) * S;
+    var hh = bot - top, r = 0.020 * S;
     g.save();
-    g.shadowColor = 'rgba(150,100,142,0.34)';
-    g.shadowBlur = 0.024 * S;
-    g.shadowOffsetY = 0.010 * S;
+    g.shadowColor = 'rgba(146,98,138,0.42)';
+    g.shadowBlur = 0.028 * S;
+    g.shadowOffsetY = 0.012 * S;
     var gr = g.createLinearGradient(x - hw, top, x + hw, bot);
     gr.addColorStop(0, '#ffffff');
-    gr.addColorStop(0.4, '#fffafd');
-    gr.addColorStop(0.72, hexA(theme.mid, 1));
+    gr.addColorStop(0.42, '#fffcfd');
+    gr.addColorStop(0.74, hexA(theme.mid, 1));
     gr.addColorStop(1, hexA(theme.bottom, 1));
     g.fillStyle = gr;
-    roundRectPath(g, x - hw, top, hw * 2, hh, 0.026 * S);
+    roundRectPath(g, x - hw, top, hw * 2, hh, r);
     g.fill();
     g.restore();
 
+    /* a soft edge so the tab reads as a separate piece of acrylic */
     g.save();
-    g.strokeStyle = 'rgba(255,255,255,0.9)';
-    g.lineWidth = Math.max(0.8, 0.0045 * S);
-    roundRectPath(g, x - hw + 0.005 * S, top + 0.005 * S, hw * 2 - 0.010 * S, hh - 0.010 * S, 0.022 * S);
+    g.strokeStyle = 'rgba(158,120,150,0.4)';
+    g.lineWidth = Math.max(0.8, 0.005 * S);
+    roundRectPath(g, x - hw, top, hw * 2, hh, r);
+    g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,0.95)';
+    g.lineWidth = Math.max(0.8, 0.007 * S);
+    roundRectPath(g, x - hw + 0.006 * S, top + 0.006 * S, hw * 2 - 0.012 * S, hh - 0.012 * S, Math.max(1, r - 0.006 * S));
     g.stroke();
     g.restore();
 
     /* the hole the jump ring goes through */
-    var hy = yTop - 0.031 * S, hrx = 0.0165 * S, hry = 0.0135 * S;
+    var hy = yTop - 0.045 * S, hrx = 0.0155 * S, hry = 0.0135 * S;
     g.save();
-    g.fillStyle = 'rgba(92,62,86,0.42)';
+    g.fillStyle = 'rgba(86,58,80,0.5)';
     g.beginPath(); g.ellipse(x, hy, hrx, hry, 0, 0, TAU); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.45)';
-    g.beginPath(); g.ellipse(x, hy + hry * 0.5, hrx * 0.6, hry * 0.34, 0, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    g.beginPath(); g.ellipse(x, hy + hry * 0.52, hrx * 0.62, hry * 0.34, 0, 0, TAU); g.fill();
     g.restore();
   }
 
@@ -1795,13 +1799,13 @@ input[type=range]::-webkit-slider-thumb{
     var pad = Math.ceil(0.07 * S);
 
     /* tab + jump ring, standing straight on the case top */
-    var tabW = Math.ceil(0.30 * S), tabH = Math.ceil((0.10 + down + 0.02) * S);
+    var tabW = Math.ceil(0.30 * S), tabH = Math.ceil((0.11 + down + 0.02) * S);
     var tabCv = cutCanvas(tabW + pad * 2, tabH + pad * 2);
     var tg = tabCv.getContext('2d');
-    var tabOX = pad + tabW / 2, tabOY = pad + Math.round(0.10 * S);  /* = the ring anchor */
+    var tabOX = pad + tabW / 2, tabOY = pad + Math.round(0.11 * S);  /* = the ring anchor */
     tg.translate(tabOX, tabOY);
     drawKeyTab(tg, 0, 0, S, down);
-    drawJumpRing(tg, 0, -0.052 * S, 0.031 * S, 0.0105 * S, ringMetalFor(), S);
+    drawJumpRing(tg, 0, -0.072 * S, 0.026 * S, 0.0095 * S, ringMetalFor(), S);
 
     /* the loop above, swinging around the jump ring centre */
     var loopW = Math.ceil(0.34 * S), loopH = Math.ceil(0.24 * S);
@@ -1825,7 +1829,7 @@ input[type=range]::-webkit-slider-thumb{
     var spr = buildRingSprites();
     var d = spr.dpr;
     var x = VIEW.cx, yTop = VIEW.cy + ringAnchorV() * VIEW.S;
-    var jy = yTop - 0.052 * VIEW.S;
+    var jy = yTop - 0.072 * VIEW.S;
     g.drawImage(spr.tab, x - spr.tabOX / d, yTop - spr.tabOY / d, spr.tw / d, spr.th / d);
     g.save();
     g.translate(x, jy);
@@ -3540,12 +3544,12 @@ input[type=range]::-webkit-slider-thumb{
       g.beginPath(); g.moveTo(W * 0.69, H * 0.33); g.lineTo(W * 0.31, H * 0.71); g.stroke();
       return cv;
     }
-    var S = H * 3.7;
-    var x = W / 2, yTop = H - 0.078 * S - H * 0.02;
-    var jy = yTop - 0.052 * S;
+    var S = H * 3.3;
+    var x = W / 2, yTop = H - 0.075 * S - H * 0.03;
+    var jy = yTop - 0.072 * S;
     g.save();
     drawKeyTab(g, x, yTop, S, 0.075);
-    drawJumpRing(g, x, jy, 0.031 * S, 0.0105 * S, (id === 'gold' ? RING_METAL.gold : RING_METAL.silver), S);
+    drawJumpRing(g, x, jy, 0.026 * S, 0.0095 * S, (id === 'gold' ? RING_METAL.gold : RING_METAL.silver), S);
     drawRingLoopKind(g, id, x, jy, S);
     g.restore();
     return cv;
