@@ -201,6 +201,12 @@ h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1.1;
 .mini .chip{width:auto;min-width:40px;height:30px;padding:0 9px;border-radius:10px;font-size:11.5px;font-weight:800;color:#9a7f95;}
 .mini .chip.sel{color:#c05a86;}
 
+/* ---------- 🔔 소리 테마 ---------- */
+.schips{gap:7px;padding:2px 2px 4px;}
+.schips .chip{flex-direction:row;width:auto;height:34px;padding:0 12px;border-radius:12px;gap:5px;}
+.schips .chip em{font-style:normal;font-size:14px;line-height:1;}
+.schips .chip span{font-size:11.5px;font-weight:800;letter-spacing:-.2px;}
+
 /* ---------- motion guide ---------- */
 .guide-body{font-size:13px;line-height:1.68;color:#6f5570;padding:2px 2px 0;}
 .guide-body p{margin:0 0 8px;}
@@ -383,6 +389,11 @@ input[type=range]::-webkit-slider-thumb{
       </div>
 
       <div class="sec">
+        <div class="sec-head"><span>🔔 소리 테마</span><span class="hint">톡 하면 미리 들려요</span></div>
+        <div class="chips schips" id="soundChips"></div>
+      </div>
+
+      <div class="sec">
         <div class="sec-head"><span>파츠 넣기</span><button id="clearBtn" class="link-btn">모두 지우기</button></div>
         <div class="chips pchips" id="partChips"></div>
         <button id="photoBtn" class="btn photo">📷 사진으로 누끼 파츠 만들기</button>
@@ -501,7 +512,7 @@ input[type=range]::-webkit-slider-thumb{
         <button id="slotSave" class="btn primary" type="button">지금 쉐이커 서랍에 저장</button>
       </div>
     </div>
-    <div class="notice" id="slotHint">지금 보이는 모양·색·파츠·데코덴을 통째로 저장해요 · 최대 14개</div>
+    <div class="notice" id="slotHint">지금 보이는 모양·색·파츠·데코덴·소리 테마를 통째로 저장해요 · 최대 14개</div>
     <div id="slotGrid" class="slot-grid"></div>
     <div id="slotEmpty" class="notice" hidden>아직 서랍이 비었어요. 지금 쉐이커를 하나 넣어 볼까요? 🎀</div>
   </div>
@@ -693,6 +704,15 @@ input[type=range]::-webkit-slider-thumb{
   var modeIdx = 0;
   function modeCfg() { return MODES[modeIdx]; }
   function isOil() { return modeIdx === 1; }
+
+  /* ---------------- 🔔 sound themes: what the shaker sounds like ---------------- */
+  var SOUND_THEMES = [
+    { id: 'bead', emoji: '🍬', name: '딸깍 비즈' },
+    { id: 'glass', emoji: '🔮', name: '유리구슬' },
+    { id: 'marimba', emoji: '🎹', name: '실로폰' },
+    { id: 'bubble', emoji: '🫧', name: '버블팝' }
+  ];
+  var soundIdx = 0;
 
   function hexA(hex, a) {
     var h = String(hex).replace('#', '');
@@ -1632,16 +1652,22 @@ input[type=range]::-webkit-slider-thumb{
       ask();
       watch();
     }
-    function clack(vol, freq, dur) {
-      if (!ac || !master || muted) return 0;
-      var now = performance.now();
-      var c = 0, i;
-      for (i = recent.length - 1; i >= 0; i--) {
-        if (now - recent[i] < 80) c++;
-      }
-      if (c > 15) return 0;
-      recent.push(now);
-      if (recent.length > 64) recent.splice(0, 32);
+    /* each theme is one flavour of the same tap, so every collision and every
+       shake speaks in the sound the user picked */
+    var themeId = 'bead';
+    /* a toy xylophone only has these bars: C6 D6 E6 G6 A6 C7 D7 E7 G7 A7 */
+    var PENTA = [1046.5, 1174.66, 1318.51, 1567.98, 1760.0, 2093.0, 2349.32, 2636.99, 3135.96, 3520.0];
+    var lastNote = -1;
+
+    function pentaNote() {
+      var i = Math.floor(Math.random() * PENTA.length);
+      if (i === lastNote) i = (i + 3) % PENTA.length;
+      lastNote = i;
+      return PENTA[i];
+    }
+
+    /* 🍬 crisp acrylic candy beads: a dry plastic click */
+    function beadClack(vol, freq, dur) {
       var t = ac.currentTime;
       vol = clamp(vol, 0.0005, 0.85);
       try {
@@ -1670,6 +1696,147 @@ input[type=range]::-webkit-slider-thumb{
       } catch (e) { return 0; }
       return 1;
     }
+
+    /* 🔮 clear glass marbles: a small bright bell with a tick of shatter */
+    function glassClack(vol, freq, dur) {
+      var t = ac.currentTime;
+      var f = clamp(freq, 900, 5600) * (0.94 + Math.random() * 0.12);
+      var d = clamp(dur * 3.4 + 0.13, 0.14, 0.34);
+      vol = clamp(vol, 0.0005, 0.8);
+      try {
+        var src = ac.createBufferSource();
+        src.buffer = noise;
+        var hp = ac.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = clamp(f * 0.8, 900, 6000);
+        var g0 = ac.createGain();
+        g0.gain.setValueAtTime(0.0001, t);
+        g0.gain.exponentialRampToValueAtTime(vol * 0.45, t + 0.002);
+        g0.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+        src.connect(hp); hp.connect(g0); g0.connect(master);
+        src.start(t); src.stop(t + 0.07);
+
+        var ratio = [1, 2.02, 3.07], lvl = [0.55, 0.22, 0.08], cut = [1, 0.6, 0.38], i, o, g;
+        for (i = 0; i < ratio.length; i++) {
+          o = ac.createOscillator();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(f * ratio[i], t);
+          g = ac.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol * lvl[i], t + 0.005);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + d * cut[i]);
+          o.connect(g); g.connect(master);
+          o.start(t); o.stop(t + d * cut[i] + 0.02);
+        }
+      } catch (e) { return 0; }
+      return 1;
+    }
+
+    /* 🎹 toy xylophone: a soft mallet on a pentatonic bar */
+    function marimbaClack(vol, freq, dur) {
+      var t = ac.currentTime;
+      var f = pentaNote() * (freq > 3300 ? 2 : 1);
+      var d = clamp(0.36 - Math.log(f / 1000) * 0.1, 0.15, 0.4);
+      vol = clamp(vol, 0.0005, 0.8);
+      try {
+        var o = ac.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f, t);
+        var g = ac.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol * 0.6, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+        o.connect(g); g.connect(master);
+        o.start(t); o.stop(t + d + 0.02);
+
+        /* the 4th partial is the wooden knock of a bar */
+        var o2 = ac.createOscillator();
+        o2.type = 'sine';
+        o2.frequency.setValueAtTime(f * 4, t);
+        var g2 = ac.createGain();
+        g2.gain.setValueAtTime(0.0001, t);
+        g2.gain.exponentialRampToValueAtTime(vol * 0.2, t + 0.004);
+        g2.gain.exponentialRampToValueAtTime(0.0001, t + d * 0.22);
+        o2.connect(g2); g2.connect(master);
+        o2.start(t); o2.stop(t + d * 0.22 + 0.02);
+
+        var src = ac.createBufferSource();
+        src.buffer = noise;
+        var bp = ac.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 2600;
+        bp.Q.value = 1.4;
+        var g3 = ac.createGain();
+        g3.gain.setValueAtTime(0.0001, t);
+        g3.gain.exponentialRampToValueAtTime(vol * 0.16, t + 0.002);
+        g3.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+        src.connect(bp); bp.connect(g3); g3.connect(master);
+        src.start(t); src.stop(t + 0.05);
+      } catch (e) { return 0; }
+      return 1;
+    }
+
+    /* 🫧 soft bubble pop: a little bloop rising out of the water */
+    function bubbleClack(vol, freq, dur) {
+      var t = ac.currentTime;
+      var f = clamp(freq * 0.42, 320, 2200);
+      vol = clamp(vol, 0.0005, 0.8);
+      try {
+        var o = ac.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f * 0.6, t);
+        o.frequency.exponentialRampToValueAtTime(f * 2, t + 0.05);
+        var g = ac.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol * 0.56, t + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+        o.connect(g); g.connect(master);
+        o.start(t); o.stop(t + 0.15);
+
+        var src = ac.createBufferSource();
+        src.buffer = noise;
+        var lp = ac.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 1700;
+        var g2 = ac.createGain();
+        g2.gain.setValueAtTime(0.0001, t);
+        g2.gain.exponentialRampToValueAtTime(vol * 0.18, t + 0.004);
+        g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+        src.connect(lp); lp.connect(g2); g2.connect(master);
+        src.start(t); src.stop(t + 0.09);
+      } catch (e) { return 0; }
+      return 1;
+    }
+
+    function clack(vol, freq, dur) {
+      if (!ac || !master || muted) return 0;
+      var now = performance.now();
+      var c = 0, i;
+      for (i = recent.length - 1; i >= 0; i--) {
+        if (now - recent[i] < 80) c++;
+      }
+      if (c > 15) return 0;
+      recent.push(now);
+      if (recent.length > 64) recent.splice(0, 32);
+      if (themeId === 'glass') return glassClack(vol, freq, dur);
+      if (themeId === 'marimba') return marimbaClack(vol, freq, dur);
+      if (themeId === 'bubble') return bubbleClack(vol, freq, dur);
+      return beadClack(vol, freq, dur);
+    }
+
+    /* a couple of taps in the current theme, for the chip that picks one */
+    function sample() {
+      if (!ac || !master || muted) return;
+      if (ac.state !== 'running') ask();
+      var steps = [0, 105, 210], i;
+      for (i = 0; i < steps.length; i++) {
+        (function (delay, k) {
+          setTimeout(function () {
+            clack(0.34 - k * 0.08, 2200 + Math.random() * 2400, 0.028 + Math.random() * 0.02);
+          }, delay);
+        })(steps[i], i);
+      }
+    }
     function pop(up) {
       if (!ac || !master || muted) return;
       var t = ac.currentTime;
@@ -1685,7 +1852,7 @@ input[type=range]::-webkit-slider-thumb{
       o.start(t); o.stop(t + 0.14);
     }
     /* soft, watery bump: low-passed noise + a little bubble blub */
-    function water(vol, pitch) {
+    function waterBase(vol, pitch) {
       if (!ac || !master || muted) return 0;
       var t = ac.currentTime;
       vol = clamp(vol, 0.0006, 0.5);
@@ -1716,6 +1883,55 @@ input[type=range]::-webkit-slider-thumb{
         o.connect(g2); g2.connect(master);
         o.start(t); o.stop(t + 0.13);
       } catch (e) { return 0; }
+      return 1;
+    }
+
+    /* the watery bump, wearing the sound theme: this is what oil mode swishes
+       with, and what a part landing in oil sounds like */
+    function water(vol, pitch) {
+      if (!ac || !master || muted) return 0;
+      if (!waterBase(vol, pitch)) return 0;
+      var t = ac.currentTime;
+      try {
+        if (themeId === 'glass') {
+          /* one bright droplet on top of the splash */
+          var o = ac.createOscillator();
+          o.type = 'sine';
+          var f = 2600 + Math.random() * 1800;
+          o.frequency.setValueAtTime(f, t + 0.01);
+          var g = ac.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(Math.min(vol, 0.3) * 0.5, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+          o.connect(g); g.connect(master);
+          o.start(t); o.stop(t + 0.14);
+        } else if (themeId === 'marimba') {
+          /* a soft bar note instead of the plain blub */
+          var mo = ac.createOscillator();
+          mo.type = 'sine';
+          var mf = pentaNote();
+          mo.frequency.setValueAtTime(mf, t + 0.012);
+          var mg = ac.createGain();
+          mg.gain.setValueAtTime(0.0001, t);
+          mg.gain.exponentialRampToValueAtTime(Math.min(vol, 0.3) * 0.55, t + 0.022);
+          mg.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+          mo.connect(mg); mg.connect(master);
+          mo.start(t); mo.stop(t + 0.22);
+        } else if (themeId === 'bubble') {
+          /* a second smaller bloop so it reads as bubbly */
+          var bo = ac.createOscillator();
+          bo.type = 'sine';
+          var bf = 420 + Math.random() * 320;
+          bo.frequency.setValueAtTime(bf, t + 0.03);
+          bo.frequency.exponentialRampToValueAtTime(bf * 1.9, t + 0.08);
+          var bg = ac.createGain();
+          bg.gain.setValueAtTime(0.0001, t);
+          bg.gain.exponentialRampToValueAtTime(Math.min(vol, 0.3) * 0.42, t + 0.04);
+          bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+          bo.connect(bg); bg.connect(master);
+          bo.start(t); bo.stop(t + 0.14);
+        }
+      } catch (e) { /* the splash already played */ }
       return 1;
     }
     /* oil mode shake: a few watery swishes instead of dry clacks */
@@ -1749,6 +1965,13 @@ input[type=range]::-webkit-slider-thumb{
       water: water,
       swish: swish,
       rattle: rattle,
+      sample: sample,
+      setTheme: function (id) {
+        var i;
+        for (i = 0; i < SOUND_THEMES.length; i++) {
+          if (SOUND_THEMES[i].id === id) { themeId = id; return; }
+        }
+      },
       setMuted: function (m) {
         muted = m;
         if (master) { try { master.gain.value = m ? 0 : 0.5; } catch (e) { /* ignore */ } }
@@ -2759,7 +2982,7 @@ input[type=range]::-webkit-slider-thumb{
       }
       list.push(s);
     }
-    return { v: 1, shape: shapeKey, theme: themeIdx, mode: MODES[modeIdx].id, parts: list, photos: photos, deco: decoSnapshot() };
+    return { v: 1, shape: shapeKey, theme: themeIdx, snd: soundIdx, mode: MODES[modeIdx].id, parts: list, photos: photos, deco: decoSnapshot() };
   }
 
   function flashSaved() {
@@ -2804,6 +3027,7 @@ input[type=range]::-webkit-slider-thumb{
       var ti = parseInt(st.theme, 10);
       if (ti >= 0 && ti < THEMES.length) { themeIdx = ti; theme = THEMES[ti]; }
     }
+    if (st.snd !== undefined) setSound(parseInt(st.snd, 10), 'restore');
     if (st.shape && SHAPES[st.shape]) shapeKey = st.shape;
     var m;
     for (m = 0; m < MODES.length; m++) if (MODES[m].id === st.mode) modeIdx = m;
@@ -3810,6 +4034,7 @@ input[type=range]::-webkit-slider-thumb{
     for (i = 0; i < sw.length; i++) sw[i].classList.toggle('sel', i === themeIdx);
     var mc = document.querySelectorAll('#modeChips .chip');
     for (i = 0; i < mc.length; i++) mc[i].classList.toggle('sel', i === modeIdx);
+    syncSoundChips();
     for (i = 0; i < parts.length; i++) parts[i].bounce = modeCfg().bounce;
     decoRefit();
     syncDecoUI();
@@ -4026,6 +4251,28 @@ input[type=range]::-webkit-slider-thumb{
     draw();
   }
 
+  function syncSoundChips() {
+    var chips = document.querySelectorAll('#soundChips .chip'), i;
+    for (i = 0; i < chips.length; i++) chips[i].classList.toggle('sel', i === soundIdx);
+  }
+
+  function setSound(i, how) {
+    i = parseInt(i, 10);
+    if (!(i >= 0 && i < SOUND_THEMES.length)) return;
+    soundIdx = i;
+    Sound.setTheme(SOUND_THEMES[i].id);
+    syncSoundChips();
+    if (how === 'restore') return;
+    Sound.unlock();
+    if (Sound.isMuted()) {
+      toast('🔇 소리가 꺼져 있어요. 위 🔊를 켜면 들려요');
+    } else {
+      Sound.sample();
+      toast(SOUND_THEMES[i].emoji + ' ' + SOUND_THEMES[i].name + ' 소리로 바꿨어');
+    }
+    touchState();
+  }
+
   function buildUI() {
     /* shaker mode chips */
     var mc = $('#modeChips');
@@ -4075,6 +4322,23 @@ input[type=range]::-webkit-slider-thumb{
         touchState();
       });
       sw.appendChild(b);
+    });
+
+    /* 🔔 sound theme chips */
+    var sch = $('#soundChips');
+    SOUND_THEMES.forEach(function (t, i) {
+      var b = document.createElement('button');
+      b.className = 'chip' + (i === soundIdx ? ' sel' : '');
+      b.type = 'button';
+      b.setAttribute('aria-label', t.name + ' 소리');
+      var em = document.createElement('em');
+      em.textContent = t.emoji;
+      b.appendChild(em);
+      var sp = document.createElement('span');
+      sp.textContent = t.name;
+      b.appendChild(sp);
+      b.addEventListener('click', function () { setSound(i); });
+      sch.appendChild(b);
     });
 
     /* part chips */
