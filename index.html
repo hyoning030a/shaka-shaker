@@ -272,6 +272,14 @@ input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;width:23px;height:23px;margin-top:-8px;border-radius:50%;
   background:#fff;border:2.5px solid #ff8fba;box-shadow:0 2px 6px rgba(255,120,160,.35);
 }
+/* ---------- extras: modes, brush, snapshot ---------- */
+#prev{touch-action:none;}
+.notice{font-size:10.5px;font-weight:700;color:#b59aae;line-height:1.55;padding:0 4px;}
+.notice b{color:#c05a86;}
+#tolRow.dim{opacity:.42;}
+#shotImg{display:block;width:min(340px,76vw);height:auto;border-radius:16px;box-shadow:0 10px 26px rgba(120,80,120,.22);}
+#shot .prev-wrap{background:#fff;background-image:none;border-color:rgba(235,225,240,.9);}
+.mini .chip.brush-wide{min-width:66px;}
 @media (prefers-reduced-motion: reduce){
   #stage.wob #cv{animation:none;}
 }
@@ -288,6 +296,7 @@ input[type=range]::-webkit-slider-thumb{
       </div>
     </div>
     <div class="top-btns">
+      <button id="shotBtn" class="icon-btn" type="button" aria-label="인증샷 만들기">📸</button>
       <button id="soundBtn" class="icon-btn" aria-label="소리 켜기/끄기">🔊</button>
     </div>
   </header>
@@ -306,6 +315,11 @@ input[type=range]::-webkit-slider-thumb{
       <div class="row">
         <button id="shakeBtn" class="btn primary grow">흔들기!</button>
         <button id="motionBtn" class="btn ghost">모션 센서 켜기</button>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span>쉐이커 모드</span><span class="hint" id="saveHint">자동 저장</span></div>
+        <div class="mini" id="modeChips"></div>
       </div>
 
       <div class="sec">
@@ -365,8 +379,8 @@ input[type=range]::-webkit-slider-thumb{
     </div>
 
     <div class="sctrl">
-      <div class="srow"><span>배경 지우기 (누끼)</span><input type="checkbox" id="bgToggle" class="sw-t" checked></div>
-      <div class="srow col">
+      <div class="srow"><span>배경 제거</span><div class="mini" id="bgChips"></div></div>
+      <div class="srow col" id="tolRow">
         <div class="row"><span>배경 제거 강도</span><em id="tolVal">45</em></div>
         <input type="range" id="tol" min="0" max="100" value="45" />
       </div>
@@ -374,11 +388,40 @@ input[type=range]::-webkit-slider-thumb{
       <div class="srow"><span>아크릴 키링 테두리</span><input type="checkbox" id="borderToggle" class="sw-t" checked></div>
       <div class="srow"><span>크기</span><div class="mini" id="sizeChips"></div></div>
       <div class="srow"><span>개수</span><div class="mini" id="countChips"></div></div>
+
+      <div class="sec" id="editSec">
+        <div class="sec-head">
+          <span>✍️ 빠진 부분 손보기</span>
+          <button id="editUndo" class="link-btn" type="button">되돌리기</button>
+        </div>
+        <div class="mini" id="editChips"></div>
+        <div class="mini" id="brushChips"></div>
+        <div class="notice" id="editHint">흰 그림이 사라졌다면 <b>원본 그대로</b>나 <b>살리기 붓</b>으로 되살려요</div>
+      </div>
     </div>
 
     <div class="sheet-actions">
       <button id="skipBtn" class="btn ghost">건너뛰기</button>
       <button id="addBtn" class="btn primary grow">파츠 추가</button>
+    </div>
+  </div>
+</div>
+
+<div id="shot" class="sheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <div>
+        <b>인증샷</b>
+        <span class="sub" id="shotSub">길게 눌러 사진에 저장할 수 있어요</span>
+      </div>
+      <button id="shotClose" class="icon-btn small" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div class="prev-wrap">
+      <img id="shotImg" alt="샤카샤카 인증샷" />
+    </div>
+    <div class="sheet-actions">
+      <button id="shotDownload" class="btn ghost" type="button">다운로드</button>
+      <button id="shotSave" class="btn primary grow" type="button">사진에 저장</button>
     </div>
   </div>
 </div>
@@ -560,6 +603,22 @@ input[type=range]::-webkit-slider-thumb{
   ];
   var themeIdx = 0;
   var theme = THEMES[0];
+
+  /* ---------------- shaker modes: 딸깍(일반) / 오일·워터 ---------------- */
+  var MODES = [
+    { id: 'classic', name: '딸깍', g: 1, drag: 0.75, bounce: 0.58, maxSp: 24, swirl: 0 },
+    { id: 'oil', name: '🫧 오일', g: 0.13, drag: 1.45, bounce: 0.34, maxSp: 11, swirl: 0.9 }
+  ];
+  var modeIdx = 0;
+  function modeCfg() { return MODES[modeIdx]; }
+  function isOil() { return modeIdx === 1; }
+
+  function hexA(hex, a) {
+    var h = String(hex).replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
 
   /* ---------------- case layers ---------------- */
   var layerBack = document.createElement('canvas');
@@ -974,6 +1033,8 @@ input[type=range]::-webkit-slider-thumb{
     { id: 'cloud', name: '구름', r: 0.072, art: 68, draw: artCloud },
     { id: 'jelly', name: '젤리', r: 0.064, art: 76, draw: artJelly }
   ];
+  var PART_BY_ID = {};
+  PART_TYPES.forEach(function (t) { PART_BY_ID[t.id] = t; });
   var spriteCache = {};
 
   function getSprite(type) {
@@ -987,6 +1048,112 @@ input[type=range]::-webkit-slider-thumb{
     return spriteCache[type.id];
   }
 
+  /* ---------------- oil fluid: rising bubbles + fine drifting glitter ---------------- */
+  var bubbles = [], sparkles = [], bubbleSprite = null, sparkSprite = null;
+  var fluidT = 0, fluidAcc = 0;
+
+  function makeFluidSprites() {
+    if (bubbleSprite) return;
+    var b = cutCanvas(64, 64), bg = b.getContext('2d');
+    var gr = bg.createRadialGradient(32, 32, 2, 32, 32, 31);
+    gr.addColorStop(0, 'rgba(255,255,255,0.16)');
+    gr.addColorStop(0.55, 'rgba(255,255,255,0.06)');
+    gr.addColorStop(0.85, 'rgba(255,255,255,0.5)');
+    gr.addColorStop(1, 'rgba(255,255,255,0.04)');
+    bg.fillStyle = gr;
+    bg.beginPath(); bg.arc(32, 32, 30.5, 0, TAU); bg.fill();
+    bg.fillStyle = 'rgba(255,255,255,0.95)';
+    bg.beginPath(); bg.ellipse(24, 21, 7, 4.4, -0.6, 0, TAU); bg.fill();
+    bg.globalAlpha = 0.7;
+    bg.beginPath(); bg.arc(42, 40, 2.4, 0, TAU); bg.fill();
+    bubbleSprite = b;
+
+    var s = cutCanvas(24, 24), sg = s.getContext('2d');
+    var g2 = sg.createRadialGradient(12, 12, 0, 12, 12, 11);
+    g2.addColorStop(0, 'rgba(255,255,255,1)');
+    g2.addColorStop(0.4, 'rgba(255,255,255,0.5)');
+    g2.addColorStop(1, 'rgba(255,255,255,0)');
+    sg.fillStyle = g2;
+    sg.beginPath(); sg.arc(12, 12, 11, 0, TAU); sg.fill();
+    sg.fillStyle = '#ffffff';
+    sg.beginPath();
+    sg.moveTo(12, 1.5);
+    sg.quadraticCurveTo(12.8, 11.2, 22.5, 12);
+    sg.quadraticCurveTo(12.8, 12.8, 12, 22.5);
+    sg.quadraticCurveTo(11.2, 12.8, 1.5, 12);
+    sg.quadraticCurveTo(11.2, 11.2, 12, 1.5);
+    sg.fill();
+    sparkSprite = s;
+  }
+
+  function seedFluid() {
+    makeFluidSprites();
+    bubbles.length = 0; sparkles.length = 0;
+    var i, u, v, r, guard;
+    for (i = 0; i < 24; i++) {
+      u = rand(-0.3, 0.3); v = rand(-0.4, 0.45); r = rand(0.01, 0.03);
+      for (guard = 0; guard < 24; guard++) {
+        u = rand(-0.4, 0.4); v = rand(-0.55, 0.55); r = rand(0.008, 0.03);
+        if (normSdf(u, v) < -r * 2.4) break;
+      }
+      bubbles.push({ u: u, v: v, r: r, sp: rand(0.035, 0.1), wob: rand(0.6, 1.7), ph: rand(0, TAU), a: rand(0.35, 0.8) });
+    }
+    for (i = 0; i < 30; i++) {
+      u = rand(-0.4, 0.4); v = rand(-0.5, 0.5);
+      for (guard = 0; guard < 24; guard++) {
+        u = rand(-0.46, 0.46); v = rand(-0.56, 0.56);
+        if (normSdf(u, v) < -0.012) break;
+      }
+      sparkles.push({ u: u, v: v, r: rand(0.005, 0.014), ph: rand(0, TAU), sp: rand(0.012, 0.05) });
+    }
+  }
+
+  function updateFluid(dt) {
+    var i, b, s, guard;
+    for (i = 0; i < bubbles.length; i++) {
+      b = bubbles[i];
+      b.v -= b.sp * dt;
+      b.u += Math.sin(fluidT * b.wob + b.ph) * 0.02 * dt;
+      if (normSdf(b.u, b.v) > -b.r * 1.3 || b.v < -0.64) {
+        for (guard = 0; guard < 20; guard++) {
+          b.u = rand(-0.32, 0.32); b.v = rand(0.2, 0.56); b.r = rand(0.008, 0.03);
+          if (normSdf(b.u, b.v) < -b.r * 2.4) break;
+        }
+        b.sp = rand(0.035, 0.1);
+        b.a = rand(0.35, 0.8);
+      }
+    }
+    for (i = 0; i < sparkles.length; i++) {
+      s = sparkles[i];
+      s.v -= s.sp * 0.3 * dt;
+      s.u += Math.sin(fluidT * 0.8 + s.ph) * 0.03 * dt;
+      if (normSdf(s.u, s.v) > -0.008 || s.v < -0.62) { s.u = rand(-0.44, 0.44); s.v = rand(0.24, 0.56); }
+    }
+  }
+
+  function drawFluid(g) {
+    if (!isOil() || !bubbleSprite) return;
+    var i, b, s, x, y, rr;
+    for (i = 0; i < sparkles.length; i++) {
+      s = sparkles[i];
+      rr = s.r * VIEW.S;
+      if (rr < 0.5) continue;
+      x = VIEW.cx + s.u * VIEW.S;
+      y = VIEW.cy + s.v * VIEW.S;
+      g.globalAlpha = 0.28 + Math.abs(Math.sin(fluidT * 1.6 + s.ph)) * 0.62;
+      g.drawImage(sparkSprite, x - rr, y - rr, rr * 2, rr * 2);
+    }
+    for (i = 0; i < bubbles.length; i++) {
+      b = bubbles[i];
+      rr = b.r * VIEW.S;
+      x = VIEW.cx + b.u * VIEW.S;
+      y = VIEW.cy + b.v * VIEW.S;
+      g.globalAlpha = b.a;
+      g.drawImage(bubbleSprite, x - rr, y - rr, rr * 2, rr * 2);
+    }
+    g.globalAlpha = 1;
+  }
+
   /* ---------------- particles ---------------- */
   var parts = [];
   var MAX_PARTS = 44;
@@ -994,19 +1161,29 @@ input[type=range]::-webkit-slider-thumb{
 
   function spawnPart(opts) {
     if (parts.length >= MAX_PARTS) return null;
+    var M = modeCfg();
     var p = {
       x: 0, y: -0.1, vx: rand(-0.6, 0.6), vy: rand(-0.2, 0.4),
       r: opts.r, rot: rand(-Math.PI, Math.PI), vr: rand(-4, 4),
       sprite: opts.sprite, art: opts.art || ART_R,
-      mass: opts.r * opts.r * 400, bounce: 0.58, kind: opts.kind || 'default'
+      sc: opts.sc || SPRITE,
+      mass: opts.r * opts.r * 400, bounce: M.bounce, kind: opts.kind || 'default',
+      ph: opts.ph || null, ph0: rand(0, TAU)
     };
-    var i, ok = false;
-    for (i = 0; i < 40; i++) {
-      p.x = rand(-0.26, 0.26);
-      p.y = rand(-0.34, 0.06);
-      if (normSdf(p.x, p.y) < -p.r * 1.25) { ok = true; break; }
+    if (typeof opts.x === 'number' && typeof opts.y === 'number') {
+      p.x = opts.x;
+      p.y = opts.y;
+      if (normSdf(p.x, p.y) > -p.r * 0.4) { p.x = 0; p.y = 0; }
+    } else {
+      var i, ok = false;
+      for (i = 0; i < 40; i++) {
+        p.x = rand(-0.26, 0.26);
+        p.y = rand(-0.34, 0.06);
+        if (normSdf(p.x, p.y) < -p.r * 1.25) { ok = true; break; }
+      }
+      if (!ok) { p.x = 0; p.y = 0; }
     }
-    if (!ok) { p.x = 0; p.y = 0; }
+    if (typeof opts.rot === 'number') p.rot = opts.rot;
     parts.push(p);
     return p;
   }
@@ -1106,7 +1283,7 @@ input[type=range]::-webkit-slider-thumb{
     var rvx = q.vx - p.vx, rvy = q.vy - p.vy;
     var vn = rvx * nx + rvy * ny;
     if (vn > 0) return;
-    var e = 0.52;
+    var e = modeCfg().bounce;
     var j = -(1 + e) * vn / (1 / mp + 1 / mq);
     p.vx -= j * nx / mp; p.vy -= j * ny / mp;
     q.vx += j * nx / mq; q.vy += j * ny / mq;
@@ -1122,18 +1299,25 @@ input[type=range]::-webkit-slider-thumb{
 
   function step(dt) {
     var i, j, p, n = parts.length;
-    var gx = grav.x * GRAV, gy = grav.y * GRAV;
-    var dragF = 1 - 0.75 * dt;
+    var M = MODES[modeIdx];
+    var gx = grav.x * GRAV * M.g, gy = grav.y * GRAV * M.g;
+    var dragF = 1 - M.drag * dt;
+    var spinF = 1 - (M.swirl ? 2.6 : 1.9) * dt;
+    fluidT += dt;
     for (i = 0; i < n; i++) {
       p = parts[i];
       if (p.drag) continue;
       p.vx += gx * dt;
       p.vy += gy * dt;
+      if (M.swirl) {
+        p.vx += Math.cos(fluidT * 0.85 + p.ph0) * 0.42 * dt;
+        p.vy += Math.sin(fluidT * 0.66 + p.ph0 * 1.6) * 0.34 * dt;
+      }
       p.vx *= dragF;
       p.vy *= dragF;
-      p.vr *= (1 - 1.9 * dt);
+      p.vr *= spinF;
       var sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-      if (sp > 24) { p.vx *= 24 / sp; p.vy *= 24 / sp; }
+      if (sp > M.maxSp) { p.vx *= M.maxSp / sp; p.vy *= M.maxSp / sp; }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.rot += p.vr * dt;
@@ -1142,6 +1326,10 @@ input[type=range]::-webkit-slider-thumb{
       for (j = i + 1; j < n; j++) collideParts(parts[i], parts[j]);
     }
     for (i = 0; i < n; i++) wallCollide(parts[i]);
+    if (M.swirl) {
+      fluidAcc += dt;
+      if (fluidAcc >= 1 / 30) { updateFluid(fluidAcc); fluidAcc = 0; }
+    }
   }
 
   /* ---------------- render ---------------- */
@@ -1154,7 +1342,7 @@ input[type=range]::-webkit-slider-thumb{
       p = parts[i];
       rad = p.r * VIEW.S;
       k = rad / p.art;
-      ds = SPRITE * k;
+      ds = (p.sc || SPRITE) * k;
       pg.save();
       pg.translate(VIEW.cx + p.x * VIEW.S, VIEW.cy + p.y * VIEW.S);
       pg.rotate(p.rot);
@@ -1173,6 +1361,7 @@ input[type=range]::-webkit-slider-thumb{
     g.clearRect(0, 0, VIEW.w, VIEW.h);
     g.drawImage(layerBack, 0, 0, VIEW.w, VIEW.h);
     renderParts(g);
+    drawFluid(g);
     g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
   }
 
@@ -1408,6 +1597,52 @@ input[type=range]::-webkit-slider-thumb{
       o.connect(g); g.connect(master);
       o.start(t); o.stop(t + 0.14);
     }
+    /* soft, watery bump: low-passed noise + a little bubble blub */
+    function water(vol, pitch) {
+      if (!ac || !master || muted) return 0;
+      var t = ac.currentTime;
+      vol = clamp(vol, 0.0006, 0.5);
+      pitch = pitch || 1;
+      try {
+        var src = ac.createBufferSource();
+        src.buffer = noise;
+        var lp = ac.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = clamp(700 * pitch, 320, 2200);
+        lp.Q.value = 0.8;
+        var g1 = ac.createGain();
+        g1.gain.setValueAtTime(0.0001, t);
+        g1.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+        g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        src.connect(lp); lp.connect(g1); g1.connect(master);
+        src.start(t); src.stop(t + 0.19);
+
+        var o = ac.createOscillator();
+        o.type = 'sine';
+        var f0 = 280 + Math.random() * 260;
+        o.frequency.setValueAtTime(f0, t);
+        o.frequency.exponentialRampToValueAtTime(f0 * 2.3, t + 0.07);
+        var g2 = ac.createGain();
+        g2.gain.setValueAtTime(0.0001, t);
+        g2.gain.exponentialRampToValueAtTime(vol * 0.5, t + 0.01);
+        g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+        o.connect(g2); g2.connect(master);
+        o.start(t); o.stop(t + 0.13);
+      } catch (e) { return 0; }
+      return 1;
+    }
+    /* oil mode shake: a few watery swishes instead of dry clacks */
+    function swish(power) {
+      if (!ac || !master || muted) return;
+      var n = Math.round(3 + power * 3), i;
+      for (i = 0; i < n; i++) {
+        (function (k) {
+          setTimeout(function () {
+            water(0.06 + Math.random() * 0.1, 0.6 + Math.random() * 0.8);
+          }, k * 42 + Math.random() * 30);
+        })(i);
+      }
+    }
     function rattle(power) {
       if (!ac || !master || muted) return;
       var n = Math.round(3 + power * 4), i;
@@ -1424,6 +1659,8 @@ input[type=range]::-webkit-slider-thumb{
       wake: wake,
       clack: clack,
       pop: pop,
+      water: water,
+      swish: swish,
       rattle: rattle,
       setMuted: function (m) {
         muted = m;
@@ -1436,6 +1673,10 @@ input[type=range]::-webkit-slider-thumb{
   function hitSound(v, r) {
     var vol = clamp((v - 1.0) / 8, 0, 1);
     if (vol < 0.05) return;
+    if (isOil()) {
+      Sound.water(vol * 0.34, 0.7 + Math.random() * 0.7);
+      return;
+    }
     var freq = 2600 + Math.random() * 2400;
     if (r < 0.06) freq *= 1.18;
     Sound.clack(vol * 0.4, freq, 0.025 + Math.random() * 0.03);
@@ -1472,18 +1713,19 @@ input[type=range]::-webkit-slider-thumb{
     power = power || 1;
     Sound.unlock();
     var i, p, a, s;
+    var k = isOil() ? 0.55 : 1;
     for (i = 0; i < parts.length; i++) {
       p = parts[i];
       if (p.drag) continue;
       a = Math.random() * TAU;
       s = (0.7 + Math.random() * 0.8) * power;
-      p.vx += Math.cos(a) * s * 3.4;
-      p.vy += Math.sin(a) * s * 3.4 - 2.6 * power;
-      p.vr += rand(-9, 9);
+      p.vx += Math.cos(a) * s * 3.4 * k;
+      p.vy += Math.sin(a) * s * 3.4 * k - 2.6 * power * (isOil() ? 0.4 : 1);
+      p.vr += rand(-9, 9) * k;
     }
     bumpCounter();
     wobble();
-    Sound.rattle(power);
+    if (isOil()) Sound.swish(power); else Sound.rattle(power);
   }
 
   /* ---------------- interaction (drag / flick) ---------------- */
@@ -1883,8 +2125,23 @@ input[type=range]::-webkit-slider-thumb{
   var Cut = {
     files: [], idx: 0, img: null, src: null,
     tol: 45, removeBg: true, shape: 'free', border: true,
-    sizeIdx: 1, count: 1, out: null, busy: false, timer: 0
+    sizeIdx: 1, count: 1, out: null, busy: false, timer: 0,
+    restoreMask: null, eraseMask: null, undo: [], brushMode: 'off', brushSize: 1
   };
+  var ART_SZ = 224, OUT_SZ = 256, OUT_PAD = 16;
+  var BRUSH_R = [10, 17, 26];
+
+  function artFrom(source, A) {
+    var cv = cutCanvas(A, A);
+    var g = cv.getContext('2d');
+    var sw = source.width, sh = source.height;
+    var cover = Cut.shape !== 'free';
+    var k = cover ? Math.max(A / sw, A / sh) : Math.min(A / sw, A / sh);
+    var dw = sw * k, dh = sh * k;
+    g.drawImage(source, (A - dw) / 2, (A - dh) / 2, dw, dh);
+    applyCrop(cv, Cut.shape);
+    return cv;
+  }
   var SIZE_OPTS = [{ label: '작게', v: 0.062 }, { label: '보통', v: 0.078 }, { label: '크게', v: 0.098 }];
   var CROP_OPTS = [{ id: 'free', label: '자유' }, { id: 'circle', label: '동그라미' }, { id: 'heart', label: '하트' }, { id: 'star', label: '별' }];
 
@@ -2036,23 +2293,33 @@ input[type=range]::-webkit-slider-thumb{
     if (!Cut.img) return null;
     var srcC = prepSource(Cut.img);
     if (!srcC) return null;
+    /* the untouched photo, kept so the restore brush can bring pixels back */
+    var origSrc = cutCanvas(srcC.width, srcC.height);
+    origSrc.getContext('2d').drawImage(srcC, 0, 0);
     if (Cut.removeBg) applyBg(srcC, Cut.tol);
     else applyBg(srcC, -1);
 
-    var A = 224;
-    var art = cutCanvas(A, A);
-    var ag = art.getContext('2d');
-    var sw = srcC.width, sh = srcC.height;
-    var cover = Cut.shape !== 'free';
-    var k = cover ? Math.max(A / sw, A / sh) : Math.min(A / sw, A / sh);
-    var dw = sw * k, dh = sh * k;
-    ag.drawImage(srcC, (A - dw) / 2, (A - dh) / 2, dw, dh);
-    applyCrop(art, Cut.shape);
+    var A = ART_SZ;
+    var art = artFrom(srcC, A);
+    if (Cut.restoreMask) {
+      var oa = artFrom(origSrc, A);
+      var tmp = cutCanvas(A, A), tg = tmp.getContext('2d');
+      tg.drawImage(oa, 0, 0);
+      tg.globalCompositeOperation = 'destination-in';
+      tg.drawImage(Cut.restoreMask, 0, 0);
+      art.getContext('2d').drawImage(tmp, 0, 0);
+    }
+    if (Cut.eraseMask) {
+      var ag2 = art.getContext('2d');
+      ag2.globalCompositeOperation = 'destination-out';
+      ag2.drawImage(Cut.eraseMask, 0, 0);
+      ag2.globalCompositeOperation = 'source-over';
+    }
 
-    var S = 256;
+    var S = OUT_SZ;
     var out = cutCanvas(S, S);
     var g = out.getContext('2d');
-    var pad = (S - A) / 2;
+    var pad = OUT_PAD;
 
     /* white silhouette (acrylic keyring rim) */
     var sil = cutCanvas(S, S);
@@ -2099,6 +2366,113 @@ input[type=range]::-webkit-slider-thumb{
     g.drawImage(Cut.out, 0, 0, pv.width, pv.height);
   }
 
+  /* ---------------- retouch brush (restore / erase) ---------------- */
+  function maskFor(mode) {
+    if (mode === 'erase') {
+      if (!Cut.eraseMask) Cut.eraseMask = cutCanvas(ART_SZ, ART_SZ);
+      return Cut.eraseMask;
+    }
+    if (!Cut.restoreMask) Cut.restoreMask = cutCanvas(ART_SZ, ART_SZ);
+    return Cut.restoreMask;
+  }
+  function cloneCv(cv) {
+    var c = cutCanvas(cv.width, cv.height);
+    c.getContext('2d').drawImage(cv, 0, 0);
+    return c;
+  }
+  function pushUndo() {
+    if (!Cut.restoreMask && !Cut.eraseMask) return;
+    Cut.undo.push({
+      r: Cut.restoreMask ? cloneCv(Cut.restoreMask) : null,
+      e: Cut.eraseMask ? cloneCv(Cut.eraseMask) : null
+    });
+    if (Cut.undo.length > 12) Cut.undo.shift();
+  }
+  function undoEdit() {
+    if (!Cut.undo.length) { toast('되돌릴 게 없어요'); return; }
+    var s = Cut.undo.pop();
+    Cut.restoreMask = s.r;
+    Cut.eraseMask = s.e;
+    rebuildEdit(true);
+  }
+  function strokeMask(mode, x0, y0, x1, y1, r) {
+    var cv = maskFor(mode), g = cv.getContext('2d');
+    g.save();
+    g.strokeStyle = '#fff'; g.fillStyle = '#fff';
+    g.lineWidth = r * 2; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    g.restore();
+    var other = maskFor(mode === 'restore' ? 'erase' : 'restore');
+    var og = other.getContext('2d');
+    og.save();
+    og.globalCompositeOperation = 'destination-out';
+    og.strokeStyle = '#fff';
+    og.lineWidth = r * 2 + 2; og.lineCap = 'round'; og.lineJoin = 'round';
+    og.beginPath(); og.moveTo(x0, y0); og.lineTo(x1, y1); og.stroke();
+    og.restore();
+  }
+  var editLast = 0, editTimer = 0, editOn = { down: false, x: 0, y: 0 };
+  function rebuildEdit(force) {
+    if (!Cut.img) return;
+    var now = performance.now();
+    if (!force && now - editLast < 110) {
+      clearTimeout(editTimer);
+      editTimer = setTimeout(function () { rebuildEdit(true); }, 110 - (now - editLast));
+      return;
+    }
+    editLast = now;
+    Cut.out = buildCutout();
+    updatePreview();
+  }
+  function prevPoint(e) {
+    var pv = $('#prev');
+    var rect = pv.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (pv.width / Math.max(1, rect.width)) - OUT_PAD,
+      y: (e.clientY - rect.top) * (pv.height / Math.max(1, rect.height)) - OUT_PAD
+    };
+  }
+  function editDown(e) {
+    if (Cut.brushMode === 'off' || !Cut.img) return;
+    if (e.isPrimary === false) return;
+    var pt = prevPoint(e);
+    editOn.down = true;
+    editOn.x = pt.x; editOn.y = pt.y;
+    pushUndo();
+    strokeMask(Cut.brushMode, pt.x, pt.y, pt.x + 0.01, pt.y, BRUSH_R[Cut.brushSize]);
+    rebuildEdit(true);
+    if (e.cancelable) e.preventDefault();
+  }
+  function editMove(e) {
+    if (!editOn.down || Cut.brushMode === 'off') return;
+    var pt = prevPoint(e);
+    strokeMask(Cut.brushMode, editOn.x, editOn.y, pt.x, pt.y, BRUSH_R[Cut.brushSize]);
+    editOn.x = pt.x; editOn.y = pt.y;
+    rebuildEdit(false);
+    if (e.cancelable) e.preventDefault();
+  }
+  function editUp() { editOn.down = false; }
+  function setBrushMode(m) {
+    Cut.brushMode = m;
+    var hint = $('#editHint');
+    if (!hint) return;
+    hint.innerHTML = m === 'restore'
+      ? '미리보기 위를 문질러 지워진 부분을 되살려요'
+      : (m === 'erase' ? '남은 배경을 문질러 지워요' : '흰 그림이 사라졌다면 <b>원본 그대로</b>나 <b>살리기 붓</b>으로 되살려요');
+  }
+  function resetEdits() {
+    Cut.restoreMask = null;
+    Cut.eraseMask = null;
+    Cut.undo = [];
+    editOn.down = false;
+  }
+  function syncTolRow() {
+    var row = $('#tolRow');
+    if (row) row.classList.toggle('dim', !Cut.removeBg);
+    var tol = $('#tol');
+    if (tol) tol.disabled = !Cut.removeBg;
+  }
+
   function reprocess(immediate) {
     if (!Cut.img) return;
     clearTimeout(Cut.timer);
@@ -2120,6 +2494,7 @@ input[type=range]::-webkit-slider-thumb{
     sh.classList.remove('on');
     setTimeout(function () { sh.hidden = true; }, 240);
     Cut.files = []; Cut.idx = 0; Cut.img = null; Cut.out = null;
+    resetEdits();
   }
 
   function handleFiles(fileList) {
@@ -2137,6 +2512,7 @@ input[type=range]::-webkit-slider-thumb{
   function loadCurrent() {
     var f = Cut.files[Cut.idx];
     Cut.out = null;
+    resetEdits();
     if (!f) { closeSheet(); return; }
     $('#sheetPager').textContent = (Cut.idx + 1) + ' / ' + Cut.files.length;
     loadImage(f, function (im) {
@@ -2164,8 +2540,18 @@ input[type=range]::-webkit-slider-thumb{
     Sound.unlock();
     var r = SIZE_OPTS[Cut.sizeIdx].v;
     var n = Cut.count, i, added = 0;
+    /* one shared, downscaled copy of this cutout: small enough to keep in storage */
+    var pid = null, spr = Cut.out, sart = 118, ssc = SPRITE;
+    try {
+      pid = registerPhoto(Cut.out);
+      if (pid && photoStore[pid]) {
+        spr = photoStore[pid].cv;
+        ssc = spr.width;
+        sart = 118 * (ssc / SPRITE);
+      }
+    } catch (e) { pid = null; }
     for (i = 0; i < n; i++) {
-      var p = spawnPart({ r: r, sprite: Cut.out, art: 118, kind: 'photo' });
+      var p = spawnPart({ r: r, sprite: spr, art: sart, sc: ssc, kind: 'photo', ph: pid });
       if (p) added++;
     }
     if (added === 0) {
@@ -2174,6 +2560,7 @@ input[type=range]::-webkit-slider-thumb{
     }
     Sound.pop(true);
     toast(added > 1 ? ('사진 파츠 ' + added + '개를 넣었어!') : '사진 파츠를 넣었어!');
+    touchState();
     nextPhoto();
   }
 
@@ -2204,11 +2591,288 @@ input[type=range]::-webkit-slider-thumb{
       Cut.files = [{ type: 'image/png' }];
       Cut.idx = 0;
       Cut.img = im;
+      resetEdits();
       openSheet();
       $('#sheetPager').textContent = '샘플 사진';
       reprocess(true);
     };
     im.src = url;
+  }
+
+  /* ---------------- auto save / restore ---------------- */
+  /* the shaker lives in localStorage so it is still there when the page is
+     closed or the phone is turned off; photos are kept as one downscaled
+     PNG per cutout, shared by every part made from that cutout */
+  var STORE_KEY = 'shakaShaker.v1';
+  var photoStore = {}, photoSeq = 1, saveTimer = 0, booted = false, saveHintEl = null;
+  var SHOT_SPRITE = 176;
+
+  function spriteShrink(cv, maxS) {
+    var k = Math.min(1, maxS / Math.max(cv.width, cv.height));
+    var w = Math.max(1, Math.round(cv.width * k)), h = Math.max(1, Math.round(cv.height * k));
+    var out = cutCanvas(w, h);
+    out.getContext('2d').drawImage(cv, 0, 0, w, h);
+    return out;
+  }
+
+  function registerPhoto(cv) {
+    var small = spriteShrink(cv, SHOT_SPRITE);
+    var url = '';
+    try { url = small.toDataURL('image/png'); } catch (e) { url = ''; }
+    if (!url) return null;
+    var id = 'p' + (photoSeq++);
+    photoStore[id] = { url: url, cv: small };
+    return id;
+  }
+
+  function stateSnapshot() {
+    var list = [], photos = {}, i, p, s;
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
+      s = {
+        k: p.ph ? 'photo' : (p.kind || 'default'),
+        r: Math.round(p.r * 10000) / 10000,
+        x: Math.round(p.x * 1000) / 1000,
+        y: Math.round(p.y * 1000) / 1000,
+        ro: Math.round(p.rot * 100) / 100
+      };
+      if (p.ph && photoStore[p.ph]) {
+        s.p = p.ph;
+        s.a = Math.round(p.art * 100) / 100;
+        s.sc = p.sc;
+        photos[p.ph] = photoStore[p.ph].url;
+      }
+      list.push(s);
+    }
+    return { v: 1, shape: shapeKey, theme: themeIdx, mode: MODES[modeIdx].id, parts: list, photos: photos };
+  }
+
+  function flashSaved() {
+    if (!saveHintEl) return;
+    saveHintEl.textContent = '저장됨 ✓';
+    saveHintEl.style.color = '#e087b0';
+    clearTimeout(flashSaved.t);
+    flashSaved.t = setTimeout(function () {
+      if (saveHintEl) { saveHintEl.textContent = '자동 저장'; saveHintEl.style.color = ''; }
+    }, 1400);
+  }
+
+  function saveState(now) {
+    if (!booted) return;
+    clearTimeout(saveTimer);
+    if (!now) {
+      saveTimer = setTimeout(function () { saveState(true); }, 420);
+      return;
+    }
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(stateSnapshot()));
+      flashSaved();
+    } catch (e) {
+      var quota = e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014);
+      toast(quota ? '저장 공간이 가득 찼어요. 사진 파츠를 몇 개 줄여 주세요' : '자동 저장을 못 했어요');
+    }
+  }
+  function touchState() { saveState(false); }
+
+  function readState() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      var st = JSON.parse(raw);
+      if (!st || !Array.isArray(st.parts)) return null;
+      return st;
+    } catch (e) { return null; }
+  }
+
+  function restoreSettings(st) {
+    if (st.theme !== undefined) {
+      var ti = parseInt(st.theme, 10);
+      if (ti >= 0 && ti < THEMES.length) { themeIdx = ti; theme = THEMES[ti]; }
+    }
+    if (st.shape && SHAPES[st.shape]) shapeKey = st.shape;
+    var m;
+    for (m = 0; m < MODES.length; m++) if (MODES[m].id === st.mode) modeIdx = m;
+  }
+
+  function restoreParts(st) {
+    var i, s, r, t;
+    for (i = 0; i < st.parts.length && parts.length < MAX_PARTS; i++) {
+      s = st.parts[i];
+      if (!s) continue;
+      r = clamp(parseFloat(s.r) || 0.07, 0.03, 0.16);
+      if (s.k === 'photo' && s.p && st.photos && st.photos[s.p]) {
+        restorePhoto(s, st.photos[s.p], r);
+      } else if (PART_BY_ID[s.k]) {
+        t = PART_BY_ID[s.k];
+        spawnPart({ r: t.r, sprite: getSprite(t), art: t.art, kind: t.id, x: s.x, y: s.y, rot: s.ro });
+      }
+    }
+  }
+
+  function restorePhoto(s, url, r) {
+    var k, hit = null;
+    for (k in photoStore) {
+      if (photoStore[k].url === url) { hit = k; break; }
+    }
+    if (hit) { addRestoredPhoto(hit, s, r); return; }
+    var im = new Image();
+    im.onload = function () {
+      var cv = cutCanvas(im.naturalWidth || SHOT_SPRITE, im.naturalHeight || SHOT_SPRITE);
+      cv.getContext('2d').drawImage(im, 0, 0);
+      var id = 'p' + (photoSeq++);
+      photoStore[id] = { url: url, cv: cv };
+      addRestoredPhoto(id, s, r);
+      draw();
+    };
+    im.onerror = function () { /* a broken saved photo simply does not come back */ };
+    im.src = url;
+  }
+
+  function addRestoredPhoto(id, s, r) {
+    var cv = photoStore[id].cv;
+    spawnPart({
+      r: r, sprite: cv,
+      art: s.a || (118 * (cv.width / SPRITE)), sc: s.sc || cv.width,
+      kind: 'photo', ph: id, x: s.x, y: s.y, rot: s.ro
+    });
+  }
+
+  /* ---------------- 인증샷 (save the shaker as a picture) ---------------- */
+  var shotURL = '', shotBlob = null;
+
+  function renderShot() {
+    var W = 1080, H = 1350;
+    var cv = cutCanvas(W, H);
+    var g = cv.getContext('2d');
+    var t = theme, i;
+
+    var bg = g.createLinearGradient(0, -H * 0.1, W * 0.2, H * 1.05);
+    bg.addColorStop(0, '#ffffff');
+    bg.addColorStop(0.42, t.top);
+    bg.addColorStop(1, t.mid);
+    g.fillStyle = bg;
+    g.fillRect(0, 0, W, H);
+
+    var blobs = [
+      [W * 0.06, H * 0.06, W * 0.58, t.accent, 0.30],
+      [W * 1.00, H * 0.16, W * 0.46, t.gold, 0.30],
+      [W * 0.92, H * 0.94, W * 0.56, t.accent, 0.22],
+      [W * 0.02, H * 0.8, W * 0.44, t.mid, 0.6]
+    ];
+    for (i = 0; i < blobs.length; i++) {
+      var bl = blobs[i];
+      var rg = g.createRadialGradient(bl[0], bl[1], 0, bl[0], bl[1], bl[2]);
+      rg.addColorStop(0, hexA(bl[3], bl[4]));
+      rg.addColorStop(1, hexA(bl[3], 0));
+      g.fillStyle = rg;
+      g.fillRect(0, 0, W, H);
+    }
+
+    var rnd = mulberry32(4727);
+    for (i = 0; i < 66; i++) {
+      var sx = rnd() * W, sy = rnd() * H, sr = 2 + rnd() * 7;
+      g.globalAlpha = 0.1 + rnd() * 0.5;
+      g.fillStyle = rnd() < 0.62 ? '#ffffff' : t.gold;
+      g.beginPath();
+      g.moveTo(sx, sy - sr);
+      g.quadraticCurveTo(sx + sr * 0.18, sy - sr * 0.18, sx + sr, sy);
+      g.quadraticCurveTo(sx + sr * 0.18, sy + sr * 0.18, sx, sy + sr);
+      g.quadraticCurveTo(sx - sr * 0.18, sy + sr * 0.18, sx - sr, sy);
+      g.quadraticCurveTo(sx - sr * 0.18, sy - sr * 0.18, sx, sy - sr);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+
+    var pad = 70;
+    var s = Math.min((W - pad * 2) / VIEW.w, (H - 400) / VIEW.h);
+    var dw = VIEW.w * s, dh = VIEW.h * s;
+    var dx = (W - dw) / 2;
+    var dy = (H - dh) / 2 - 52;
+
+    var shg = g.createRadialGradient(0, 0, 10, 0, 0, dw * 0.5);
+    shg.addColorStop(0, 'rgba(122,84,122,0.34)');
+    shg.addColorStop(0.6, 'rgba(122,84,122,0.12)');
+    shg.addColorStop(1, 'rgba(122,84,122,0)');
+    g.save();
+    g.translate(W / 2, dy + dh * 0.94);
+    g.scale(1, 0.26);
+    g.fillStyle = shg;
+    g.beginPath();
+    g.arc(0, 0, dw * 0.5, 0, TAU);
+    g.fill();
+    g.restore();
+
+    g.save();
+    g.translate(dx, dy);
+    g.scale(s, s);
+    g.drawImage(layerBack, 0, 0, VIEW.w, VIEW.h);
+    g.drawImage(partsLayer, 0, 0, VIEW.w, VIEW.h);
+    drawFluid(g);
+    g.drawImage(layerFront, 0, 0, VIEW.w, VIEW.h);
+    g.restore();
+
+    var capY = H - 148;
+    g.textAlign = 'center';
+    g.fillStyle = '#5c4358';
+    g.font = '800 58px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif';
+    g.fillText('샤카샤카', W / 2, capY);
+    g.fillStyle = 'rgba(120,94,114,0.66)';
+    g.font = '700 19px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif';
+    g.fillText('A C R Y L I C   S H A K E R', W / 2, capY + 42);
+    g.fillStyle = 'rgba(120,94,114,0.4)';
+    g.font = '600 17px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif';
+    g.fillText(dateStamp(), W / 2, capY + 72);
+    return cv;
+  }
+
+  function dateStamp() {
+    var d = new Date();
+    return d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.';
+  }
+
+  function openShot() {
+    var cv;
+    try { cv = renderShot(); } catch (e) { toast('인증샷을 만들지 못했어요'); return; }
+    shotURL = cv.toDataURL('image/png');
+    shotBlob = null;
+    try { cv.toBlob(function (b) { shotBlob = b; }, 'image/png'); } catch (e) { shotBlob = null; }
+    $('#shotImg').src = shotURL;
+    $('#shotSub').textContent = ENV.ios ? '길게 눌러 ‘사진에 저장’도 돼요' : '저장하면 PNG로 받아요';
+    var sh = $('#shot');
+    sh.hidden = false;
+    requestAnimationFrame(function () { sh.classList.add('on'); });
+  }
+  function closeShot() {
+    var sh = $('#shot');
+    if (!sh) return;
+    sh.classList.remove('on');
+    setTimeout(function () { sh.hidden = true; }, 240);
+  }
+  function downloadShot() {
+    if (!shotURL) return;
+    try {
+      var a = document.createElement('a');
+      a.href = shotURL;
+      a.download = '샤카샤카-인증샷.png';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 0);
+      toast(ENV.ios ? '이미지를 길게 눌러 사진에 저장해도 돼요' : '인증샷 PNG를 저장했어요!');
+    } catch (e) {
+      toast('이미지를 길게 눌러 저장해 주세요');
+    }
+  }
+  function saveShot() {
+    if (!shotURL) return;
+    var file = null;
+    try {
+      if (shotBlob) file = new File([shotBlob], 'shaka-shaker.png', { type: 'image/png' });
+    } catch (e) { file = null; }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: '샤카샤카 인증샷' }).catch(function () { downloadShot(); });
+      return;
+    }
+    downloadShot();
   }
 
   /* ---------------- layout ---------------- */
@@ -2265,6 +2929,7 @@ input[type=range]::-webkit-slider-thumb{
       }
     }
     Sound.pop(false);
+    touchState();
   }
 
   function shapeThumb(key) {
@@ -2299,7 +2964,45 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   /* ---------------- UI build ---------------- */
+  function markSel(box, btn) {
+    var all = box.children, q;
+    for (q = 0; q < all.length; q++) all[q].classList.toggle('sel', all[q] === btn);
+  }
+
+  function setMode(i) {
+    if (i === modeIdx || !MODES[i]) return;
+    modeIdx = i;
+    var M = MODES[modeIdx], q;
+    for (q = 0; q < parts.length; q++) parts[q].bounce = M.bounce;
+    if (isOil()) {
+      seedFluid();
+      toast('오일 쉐이커! 파츠가 둥둥 떠다녀 🫧');
+    } else {
+      bubbles.length = 0;
+      sparkles.length = 0;
+      toast('딸깍 일반 모드로 돌아왔어');
+    }
+    var chips = document.querySelectorAll('#modeChips .chip');
+    for (q = 0; q < chips.length; q++) chips[q].classList.toggle('sel', q === modeIdx);
+    Sound.unlock();
+    Sound.pop(isOil());
+    touchState();
+    draw();
+  }
+
   function buildUI() {
+    /* shaker mode chips */
+    var mc = $('#modeChips');
+    MODES.forEach(function (M, i) {
+      var mb = document.createElement('button');
+      mb.className = 'chip' + (i === modeIdx ? ' sel' : '');
+      mb.type = 'button';
+      mb.textContent = M.name;
+      mb.addEventListener('click', function () { setMode(i); });
+      mc.appendChild(mb);
+    });
+    saveHintEl = $('#saveHint');
+
     /* shape chips */
     var sc = $('#shapeChips');
     SHAPE_KEYS.forEach(function (k) {
@@ -2333,6 +3036,7 @@ input[type=range]::-webkit-slider-thumb{
         var all = document.querySelectorAll('#swatches .sw');
         for (var q = 0; q < all.length; q++) all[q].classList.toggle('sel', q === i);
         Sound.pop(false);
+        touchState();
       });
       sw.appendChild(b);
     });
@@ -2359,6 +3063,7 @@ input[type=range]::-webkit-slider-thumb{
           if (removeOnePart(t.id)) {
             Sound.pop(false);
             toast(t.name + ' 하나를 뺐어요 (길게 누르면 빼기)');
+            touchState();
           }
         }, 520);
       });
@@ -2372,6 +3077,7 @@ input[type=range]::-webkit-slider-thumb{
         if (parts.length >= MAX_PARTS) { toast('파츠가 너무 많아요!'); return; }
         addDefaultPart(t);
         Sound.pop(true);
+        touchState();
       });
       pc.appendChild(b);
     });
@@ -2422,6 +3128,64 @@ input[type=range]::-webkit-slider-thumb{
       cn.appendChild(b);
     });
 
+    /* background removal: keep the original untouched when wanted */
+    var bgc = $('#bgChips');
+    [['cut', '누끼 따기', true], ['raw', '원본 그대로', false]].forEach(function (o) {
+      var b = document.createElement('button');
+      b.className = 'chip' + ((Cut.removeBg === o[2]) ? ' sel' : '');
+      b.type = 'button';
+      b.textContent = o[1];
+      b.setAttribute('data-bg', o[0]);
+      b.addEventListener('click', function () {
+        Cut.removeBg = o[2];
+        markSel(bgc, b);
+        syncTolRow();
+        reprocess();
+      });
+      bgc.appendChild(b);
+    });
+    syncTolRow();
+
+    /* retouch brush: restore the eaten pixels, or erase the strays */
+    var ec = $('#editChips');
+    [['off', '✋ 보기'], ['restore', '🖌 살리기'], ['erase', '🧽 지우개']].forEach(function (o) {
+      var b = document.createElement('button');
+      b.className = 'chip' + (Cut.brushMode === o[0] ? ' sel' : '');
+      b.type = 'button';
+      b.textContent = o[1];
+      b.addEventListener('click', function () {
+        setBrushMode(o[0]);
+        markSel(ec, b);
+      });
+      ec.appendChild(b);
+    });
+    var brc = $('#brushChips');
+    ['S', 'M', 'L'].forEach(function (lbl, i) {
+      var b = document.createElement('button');
+      b.className = 'chip' + (Cut.brushSize === i ? ' sel' : '');
+      b.type = 'button';
+      b.textContent = lbl;
+      b.addEventListener('click', function () {
+        Cut.brushSize = i;
+        markSel(brc, b);
+      });
+      brc.appendChild(b);
+    });
+    var pvEl = $('#prev');
+    pvEl.addEventListener('pointerdown', editDown);
+    pvEl.addEventListener('pointermove', editMove);
+    pvEl.addEventListener('pointerup', editUp);
+    pvEl.addEventListener('pointercancel', editUp);
+    pvEl.addEventListener('pointerleave', editUp);
+    $('#editUndo').addEventListener('click', undoEdit);
+
+    /* snapshot */
+    $('#shotBtn').addEventListener('click', function () { Sound.unlock(); openShot(); });
+    $('#shotClose').addEventListener('click', closeShot);
+    $('#shotDownload').addEventListener('click', downloadShot);
+    $('#shotSave').addEventListener('click', saveShot);
+    $('#shot').addEventListener('click', function (e) { if (e.target === this) closeShot(); });
+
     /* listeners */
     $('#shakeBtn').addEventListener('click', function () { shakeIt(1); });
     motionBtn = $('#motionBtn');
@@ -2454,6 +3218,7 @@ input[type=range]::-webkit-slider-thumb{
       clearParts();
       Sound.pop(false);
       toast('파츠를 모두 비웠어요.');
+      touchState();
     });
     $('#photoBtn').addEventListener('click', function () {
       Sound.unlock();
@@ -2466,10 +3231,6 @@ input[type=range]::-webkit-slider-thumb{
     $('#sheetClose').addEventListener('click', closeSheet);
     $('#skipBtn').addEventListener('click', nextPhoto);
     $('#addBtn').addEventListener('click', addCutoutPart);
-    $('#bgToggle').addEventListener('change', function () {
-      Cut.removeBg = this.checked;
-      reprocess();
-    });
     $('#tol').addEventListener('input', function () {
       Cut.tol = parseInt(this.value, 10) || 0;
       $('#tolVal').textContent = String(Cut.tol);
@@ -2559,12 +3320,29 @@ input[type=range]::-webkit-slider-thumb{
     theme = THEMES[themeIdx];
 
     makeAppIcon();
+
+    var saved = readState();
+    var restored = 0;
+    if (saved) {
+      restoreSettings(saved);
+      restored = saved.parts.length;
+    }
+
     layout();
-    fillDefault();
+    if (saved) restoreParts(saved); else fillDefault();
+    if (isOil()) seedFluid();
     buildUI();
     draw();
     startLoop();
     bindReturnHandlers();
+    booted = true;
+
+    /* the last state is written when the page goes away, positions included */
+    window.addEventListener('pagehide', function () { saveState(true); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) saveState(true);
+    });
+    if (restored) setTimeout(function () { toast('지난번 쉐이커를 그대로 꺼내왔어 🫧'); }, 420);
 
     /* iOS: block double-tap zoom & rubber band on the stage */
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
