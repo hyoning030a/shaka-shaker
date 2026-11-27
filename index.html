@@ -1056,10 +1056,10 @@ input[type=range]::-webkit-slider-thumb{
     if (bubbleSprite) return;
     var b = cutCanvas(64, 64), bg = b.getContext('2d');
     var gr = bg.createRadialGradient(32, 32, 2, 32, 32, 31);
-    gr.addColorStop(0, 'rgba(255,255,255,0.16)');
-    gr.addColorStop(0.55, 'rgba(255,255,255,0.06)');
-    gr.addColorStop(0.85, 'rgba(255,255,255,0.5)');
-    gr.addColorStop(1, 'rgba(255,255,255,0.04)');
+    gr.addColorStop(0, 'rgba(255,255,255,0.22)');
+    gr.addColorStop(0.55, 'rgba(255,255,255,0.1)');
+    gr.addColorStop(0.84, 'rgba(255,255,255,0.72)');
+    gr.addColorStop(1, 'rgba(255,255,255,0.06)');
     bg.fillStyle = gr;
     bg.beginPath(); bg.arc(32, 32, 30.5, 0, TAU); bg.fill();
     bg.fillStyle = 'rgba(255,255,255,0.95)';
@@ -1096,7 +1096,7 @@ input[type=range]::-webkit-slider-thumb{
         u = rand(-0.4, 0.4); v = rand(-0.55, 0.55); r = rand(0.008, 0.03);
         if (normSdf(u, v) < -r * 2.4) break;
       }
-      bubbles.push({ u: u, v: v, r: r, sp: rand(0.035, 0.1), wob: rand(0.6, 1.7), ph: rand(0, TAU), a: rand(0.35, 0.8) });
+      bubbles.push({ u: u, v: v, r: r, sp: rand(0.035, 0.1), wob: rand(0.6, 1.7), ph: rand(0, TAU), a: rand(0.45, 0.9) });
     }
     for (i = 0; i < 30; i++) {
       u = rand(-0.4, 0.4); v = rand(-0.5, 0.5);
@@ -1120,7 +1120,7 @@ input[type=range]::-webkit-slider-thumb{
           if (normSdf(b.u, b.v) < -b.r * 2.4) break;
         }
         b.sp = rand(0.035, 0.1);
-        b.a = rand(0.35, 0.8);
+        b.a = rand(0.45, 0.9);
       }
     }
     for (i = 0; i < sparkles.length; i++) {
@@ -2783,22 +2783,27 @@ input[type=range]::-webkit-slider-thumb{
     }
     g.globalAlpha = 1;
 
-    var pad = 70;
-    var s = Math.min((W - pad * 2) / VIEW.w, (H - 400) / VIEW.h);
-    var dw = VIEW.w * s, dh = VIEW.h * s;
-    var dx = (W - dw) / 2;
-    var dy = (H - dh) / 2 - 52;
+    var pad = 60;
+    /* frame the acrylic case itself, so the picture looks the same on a phone
+       and on a wide desktop window */
+    var caseW = VIEW.S * FRAME_UW, caseH = VIEW.S * FRAME_UH;
+    var s = Math.min((W - pad * 2) / caseW, (H - 400) / caseH);
+    var cx0 = W / 2;
+    var cy0 = (H - 380) / 2 + 36;
+    var dx = cx0 - VIEW.cx * s;
+    var dy = cy0 - VIEW.cy * s;
+    var dw = caseW * s, dh = caseH * s;
 
-    var shg = g.createRadialGradient(0, 0, 10, 0, 0, dw * 0.5);
+    var shg = g.createRadialGradient(0, 0, 10, 0, 0, dw * 0.46);
     shg.addColorStop(0, 'rgba(122,84,122,0.34)');
     shg.addColorStop(0.6, 'rgba(122,84,122,0.12)');
     shg.addColorStop(1, 'rgba(122,84,122,0)');
     g.save();
-    g.translate(W / 2, dy + dh * 0.94);
+    g.translate(cx0, cy0 + dh * 0.46);
     g.scale(1, 0.26);
     g.fillStyle = shg;
     g.beginPath();
-    g.arc(0, 0, dw * 0.5, 0, TAU);
+    g.arc(0, 0, dw * 0.46, 0, TAU);
     g.fill();
     g.restore();
 
