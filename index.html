@@ -1276,7 +1276,7 @@ input[type=range]::-webkit-slider-thumb{
       ac = made;
       try {
         master = ac.createGain();
-        master.gain.value = muted ? 0.0001 : 0.5;
+        master.gain.value = muted ? 0 : 0.5;
         master.connect(ac.destination);
         var len = Math.floor(ac.sampleRate * 0.4);
         noise = ac.createBuffer(1, len, ac.sampleRate);
@@ -1427,7 +1427,7 @@ input[type=range]::-webkit-slider-thumb{
       rattle: rattle,
       setMuted: function (m) {
         muted = m;
-        if (master) { try { master.gain.value = m ? 0.0001 : 0.5; } catch (e) { /* ignore */ } }
+        if (master) { try { master.gain.value = m ? 0 : 0.5; } catch (e) { /* ignore */ } }
       },
       isMuted: function () { return muted; }
     };
