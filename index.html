@@ -1021,10 +1021,10 @@ input[type=range]::-webkit-slider-thumb{
       if (clearOn) {
         /* 🤍 crystal clear: almost no body colour, just a breath of cool glass
            so the outline still reads while the inside stays see-through */
-        gr.addColorStop(0, 'rgba(255,255,255,0.18)');
-        gr.addColorStop(0.3, 'rgba(246,252,255,0.05)');
-        gr.addColorStop(0.68, 'rgba(232,244,253,0.06)');
-        gr.addColorStop(1, 'rgba(206,229,247,0.18)');
+        gr.addColorStop(0, 'rgba(255,255,255,0.10)');
+        gr.addColorStop(0.3, 'rgba(246,252,255,0.02)');
+        gr.addColorStop(0.68, 'rgba(232,244,253,0.03)');
+        gr.addColorStop(1, 'rgba(206,229,247,0.12)');
       } else {
         gr.addColorStop(0, theme.top);
         gr.addColorStop(0.52, theme.mid);
@@ -1047,7 +1047,7 @@ input[type=range]::-webkit-slider-thumb{
       }
 
       var hiA;
-      if (clearOn) hiA = matteOn ? 0.13 : 0.2;
+      if (clearOn) hiA = matteOn ? 0.07 : 0.1;
       else if (bgPattern === 'none') hiA = matteOn ? 0.44 : 0.82;
       else hiA = matteOn ? 0.22 : 0.34;
       var rg = g.createRadialGradient(
@@ -1059,7 +1059,7 @@ input[type=range]::-webkit-slider-thumb{
       g.fillStyle = rg;
       g.fillRect(0, 0, VIEW.w, VIEW.h);
 
-      drawGlitter(g, 9137 + themeIdx * 77, clearOn ? (matteOn ? 0.34 : 0.5) : (matteOn ? 0.5 : 1));
+      drawGlitter(g, 9137 + themeIdx * 77, clearOn ? (matteOn ? 0.3 : 0.45) : (matteOn ? 0.5 : 1));
     }, maskMain, null);
     b.drawImage(inner, 0, 0, VIEW.w, VIEW.h);
 
@@ -1131,7 +1131,7 @@ input[type=range]::-webkit-slider-thumb{
       f.drawImage(frost, 0, 0, VIEW.w, VIEW.h);
     } else {
       /* ✨ glossy: crisp specular streaks */
-      var gk = clearOn ? 0.86 : 1;
+      var gk = clearOn ? 0.78 : 1;
       var gloss = maskLayer(function (g) {
         var lg = g.createLinearGradient(
           VIEW.cx - VIEW.S * 0.6, VIEW.cy - VIEW.S * 0.72,
