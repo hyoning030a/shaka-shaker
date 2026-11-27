@@ -4556,7 +4556,15 @@ input[type=range]::-webkit-slider-thumb{
   /* =========================================================
      💌 쉐이커 공유 — 링크(#s=) · 파일(.shaker.json)
      ========================================================= */
-  var SHARE_MAX_URL = 8000;
+  var SHARE_MAX_URL = 12000;
+  /* photo sizes tried in order, biggest that still fits the link wins */
+  var SHARE_PLANS = [
+    { ps: 64, bs: 72, bq: 0.62 },
+    { ps: 56, bs: 64, bq: 0.58 },
+    { ps: 48, bs: 56, bq: 0.54 },
+    { ps: 40, bs: 48, bq: 0.50 },
+    { ps: 34, bs: 40, bq: 0.46 }
+  ];
   var SHARE_HINT = '링크를 열면 친구 화면에 이 쉐이커가 그대로 떠요. 사진 파츠는 작게 담겨요 · 파일(.shaker.json)은 사진까지 원본 크기로 담겨요';
   var shareEl = null, shareURL = '', shareBusy = false;
 
@@ -4600,7 +4608,7 @@ input[type=range]::-webkit-slider-thumb{
     } catch (e) { return Promise.resolve(null); }
   }
 
-  /* payload = 'z' + base64url(deflate-raw json) or 'u' + base64url(json) */
+  /* payload = 'z' + base64url(deflate-raw [pack|json]) or 'u' + base64url(json) */
   function encodeSharePayload(st) {
     var bytes;
     try { bytes = new TextEncoder().encode(JSON.stringify(st)); }
@@ -4610,71 +4618,221 @@ input[type=range]::-webkit-slider-thumb{
     });
   }
 
+  /* a tiny pack: version byte 3, 2-byte header length, the json, then raw blobs */
+  function encodeSharePack(pack) {
+    var header;
+    try { header = new TextEncoder().encode(JSON.stringify(pack.st)); }
+    catch (e) { return Promise.resolve(''); }
+    if (!header.length || header.length > 60000) return Promise.resolve('');
+    var total = 3 + header.length, i;
+    for (i = 0; i < pack.blobs.length; i++) total += pack.blobs[i].bytes.length;
+    var out = new Uint8Array(total);
+    out[0] = 3;
+    out[1] = (header.length >> 8) & 255;
+    out[2] = header.length & 255;
+    out.set(header, 3);
+    var o = 3 + header.length;
+    for (i = 0; i < pack.blobs.length; i++) {
+      out.set(pack.blobs[i].bytes, o);
+      o += pack.blobs[i].bytes.length;
+    }
+    return deflateRawBytes(out).then(function (z) {
+      return z ? 'z' + bytesToB64url(z) : '';
+    }, function () { return ''; });
+  }
+
+  function dataURLToBytes(url) {
+    var comma = String(url || '').indexOf(',');
+    if (comma < 0) return null;
+    var bin;
+    try { bin = atob(url.slice(comma + 1)); } catch (e) { return null; }
+    var out = new Uint8Array(bin.length), i;
+    for (i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  /* one blob back into an image: 4-bit rgba, or jpeg bytes as they came */
+  function blobToImageURL(bytes, w, h, f) {
+    if (f === 2) {
+      var s = '', i;
+      for (i = 0; i < bytes.length; i += 0x8000) {
+        s += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(bytes.length, i + 0x8000)));
+      }
+      try { return 'data:image/jpeg;base64,' + btoa(s); } catch (e) { return ''; }
+    }
+    var n = w * h;
+    if (bytes.length < n * 2) return '';
+    var cv = cutCanvas(w, h), g = cv.getContext('2d'), img, d = null, p, o, hi, lo;
+    try { img = g.createImageData(w, h); d = img.data; } catch (e) { return ''; }
+    for (p = 0, o = 0; p < n; p++, o += 2) {
+      hi = bytes[o]; lo = bytes[o + 1];
+      d[p * 4] = (hi >> 4) * 17;
+      d[p * 4 + 1] = (hi & 15) * 17;
+      d[p * 4 + 2] = (lo >> 4) * 17;
+      d[p * 4 + 3] = f === 1 ? (lo & 15) * 17 : 255;
+    }
+    try { g.putImageData(img, 0, 0); } catch (e) { return ''; }
+    var url = '';
+    try { url = cv.toDataURL('image/png'); } catch (e) { url = ''; }
+    return url;
+  }
+
+  function expandSharePack(bytes) {
+    if (!bytes || bytes.length < 4 || bytes[0] !== 3) return null;
+    var hl = (bytes[1] << 8) | bytes[2];
+    if (hl < 2 || 3 + hl > bytes.length) return null;
+    var st;
+    try { st = JSON.parse(new TextDecoder().decode(bytes.subarray(3, 3 + hl))); }
+    catch (e) { return null; }
+    if (!st || typeof st !== 'object' || !Array.isArray(st.bl) || !Array.isArray(st.parts)) return null;
+    var pos = 3 + hl, urls = [], i, meta, blob, url;
+    for (i = 0; i < st.bl.length; i++) {
+      meta = st.bl[i];
+      if (!Array.isArray(meta) || meta.length < 4) return null;
+      var w = meta[0] | 0, h = meta[1] | 0, f = meta[2] | 0, len = meta[3] | 0;
+      if (w < 1 || h < 1 || w > 512 || h > 512 || len < 0 || pos + len > bytes.length) return null;
+      blob = bytes.subarray(pos, pos + len);
+      pos += len;
+      url = blobToImageURL(blob, w, h, f);
+      urls.push(url || '');
+    }
+    var photos = {}, ph, v;
+    if (st.photos && typeof st.photos === 'object') {
+      for (ph in st.photos) {
+        if (!Object.prototype.hasOwnProperty.call(st.photos, ph)) continue;
+        v = st.photos[ph];
+        if (typeof v === 'number') { if (urls[v]) photos[ph] = urls[v]; }
+        else if (typeof v === 'string' && v) photos[ph] = v;
+      }
+    }
+    st.photos = photos;
+    st.bgp = (typeof st.bgq === 'number' && urls[st.bgq]) ? urls[st.bgq] : '';
+    if (!st.bgp && st.pat === 'photo') st.pat = 'none';
+    st.v = 3;
+    delete st.bl;
+    delete st.bgq;
+    return st;
+  }
+
   function decodeSharePayload(payload) {
     payload = String(payload || '');
     if (payload.length < 4) return Promise.resolve(null);
     var kind = payload.charAt(0), bytes;
+    if (kind !== 'z' && kind !== 'u') return Promise.resolve(null);
     try { bytes = b64urlToBytes(payload.slice(1)); } catch (e) { return Promise.resolve(null); }
     var work = kind === 'z' ? inflateRawBytes(bytes) : Promise.resolve(bytes);
     return work.then(function (out) {
       if (!out || !out.length) return null;
+      if (out[0] === 3) return expandSharePack(out);
       try { return JSON.parse(new TextDecoder().decode(out)); } catch (e) { return null; }
     }, function () { return null; });
   }
 
-  /* draw any image source (canvas or data URL) small, keeping the alpha for parts */
-  function shrinkImageURL(src, maxS, type, q) {
+  /* draw any image source (canvas or data URL) into a small canvas, alpha kept */
+  function shrinkCanvas(src, maxS) {
     return new Promise(function (resolve) {
       function draw(img) {
         try {
           var iw = img.naturalWidth || img.width || 0, ih = img.naturalHeight || img.height || 0;
-          if (!iw || !ih) { resolve(''); return; }
+          if (!iw || !ih) { resolve(null); return; }
           var k = Math.min(1, maxS / Math.max(iw, ih));
           var w = Math.max(1, Math.round(iw * k)), h = Math.max(1, Math.round(ih * k));
           var cv = cutCanvas(w, h), g = cv.getContext('2d');
           try { g.imageSmoothingQuality = 'high'; } catch (e) { /* older engines */ }
           g.drawImage(img, 0, 0, w, h);
-          var url = '';
-          try { url = cv.toDataURL(type, q); } catch (e2) { url = ''; }
-          if (!url || (type === 'image/webp' && url.indexOf('data:image/webp') !== 0)) {
-            try { url = cv.toDataURL('image/png'); } catch (e3) { url = ''; }
-          }
-          resolve(url);
-        } catch (e) { resolve(''); }
+          resolve(cv);
+        } catch (e) { resolve(null); }
       }
-      if (!src) { resolve(''); return; }
+      if (!src) { resolve(null); return; }
       if (src.getContext || src.naturalWidth) { draw(src); return; }
       var im = new Image();
       im.onload = function () { draw(im); };
-      im.onerror = function () { resolve(''); };
+      im.onerror = function () { resolve(null); };
       im.src = String(src);
     });
   }
 
-  /* the same shaker, with every photo squeezed into a tiny thumbnail */
-  function buildShareState(st) {
-    var photos = {}, ids = [], jobs = [], id;
-    for (id in st.photos) {
-      if (Object.prototype.hasOwnProperty.call(st.photos, id)) ids.push(id);
+  /* 2 bytes a pixel, 4 bits a channel. A photo bead still looks crisp, the bytes
+     deflate to almost nothing, and it never asks for WebP — so iOS Safari, which
+     quietly hands back a fat PNG for every toDataURL('image/webp'), packs the
+     very same tiny photos as every other browser */
+  function quantizeCanvas(cv, keepAlpha) {
+    var w = cv.width, h = cv.height, n = w * h, d;
+    try { d = cv.getContext('2d').getImageData(0, 0, w, h).data; }
+    catch (e) { return null; }
+    var out = new Uint8Array(n * 2), i, o, off, a, qa;
+    for (i = 0, o = 0; i < n; i++, o += 2) {
+      off = i * 4;
+      a = d[off + 3];
+      if (keepAlpha && a < 24) { out[o] = 0; out[o + 1] = 0; continue; }
+      qa = keepAlpha ? Math.min(15, Math.max(1, (a * 15 + 127) / 255 | 0)) : 15;
+      out[o] = (((d[off] * 15 + 127) / 255 | 0) << 4) | ((d[off + 1] * 15 + 127) / 255 | 0);
+      out[o + 1] = (((d[off + 2] * 15 + 127) / 255 | 0) << 4) | qa;
     }
-    ids.forEach(function (pid) {
+    return out;
+  }
+
+  /* the same shaker, with every photo squeezed into a pack of raw blobs */
+  function buildSharePack(st, plan) {
+    plan = plan || SHARE_PLANS[0];
+    var withBg = !!st.bgp && st.pat === 'photo' && !plan.noBg;
+    var order = [], jobs = [], id;
+    for (id in st.photos) {
+      if (Object.prototype.hasOwnProperty.call(st.photos, id)) order.push(id);
+    }
+    order.forEach(function (pid) {
       var ent = photoStore[pid], src = ent && ent.cv ? ent.cv : st.photos[pid];
-      jobs.push(shrinkImageURL(src, 64, 'image/webp', 0.55).then(function (url) {
-        photos[pid] = url || st.photos[pid];
+      jobs.push(shrinkCanvas(src, plan.ps).then(function (cv) {
+        if (!cv) return null;
+        var q = quantizeCanvas(cv, true);
+        return q ? { w: cv.width, h: cv.height, f: 1, bytes: q } : null;
       }));
     });
-    var bgJob;
-    if (st.bgp && st.pat === 'photo') {
-      bgJob = shrinkImageURL(bgArt && bgArt.src ? bgArt.src : st.bgp, 64, 'image/jpeg', 0.55)
-        .then(function (url) { st.bgp = url || st.bgp; });
-    } else {
-      st.bgp = '';
-      bgJob = Promise.resolve();
+    var bgJob = Promise.resolve(null);
+    if (withBg) {
+      bgJob = shrinkCanvas(bgArt && bgArt.src ? bgArt.src : st.bgp, plan.bs).then(function (cv) {
+        if (!cv) return null;
+        var url = '';
+        try { url = cv.toDataURL('image/jpeg', plan.bq); } catch (e) { url = ''; }
+        var bytes = url.indexOf('data:image/jpeg') === 0 ? dataURLToBytes(url) : null;
+        if (bytes && bytes.length) return { w: cv.width, h: cv.height, f: 2, bytes: bytes };
+        var q = quantizeCanvas(cv, false);
+        return q ? { w: cv.width, h: cv.height, f: 0, bytes: q } : null;
+      });
     }
-    return Promise.all(jobs.concat([bgJob])).then(function () {
-      st.photos = photos;
-      st.v = 2;
-      return st;
+    return Promise.all(jobs.concat([bgJob])).then(function (list) {
+      var got = {}, k, i, bgItem = list[list.length - 1];
+      for (i = 0; i < order.length; i++) got[order[i]] = list[i];
+      /* a photo part whose photo never arrived would be an empty bead */
+      var parts = [], used = {}, p, j;
+      for (j = 0; j < st.parts.length; j++) {
+        p = st.parts[j];
+        if (p && p.k === 'photo') {
+          if (!p.p || !got[p.p]) continue;
+          used[p.p] = 1;
+        }
+        parts.push(p);
+      }
+      var blobs = [], photos = {};
+      for (k in used) {
+        if (!Object.prototype.hasOwnProperty.call(used, k)) continue;
+        photos[k] = blobs.length;
+        blobs.push(got[k]);
+      }
+      var out = {
+        v: 3,
+        shape: st.shape, theme: st.theme, snd: st.snd, mode: st.mode,
+        fin: st.fin, holo: st.holo, pat: st.pat, ring: st.ring,
+        bgp: '', parts: parts, photos: photos, deco: st.deco
+      };
+      if (withBg && bgItem) {
+        out.bgq = blobs.length;
+        blobs.push(bgItem);
+      } else if (st.pat === 'photo') {
+        out.pat = 'none';
+      }
+      out.bl = blobs.map(function (b) { return [b.w, b.h, b.f, b.bytes.length]; });
+      return { st: out, blobs: blobs };
     });
   }
 
@@ -4724,30 +4882,57 @@ input[type=range]::-webkit-slider-thumb{
     if (btn) { btn.disabled = true; btn.textContent = '만드는 중…'; }
     if (sizeEl && !auto) sizeEl.textContent = '만드는 중…';
     var mine = stateSnapshot();
-    buildShareState(mine).then(function (small) {
-      return encodeSharePayload(small).then(function (payload) {
-        var url = shareBaseURL() + '#s=' + payload;
-        if (url.length <= SHARE_MAX_URL) {
-          return { url: url, dropped: 0, droppedBg: false };
+    var heavy = countPhotos(mine) > 0 || (!!mine.bgp && mine.pat === 'photo');
+    var plans = [SHARE_PLANS[0]], i;
+    if (heavy) {
+      plans = SHARE_PLANS.slice();
+      /* if even the smallest size is too heavy, the photo parts matter more
+         than the case background: try again without it before giving up */
+      if (mine.bgp && mine.pat === 'photo') {
+        for (i = 0; i < SHARE_PLANS.length; i++) {
+          plans.push({ ps: SHARE_PLANS[i].ps, bs: SHARE_PLANS[i].bs, bq: SHARE_PLANS[i].bq, noBg: true });
         }
-        /* too heavy: a link without the photos still lets the friend see the design */
-        var light = stateSnapshot(), keep = [], i, p, n = 0;
-        for (i = 0; i < light.parts.length; i++) {
-          p = light.parts[i];
-          if (p.k === 'photo') { n++; continue; }
-          keep.push(p);
-        }
-        var droppedBg = !!light.bgp;
-        light.parts = keep;
-        light.photos = {};
-        light.bgp = '';
-        if (light.pat === 'photo') light.pat = 'none';
-        light.v = 2;
-        return encodeSharePayload(light).then(function (payload2) {
-          var url2 = shareBaseURL() + '#s=' + payload2;
-          return { url: url2.length <= SHARE_MAX_URL ? url2 : '', dropped: n, droppedBg: droppedBg };
+      }
+    }
+    var pi = 0;
+    /* biggest photo size first, step down until the link fits */
+    function attempt() {
+      if (pi >= plans.length) return Promise.resolve(null);
+      var plan = plans[pi++];
+      return buildSharePack(stateSnapshot(), plan).then(function (pack) {
+        return encodeSharePack(pack).then(function (payload) {
+          if (!payload) return null;
+          var url = shareBaseURL() + '#s=' + payload;
+          if (url.length <= SHARE_MAX_URL) {
+            return { url: url, dropped: 0, droppedBg: !!plan.noBg && !!mine.bgp };
+          }
+          return attempt();
         });
       });
+    }
+    /* too heavy even at the smallest size: a link without the photos still lets
+       the friend see the design */
+    function light() {
+      var st = stateSnapshot(), keep = [], i, p, n = 0;
+      for (i = 0; i < st.parts.length; i++) {
+        p = st.parts[i];
+        if (p.k === 'photo') { n++; continue; }
+        keep.push(p);
+      }
+      var droppedBg = !!st.bgp;
+      st.parts = keep;
+      st.photos = {};
+      st.bgp = '';
+      if (st.pat === 'photo') st.pat = 'none';
+      st.v = 2;
+      return encodeSharePayload(st).then(function (payload) {
+        var url = shareBaseURL() + '#s=' + payload;
+        return { url: url.length <= SHARE_MAX_URL ? url : '', dropped: n, droppedBg: droppedBg };
+      });
+    }
+    var run = (typeof CompressionStream === 'function') ? attempt : function () { return Promise.resolve(null); };
+    run().then(function (res) {
+      return res || light();
     }).then(function (res) {
       shareBusy = false;
       if (btn) { btn.disabled = false; btn.textContent = '🔗 공유 링크 만들기'; }
@@ -4766,7 +4951,8 @@ input[type=range]::-webkit-slider-thumb{
         var what = [];
         if (res.dropped) what.push('사진 파츠 ' + res.dropped + '개');
         if (res.droppedBg) what.push('배경 사진');
-        setShareHint(what.join(' · ') + '는 링크에 담지 못했어요. 사진까지 그대로 보내려면 <b>📦 파일로 보내기</b>를 써 주세요');
+        setShareHint(what.join(' · ') + (/사진$/.test(what[what.length - 1]) ? '은' : '는') +
+          ' 링크에 담지 못했어요. 사진까지 그대로 보내려면 <b>📦 파일로 보내기</b>를 써 주세요');
       } else {
         setShareHint(SHARE_HINT);
       }
