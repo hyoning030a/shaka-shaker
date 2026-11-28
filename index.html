@@ -8610,7 +8610,9 @@ input[type=range]::-webkit-slider-thumb{
     g.save();
     g.translate(120, 130);
     var R = 168, n = 22, a;
-    g.fillStyle = 'rgba(255,255,255,0.96)';
+    g.fillStyle = 'rgba(120,95,110,0.10)';
+    g.beginPath(); g.arc(8, 14, R + 6, 0, TAU); g.fill();
+    g.fillStyle = vLin(g, 0, -R, 0, R, [[0, '#ffffff'], [0.6, hexMix(P.card1, '#ffffff', 0.60)], [1, hexMix(P.card2, '#ffffff', 0.42)]]);
     g.beginPath(); g.arc(0, 0, R, 0, TAU); g.fill();
     for (i = 0; i < n; i++) {
       a = i / n * TAU;
@@ -8619,6 +8621,9 @@ input[type=range]::-webkit-slider-thumb{
     g.strokeStyle = hexA(P.card2, 0.85);
     g.lineWidth = 5;
     g.beginPath(); g.arc(0, 0, R * 0.78, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,0.75)';
+    g.lineWidth = 3;
+    g.beginPath(); g.arc(0, 0, R * 0.86, Math.PI * 1.05, Math.PI * 1.6); g.stroke();
     g.restore();
 
     /* pastel books, top right */
