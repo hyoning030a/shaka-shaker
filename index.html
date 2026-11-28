@@ -1079,62 +1079,17 @@ input[type=range]::-webkit-slider-thumb{
     ]),
     /* 💗 하트: 둥근 꼭지 · 부드러운 홈 · 통통한 아래 끝 */
     heart: HEART_PATH,
-    /* 🐱 고양이: 넓고 통통한 볼, 머리 위 모서리에 부드러운 귀 */
-    cat: closed(
-      { m: [-0.4206, -0.5304] },
-      { c: [-0.4009, -0.5335, -0.3749, -0.5204, -0.3550, -0.5088] },
-      { c: [-0.3352, -0.4972, -0.3201, -0.4758, -0.3015, -0.4607] },
-      { c: [-0.2829, -0.4457, -0.2611, -0.4342, -0.2433, -0.4184] },
-      { c: [-0.2254, -0.4026, -0.2113, -0.3823, -0.1946, -0.3660] },
-      { c: [-0.1778, -0.3497, -0.1631, -0.3277, -0.1426, -0.3209] },
-      { c: [-0.1222, -0.3140, -0.0956, -0.3236, -0.0719, -0.3251] },
-      { c: [-0.0481, -0.3265, -0.0240, -0.3297, 0.0000, -0.3297] },
-      { c: [0.0240, -0.3297, 0.0481, -0.3265, 0.0719, -0.3251] },
-      { c: [0.0956, -0.3236, 0.1222, -0.3140, 0.1426, -0.3209] },
-      { c: [0.1631, -0.3277, 0.1778, -0.3497, 0.1946, -0.3660] },
-      { c: [0.2113, -0.3823, 0.2254, -0.4026, 0.2433, -0.4184] },
-      { c: [0.2611, -0.4342, 0.2829, -0.4457, 0.3015, -0.4607] },
-      { c: [0.3201, -0.4758, 0.3352, -0.4972, 0.3550, -0.5088] },
-      { c: [0.3749, -0.5204, 0.4009, -0.5335, 0.4206, -0.5304] },
-      { c: [0.4404, -0.5272, 0.4642, -0.5083, 0.4735, -0.4899] },
-      { c: [0.4827, -0.4715, 0.4789, -0.4432, 0.4761, -0.4200] },
-      { c: [0.4732, -0.3968, 0.4605, -0.3743, 0.4563, -0.3509] },
-      { c: [0.4522, -0.3274, 0.4543, -0.3029, 0.4513, -0.2792] },
-      { c: [0.4482, -0.2555, 0.4426, -0.2321, 0.4380, -0.2087] },
-      { c: [0.4334, -0.1853, 0.4226, -0.1618, 0.4237, -0.1388] },
-      { c: [0.4247, -0.1158, 0.4369, -0.0935, 0.4444, -0.0709] },
-      { c: [0.4519, -0.0483, 0.4628, -0.0263, 0.4686, -0.0032] },
-      { c: [0.4744, 0.0200, 0.4781, 0.0441, 0.4792, 0.0680] },
-      { c: [0.4803, 0.0918, 0.4790, 0.1162, 0.4754, 0.1398] },
-      { c: [0.4718, 0.1633, 0.4656, 0.1870, 0.4575, 0.2094] },
-      { c: [0.4494, 0.2318, 0.4388, 0.2538, 0.4267, 0.2744] },
-      { c: [0.4145, 0.2949, 0.4002, 0.3146, 0.3846, 0.3327] },
-      { c: [0.3691, 0.3509, 0.3517, 0.3678, 0.3333, 0.3832] },
-      { c: [0.3150, 0.3986, 0.2952, 0.4126, 0.2747, 0.4250] },
-      { c: [0.2543, 0.4374, 0.2326, 0.4483, 0.2106, 0.4576] },
-      { c: [0.1885, 0.4670, 0.1656, 0.4748, 0.1425, 0.4810] },
-      { c: [0.1194, 0.4873, 0.0956, 0.4919, 0.0719, 0.4951] },
-      { c: [0.0481, 0.4982, 0.0240, 0.4997, 0.0000, 0.4997] },
-      { c: [-0.0240, 0.4997, -0.0481, 0.4982, -0.0719, 0.4951] },
-      { c: [-0.0956, 0.4919, -0.1194, 0.4873, -0.1425, 0.4810] },
-      { c: [-0.1656, 0.4748, -0.1885, 0.4670, -0.2106, 0.4576] },
-      { c: [-0.2326, 0.4483, -0.2543, 0.4374, -0.2747, 0.4250] },
-      { c: [-0.2952, 0.4126, -0.3150, 0.3986, -0.3333, 0.3832] },
-      { c: [-0.3517, 0.3678, -0.3691, 0.3509, -0.3846, 0.3327] },
-      { c: [-0.4002, 0.3146, -0.4145, 0.2949, -0.4267, 0.2744] },
-      { c: [-0.4388, 0.2538, -0.4494, 0.2318, -0.4575, 0.2094] },
-      { c: [-0.4656, 0.1870, -0.4718, 0.1633, -0.4754, 0.1398] },
-      { c: [-0.4790, 0.1162, -0.4803, 0.0918, -0.4792, 0.0680] },
-      { c: [-0.4781, 0.0441, -0.4744, 0.0200, -0.4686, -0.0032] },
-      { c: [-0.4628, -0.0263, -0.4519, -0.0483, -0.4444, -0.0709] },
-      { c: [-0.4369, -0.0935, -0.4247, -0.1158, -0.4237, -0.1388] },
-      { c: [-0.4226, -0.1618, -0.4334, -0.1853, -0.4380, -0.2087] },
-      { c: [-0.4426, -0.2321, -0.4482, -0.2555, -0.4513, -0.2792] },
-      { c: [-0.4543, -0.3029, -0.4522, -0.3274, -0.4563, -0.3509] },
-      { c: [-0.4605, -0.3743, -0.4732, -0.3968, -0.4761, -0.4200] },
-      { c: [-0.4789, -0.4432, -0.4827, -0.4715, -0.4735, -0.4899] },
-      { c: [-0.4642, -0.5083, -0.4404, -0.5272, -0.4206, -0.5304] }
-    ),
+    /* 🐱 고양이: 둥근 귀끝 · 부드러운 이마 골 · 넓고 통통한 볼
+       (a clean symmetric bezier — no metaball bumps on the ear's outer edge) */
+    cat: halfBody([0, -0.330], [
+      { c: [0.055, -0.334, 0.240, -0.474, 0.380, -0.520] },
+      { c: [0.398, -0.530, 0.416, -0.535, 0.430, -0.535] },
+      { c: [0.448, -0.535, 0.461, -0.520, 0.465, -0.500] },
+      { c: [0.458, -0.455, 0.446, -0.380, 0.443, -0.330] },
+      { c: [0.441, -0.240, 0.475, -0.130, 0.484, -0.040] },
+      { c: [0.489, 0.090, 0.450, 0.310, 0.380, 0.395] },
+      { c: [0.310, 0.462, 0.150, 0.502, 0, 0.502] }
+    ]),
     /* 🐻 곰돌이: 동그란 머리에 동글동글한 귀 두 개 */
     bear: closed(
       { m: [-0.2844, -0.5316] },
@@ -1303,14 +1258,12 @@ input[type=range]::-webkit-slider-thumb{
       { c: [-0.0979, -0.3325, -0.0786, -0.3375, -0.0591, -0.3404] },
       { c: [-0.0396, -0.3433, -0.0197, -0.3448, 0.0000, -0.3448] }
     ),
-    /* 🥛 우유팩: 모서리를 둥글게 깎은 지붕형 카톤 */
-    milk: halfBody([0, -0.588], [
-      { c: [0.082, -0.588, 0.176, -0.560, 0.258, -0.505] },
-      { c: [0.298, -0.478, 0.351, -0.452, 0.374, -0.430] },
-      { c: [0.386, -0.419, 0.395, -0.380, 0.395, -0.330] },
-      { c: [0.395, -0.315, 0.395, 0.300, 0.386, 0.420] },
-      { c: [0.382, 0.453, 0.332, 0.510, 0.257, 0.512] },
-      { c: [0.229, 0.513, 0.070, 0.514, 0, 0.514] }
+    /* 🥛 우유팩: 뾰족한 지붕 · 곧은 몸통 · 둥근 아래 모서리 */
+    milk: halfBody([0, -0.560], [
+      { c: [0.100, -0.430, 0.200, -0.300, 0.300, -0.170] },
+      { c: [0.300, -0.010, 0.300, 0.200, 0.300, 0.422] },
+      { a: [0.222, 0.422, 0.078, 0, 90] },
+      { c: [0.150, 0.500, 0.070, 0.500, 0, 0.500] }
     ]),
     /* ⬜ 네모: 둥글둥글한 사각 */
     square: halfBody([0, -0.430], [
@@ -2897,8 +2850,8 @@ input[type=range]::-webkit-slider-thumb{
     wing_right: function (g) { wingArt(g, 1); },
     /* the old pair, only ever seen on cases saved before the split */
     wing: function (g) {
-      wingArt(g, -1, 0.86);
-      wingArt(g, 1, 0.86);
+      g.save(); g.translate(-31, 0); wingArt(g, -1); g.restore();
+      g.save(); g.translate(31, 0); wingArt(g, 1); g.restore();
     },
     wand: function (g) {
       g.save();
@@ -3073,35 +3026,25 @@ input[type=range]::-webkit-slider-thumb{
     }
   };
 
-  /* 🪽 one soft angel wing — three plump feathers fanned from a little base,
-     so it still reads as a wing at charm size; sg = -1 points it left */
-  function wingArt(g, sg, scale) {
-    var k = scale || 1;
+  /* 🪽 the soft scalloped angel wing (the original v4 artwork), drawn one
+     side at a time so 왼쪽/오른쪽 날개 can be placed on their own; sg = -1
+     points it left. The path is shifted to sit centred in its own charm box. */
+  function wingArt(g, sg) {
     g.save();
-    g.scale(sg * k, k);
-    var col = vLin(g, 0, -64, 0, 34, [[0, '#ffffff'], [0.38, '#f4f9ff'], [1, '#d4e4fb']]);
-    var feather = [
-      { x: -46, y: -34, rx: 27, ry: 15, rot: -0.72 },
-      { x: -34, y: -8, rx: 29, ry: 15, rot: -0.50 },
-      { x: -18, y: 14, rx: 27, ry: 14, rot: -0.28 }
-    ];
-    var i;
-    for (i = 0; i < feather.length; i++) {
-      (function (f) {
-        vBody(g, function (gg) { vEll(gg, f.x, f.y, f.rx, f.ry, f.rot); }, col,
-          { bw: 4, round: 6, edge: 'rgba(158,190,232,0.45)', ew: 1.6 });
-      })(feather[i]);
-    }
-    /* the little shoulder that joins the feathers to the case */
-    vBody(g, function (gg) { vEll(gg, 8, 24, 20, 16, -0.2); }, col, { bw: 4, round: 4 });
-    /* a couple of feather lines */
-    g.save();
-    g.strokeStyle = 'rgba(150,185,230,0.45)';
-    g.lineWidth = 2.4;
-    g.lineCap = 'round';
-    g.beginPath(); g.moveTo(-20, 6); g.quadraticCurveTo(-34, 0, -44, -6); g.stroke();
-    g.beginPath(); g.moveTo(-30, -18); g.quadraticCurveTo(-44, -24, -54, -30); g.stroke();
-    g.restore();
+    g.translate(sg * -38, 18);
+    g.scale(sg, 1);
+    var col = vLin(g, 0, -60, 0, 30, [[0, '#ffffff'], [0.38, '#e9f3ff'], [1, '#c2dbf9']]);
+    vBody(g, function (gg) {
+      gg.beginPath();
+      gg.moveTo(6, 14);
+      gg.bezierCurveTo(0, -30, 30, -58, 60, -50);
+      gg.bezierCurveTo(70, -46, 68, -28, 56, -24);
+      gg.bezierCurveTo(64, -12, 56, 2, 44, 0);
+      gg.bezierCurveTo(46, 12, 34, 22, 22, 16);
+      gg.bezierCurveTo(14, 22, 6, 20, 6, 14);
+      gg.closePath();
+    }, col, { bw: 2.2, round: 3, edge: 'rgba(140,178,228,0.5)', ew: 1.6 });
+    vGloss(g, -30, -30, 13, 7, -0.45, 0.9);
     g.restore();
   }
 
@@ -6259,8 +6202,8 @@ input[type=range]::-webkit-slider-thumb{
   var DECO_TYPES = [
     { id: 'bow', name: '리본', s: 0.30 },
     { id: 'bow_mini', name: '미니리본', s: 0.20 },
-    { id: 'wing_left', name: '왼쪽 날개', s: 0.30 },
-    { id: 'wing_right', name: '오른쪽 날개', s: 0.30 },
+    { id: 'wing_left', name: '왼쪽 날개', s: 0.36 },
+    { id: 'wing_right', name: '오른쪽 날개', s: 0.36 },
     { id: 'wand', name: '마술봉', s: 0.28 },
     { id: 'halo', name: '후광', s: 0.24 },
     { id: 'moon', name: '초승달', s: 0.24 },
@@ -8745,7 +8688,7 @@ input[type=range]::-webkit-slider-thumb{
     g.restore();
 
     /* ---- the shaker, packed in its blister ---- */
-    var domeCx = 0, domeCy = 100, domeW = 448, domeH = 572;
+    var domeCx = 0, domeCy = 92, domeW = 404, domeH = 636;
     /* the printed insert card the shaker is sealed against */
     g.save();
     roundRectPath(g, domeCx - domeW / 2, domeCy - domeH / 2, domeW, domeH, domeW / 2);
@@ -8756,7 +8699,7 @@ input[type=range]::-webkit-slider-thumb{
     g.fillStyle = ig;
     g.fill();
     g.restore();
-    mockDrawShaker(g, domeCx, domeCy - 4, mockCaseHForDome(domeW, domeH, 0.88), 0.012);
+    mockDrawShaker(g, domeCx, domeCy, mockCaseHForDome(domeW, domeH, 0.88), 0.012);
     mockBlisterDome(g, domeCx, domeCy, domeW, domeH, P);
 
     /* motifs scattered around the dome */
@@ -9115,7 +9058,7 @@ input[type=range]::-webkit-slider-thumb{
     g.strokeStyle = hexA(P.ink, 0.16);
     g.lineWidth = 2;
     g.beginPath(); g.arc(0, holeY, holeR + 1, 0, TAU); g.stroke();
-    mockBowMotif(g, 4, holeY + 26, 92, 0, P);
+    mockBowMotif(g, 4, holeY + 16, 78, 0, P);
 
     /* the name of the pack, in a soft italic */
     g.save();
@@ -9123,11 +9066,11 @@ input[type=range]::-webkit-slider-thumb{
     g.textBaseline = 'alphabetic';
     g.font = 'italic 900 52px "Apple SD Gothic Neo","Pretendard",-apple-system,system-ui,sans-serif';
     g.fillStyle = hexA(P.ink, 0.82);
-    g.fillText('Pocket Shaker', 0, -cardH / 2 + 150);
+    g.fillText('Pocket Shaker', 0, -cardH / 2 + 166);
     g.restore();
 
     /* the shaker in its window */
-    var domeCx = 0, domeCy = 70, domeW = 456, domeH = 604;
+    var domeCx = 0, domeCy = 44, domeW = 410, domeH = 648;
     g.save();
     roundRectPath(g, domeCx - domeW / 2, domeCy - domeH / 2, domeW, domeH, domeW / 2);
     var ig = g.createLinearGradient(0, domeCy - domeH / 2, 0, domeCy + domeH / 2);
@@ -9144,7 +9087,7 @@ input[type=range]::-webkit-slider-thumb{
     roundRectPath(g, domeCx - domeW / 2 - 15, domeCy - domeH / 2 - 15, domeW + 30, domeH + 30, (domeW + 30) / 2);
     g.stroke();
     g.restore();
-    mockDrawShaker(g, domeCx, domeCy - 2, mockCaseHForDome(domeW, domeH, 0.90), 0.01);
+    mockDrawShaker(g, domeCx, domeCy, mockCaseHForDome(domeW, domeH, 0.88), 0.01);
     mockBlisterDome(g, domeCx, domeCy, domeW, domeH, P);
 
     /* a gingham bow at the foot of the card, a heart tag and two stickers */
