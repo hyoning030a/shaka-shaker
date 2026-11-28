@@ -474,19 +474,22 @@ input[type=range]::-webkit-slider-thumb{
 #shotImg{display:block;width:min(340px,76vw);height:auto;border-radius:16px;box-shadow:0 10px 26px rgba(120,80,120,.22);}
 #shotModeChips button{font-size:11.5px;padding:10px 3px;letter-spacing:-.4px;}
 #shot .prev-wrap{background:#fff;background-image:none;border-color:rgba(235,225,240,.9);}
-/* 🎞️ 움짤 만드는 동안의 잠깐 안내 */
-.gifbusy{
+/* 🎬 영상 만드는 동안의 잠깐 안내 */
+#shotVideo{display:block;width:min(340px,76vw);height:auto;border-radius:16px;box-shadow:0 10px 26px rgba(120,80,120,.22);background:#fff;}
+#shotVideo[hidden],#shotImg[hidden]{display:none;}
+.vidbusy{
   position:absolute;inset:0;border-radius:20px;background:rgba(255,255,255,.88);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
   font-size:12.5px;font-weight:800;color:#c05a86;letter-spacing:-.2px;
+  text-align:center;padding:0 18px;line-height:1.5;
 }
-.gifbusy::before{
+.vidbusy::before{
   content:'';width:26px;height:26px;border-radius:50%;
   border:3px solid #ffdceb;border-top-color:#ff7aa8;
-  animation:gifspin .75s linear infinite;
+  animation:vidspin .75s linear infinite;
 }
-.gifbusy[hidden]{display:none;}
-@keyframes gifspin{to{transform:rotate(360deg);}}
+.vidbusy[hidden]{display:none;}
+@keyframes vidspin{to{transform:rotate(360deg);}}
 #shot.mock .prev-wrap{padding:9px;}
 #shot.mock #shotImg{width:min(306px,68vw);}
 @media (max-height:760px){
@@ -813,7 +816,7 @@ input[type=range]::-webkit-slider-thumb{
     <div class="seg" id="shotModeChips">
       <button type="button" data-mode="shot" class="sel">📸 일반 인증샷</button>
       <button type="button" data-mode="product">🎁 제품 목업 모드</button>
-      <button type="button" data-mode="gif">🎞️ 움짤(GIF)</button>
+      <button type="button" data-mode="video">🎬 영상(MP4)</button>
     </div>
     <div id="mockBar" hidden>
       <div id="mockStyles" role="group" aria-label="목업 스타일"></div>
@@ -830,7 +833,8 @@ input[type=range]::-webkit-slider-thumb{
     </div>
     <div class="prev-wrap">
       <img id="shotImg" alt="포켓쉐이커 인증샷" />
-      <div id="gifBusy" class="gifbusy" hidden>움짤 만드는 중…</div>
+      <video id="shotVideo" playsinline autoplay loop muted hidden aria-label="포켓쉐이커 영상"></video>
+      <div id="vidBusy" class="vidbusy" hidden>영상 만드는 중…</div>
     </div>
     <div id="shotNameRow">
       <span>이름</span>
@@ -5875,12 +5879,12 @@ input[type=range]::-webkit-slider-thumb{
 
   function shotFileName() {
     var product = shotMode === 'product';
-    var gif = shotMode === 'gif';
+    var video = shotMode === 'video';
     var base = shotTitle
       ? safeFileName(shotTitle)
-      : (gif ? '포켓쉐이커-움짤' : (product ? '포켓쉐이커-제품목업' : '포켓쉐이커-인증샷'));
-    var tail = product && shotTitle ? '-제품목업' : (gif && shotTitle ? '-움짤' : '');
-    return base + tail + (gif ? '.gif' : '.png');
+      : (video ? '포켓쉐이커-영상' : (product ? '포켓쉐이커-제품목업' : '포켓쉐이커-인증샷'));
+    var tail = product && shotTitle ? '-제품목업' : (video && shotTitle ? '-영상' : '');
+    return base + tail + (video ? ((vidExt || vidPlannedExt()) === 'webm' ? '.webm' : '.mp4') : '.png');
   }
 
   function renderShot() {
@@ -6026,21 +6030,20 @@ input[type=range]::-webkit-slider-thumb{
           if (shotURL) { try { URL.revokeObjectURL(shotURL); } catch (e2) { /* gone */ } }
           shotURL = URL.createObjectURL(b);
           var im = $('#shotImg');
-          /* 움짤을 보는 중에는 영수증 사진이 그 미리보기를 덮지 않게 */
-          if (im && shotMode !== 'gif') im.src = shotURL;
+          if (im) im.src = shotURL;
         }, 'image/png');
       } catch (e) { shotBlob = null; }
     }
     if (!shotURL) {
       try { shotURL = out.toDataURL('image/png'); } catch (e3) { shotURL = ''; }
       var img = $('#shotImg');
-      if (img && shotURL && shotMode !== 'gif') img.src = shotURL;
+      if (img && shotURL) img.src = shotURL;
     }
     return true;
   }
 
   function openShot() {
-    if (shotMode !== 'gif' && !makeShotImage()) { toast('인증샷을 만들지 못했어요'); return; }
+    if (!makeShotImage()) { toast('인증샷을 만들지 못했어요'); return; }
     var nameEl = $('#shotName');
     if (nameEl) nameEl.value = shotTitle;
     buildMockUI();
@@ -6048,7 +6051,7 @@ input[type=range]::-webkit-slider-thumb{
     var sh = $('#shot');
     sh.hidden = false;
     requestAnimationFrame(function () { sh.classList.add('on'); });
-    if (shotMode === 'gif') buildGif();
+    if (shotMode === 'video') buildVideo();
   }
 
   function onShotNameInput() {
@@ -6060,7 +6063,7 @@ input[type=range]::-webkit-slider-thumb{
     clearTimeout(shotRenderTimer);
     shotRenderTimer = setTimeout(function () {
       var sh = $('#shot');
-      if (!sh || sh.hidden || shotMode === 'gif') return;
+      if (!sh || sh.hidden || shotMode === 'video') return;
       makeShotImage();
     }, 260);
   }
@@ -6079,78 +6082,34 @@ input[type=range]::-webkit-slider-thumb{
     shotTitle = v;
     clearTimeout(shotRenderTimer);
     var sh = $('#shot');
-    if (sh && !sh.hidden && shotMode !== 'gif') makeShotImage();
+    if (sh && !sh.hidden && shotMode !== 'video') makeShotImage();
   }
   function closeShot() {
     var sh = $('#shot');
     if (!sh) return;
     commitShotName();
     blurShotName();
-    stopGifBuild();
+    stopVideoBuild();
     sh.classList.remove('on');
     setTimeout(function () { sh.hidden = true; }, 240);
-  }
-
-  /* =================================================================
-     🎞️ 움짤 모드 — 미리보기도, 저장도 진짜 image/gif
-     ================================================================= */
-  var gifURL = '', gifBlob = null, gifBuildSeq = 0, gifTimer = 0, gifMs = 0;
-
-  function stopGifBuild() {
-    gifBuildSeq++;
-    clearTimeout(gifTimer);
-    gifTimer = 0;
-    var busy = $('#gifBusy');
-    if (busy) busy.hidden = true;
-  }
-
-  function clearGifPreview() {
-    stopGifBuild();
-    if (gifURL) { try { URL.revokeObjectURL(gifURL); } catch (e) { /* gone */ } }
-    gifURL = '';
-    gifBlob = null;
-  }
-
-  /* paint the sheet first, then encode: the “움짤 만드는 중…” note is on
-     screen for the moment the page is busy squeezing the frames */
-  function buildGif() {
-    if (shotMode !== 'gif') return;
-    var mine = ++gifBuildSeq;
-    clearTimeout(gifTimer);
-    var busy = $('#gifBusy');
-    if (busy) busy.hidden = false;
-    gifTimer = setTimeout(function () {
-      gifTimer = 0;
-      if (mine !== gifBuildSeq) return;
-      var t0 = performance.now(), blob = null;
-      try { blob = encodeShakeGif(); } catch (e) { try { console.warn('gif encode failed', e); } catch (e2) { /* ignore */ } }
-      if (mine !== gifBuildSeq) return;
-      if (busy) busy.hidden = true;
-      if (!blob || !blob.size) { toast('움짤을 만들지 못했어요'); return; }
-      if (gifURL) { try { URL.revokeObjectURL(gifURL); } catch (e3) { /* gone */ } }
-      gifMs = Math.round(performance.now() - t0);
-      gifBlob = blob;
-      gifURL = URL.createObjectURL(blob);
-      var im = $('#shotImg');
-      if (im) im.src = gifURL;
-    }, 120);
   }
 
   function downloadShot() {
     commitShotName();
     blurShotName();
-    if (shotMode === 'gif') {
-      if (!gifBlob || !gifURL) { buildGif(); toast('움짤을 만드는 중이에요 🎞️'); return; }
+    if (shotMode === 'video') {
+      if (vidUnsupported) { toast('이 브라우저에선 영상 저장이 안 돼요 · 사진으로 저장해 주세요'); return; }
+      if (!vidBlob || !vidURL) { buildVideo(); toast('영상을 만드는 중이에요 🎬'); return; }
       try {
-        var ga = document.createElement('a');
-        ga.href = gifURL;
-        ga.download = shotFileName();
-        document.body.appendChild(ga);
-        ga.click();
-        setTimeout(function () { if (ga.parentNode) ga.parentNode.removeChild(ga); }, 0);
-        toast(ENV.ios ? '움짤을 길게 눌러 사진에 저장해도 돼요' : '움짤 GIF를 저장했어요!');
+        var va = document.createElement('a');
+        va.href = vidURL;
+        va.download = shotFileName();
+        document.body.appendChild(va);
+        va.click();
+        setTimeout(function () { if (va.parentNode) va.parentNode.removeChild(va); }, 0);
+        toast(ENV.ios ? '영상을 길게 눌러 사진에 저장해도 돼요' : '영상을 저장했어요!');
       } catch (e) {
-        toast('움짤을 길게 눌러 저장해 주세요');
+        toast('영상을 길게 눌러 저장해 주세요');
       }
       return;
     }
@@ -6174,12 +6133,14 @@ input[type=range]::-webkit-slider-thumb{
   function saveShot() {
     commitShotName();
     blurShotName();
-    if (shotMode === 'gif') {
-      if (!gifBlob) { buildGif(); toast('움짤을 만드는 중이에요 🎞️'); return; }
-      var gfile = null;
-      try { gfile = new File([gifBlob], shotFileName(), { type: 'image/gif' }); } catch (e) { gfile = null; }
-      if (gfile && navigator.canShare && navigator.canShare({ files: [gfile] })) {
-        navigator.share({ files: [gfile], title: '포켓쉐이커 움짤' }).catch(function () { downloadShot(); });
+    if (shotMode === 'video') {
+      if (vidUnsupported) { toast('이 브라우저에선 영상 저장이 안 돼요 · 사진으로 저장해 주세요'); return; }
+      if (!vidBlob) { buildVideo(); toast('영상을 만드는 중이에요 🎬'); return; }
+      var vfile = null;
+      try { vfile = new File([vidBlob], shotFileName(), { type: vidBlob.type || 'video/mp4' }); } catch (e) { vfile = null; }
+      /* 아이폰 사진첩은 이 공유 시트의 ‘비디오 저장’으로 바로 들어가요 */
+      if (vfile && navigator.canShare && navigator.canShare({ files: [vfile] })) {
+        navigator.share({ files: [vfile], title: '포켓쉐이커 영상' }).catch(function () { downloadShot(); });
         return;
       }
       downloadShot();
@@ -8067,7 +8028,7 @@ input[type=range]::-webkit-slider-thumb{
     shotBgHex = /^#[0-9a-f]{6}$/i.test(String(hex)) ? String(hex).toLowerCase() : '';
     syncShotBgUI();
     var sh = $('#shot');
-    if (sh && !sh.hidden) { if (shotMode === 'gif') buildGif(); else makeShotImage(); }
+    if (sh && !sh.hidden) { if (shotMode === 'video') buildVideo(); else makeShotImage(); }
   }
   function buildShotBgUI() {
     var box = $('#shotBgSwatches');
@@ -8092,7 +8053,7 @@ input[type=range]::-webkit-slider-thumb{
         var sh = $('#shot');
         if (sh && !sh.hidden) {
           clearTimeout(shotBgTimer);
-          shotBgTimer = setTimeout(function () { if (shotMode === 'gif') buildGif(); else makeShotImage(); }, 90);
+          shotBgTimer = setTimeout(function () { if (shotMode === 'video') buildVideo(); else makeShotImage(); }, 90);
         }
       });
       inp.addEventListener('change', function () { syncShotBgUI(); });
@@ -9213,240 +9174,30 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   /* =================================================================
-     🎞️ 흔들리는 움짤(GIF)
-     A canvas paints about two seconds of shaking, a median cut chooses the
-     colours, and our own LZW squeezes every frame. No library, no CDN, no
-     network: the whole encoder lives in this file.
+     🎬 흔들리는 영상 저장 — 아이폰은 진짜 MP4, 그 밖엔 WebM
+     720×900 · 30fps · 약 2.2초를 24비트 색 그대로 그려서, 캔버스를
+     captureStream으로 흘려보내고 MediaRecorder가 그대로 압축해요.
+     라이브러리도 CDN도 서버도 없이 이 파일 안에서 끝납니다.
      ================================================================= */
-  var GIF_W = 360, GIF_H = 450, GIF_FRAMES = 40, GIF_DELAY = 4; /* 40ms a frame → 1.6초 */
-  var GIF_SHAKE = 0.42;            /* 얼마나 빠르게 흔들까 (프레임당 라디안) */
-  var gifTint = null;              /* 목업 모드에서 넘어왔다면 그 팔레트 색을 입혀요 */
-  var gifHoloPainted = false;
-
-  /* ---------------- a byte buffer that grows itself ---------------- */
-  function gifBuf(cap) { this.a = new Uint8Array(cap || 65536); this.n = 0; }
-  gifBuf.prototype.need = function (k) {
-    if (this.n + k <= this.a.length) return;
-    var na = new Uint8Array(Math.max(this.a.length * 2, this.n + k));
-    na.set(this.a.subarray(0, this.n));
-    this.a = na;
-  };
-  gifBuf.prototype.u8 = function (v) { this.need(1); this.a[this.n++] = v & 255; };
-  gifBuf.prototype.u16 = function (v) { this.need(2); this.a[this.n++] = v & 255; this.a[this.n++] = (v >> 8) & 255; };
-  gifBuf.prototype.str = function (s) {
-    var i; this.need(s.length);
-    for (i = 0; i < s.length; i++) this.a[this.n++] = s.charCodeAt(i) & 255;
-  };
-  gifBuf.prototype.raw = function (src, off, len) {
-    this.need(len);
-    this.a.set(len === src.length ? src : src.subarray(off, off + len), this.n);
-    this.n += len;
-  };
-  gifBuf.prototype.out = function () { return this.a.slice(0, this.n); };
-
-  /* ---------------- colours: a median cut over the frames' own pixels ---------------- */
-  function gifMakeBox(list) {
-    var j, q, mnr = 255, mxr = 0, mng = 255, mxg = 0, mnb = 255, mxb = 0, sum = 0;
-    for (j = 0; j < list.length; j++) {
-      q = list[j];
-      if (q.r < mnr) mnr = q.r;
-      if (q.r > mxr) mxr = q.r;
-      if (q.g < mng) mng = q.g;
-      if (q.g > mxg) mxg = q.g;
-      if (q.b < mnb) mnb = q.b;
-      if (q.b > mxb) mxb = q.b;
-      sum += q.n;
-    }
-    return {
-      list: list, n: sum,
-      r0: mnr, r1: mxr, g0: mng, g1: mxg, b0: mnb, b1: mxb,
-      vol: (mxr - mnr + 1) * (mxg - mng + 1) * (mxb - mnb + 1)
-    };
-  }
-  function gifPalette(hist, want) {
-    var bins = [], k, q, j;
-    for (k = 0; k < 32768; k++) {
-      if (!hist[k]) continue;
-      bins.push({
-        r: ((k >> 10) & 31) * 8 + 4,
-        g: ((k >> 5) & 31) * 8 + 4,
-        b: (k & 31) * 8 + 4,
-        n: hist[k]
-      });
-    }
-    if (!bins.length) return [[255, 255, 255]];
-    if (bins.length <= want) {
-      var small = [], i;
-      for (i = 0; i < bins.length; i++) small.push([bins[i].r, bins[i].g, bins[i].b]);
-      return small;
-    }
-    var boxes = [gifMakeBox(bins)];
-    while (boxes.length < want) {
-      var bi = -1, best = -1;
-      for (j = 0; j < boxes.length; j++) {
-        var bx = boxes[j];
-        if (bx.list.length < 2) continue;
-        /* a box earns its own colours by how many pixels it holds and by how
-           wide it is: a flat background stays one colour, a charm gets more */
-        var score = bx.n * Math.pow(bx.vol, 0.34);
-        if (score > best) { best = score; bi = j; }
-      }
-      if (bi < 0) break;
-      var box = boxes[bi];
-      var axis = 0, len = box.r1 - box.r0;
-      if (box.g1 - box.g0 > len) { axis = 1; len = box.g1 - box.g0; }
-      if (box.b1 - box.b0 > len) axis = 2;
-      var ch = axis === 0 ? 'r' : (axis === 1 ? 'g' : 'b');
-      box.list.sort(function (a, b) { return a[ch] - b[ch]; });
-      var half = box.n / 2, acc = 0, cut = 1;
-      for (j = 0; j < box.list.length - 1; j++) {
-        acc += box.list[j].n;
-        if (acc >= half) { cut = j + 1; break; }
-      }
-      boxes.splice(bi, 1, gifMakeBox(box.list.slice(0, cut)), gifMakeBox(box.list.slice(cut)));
-    }
-    var out = [];
-    for (j = 0; j < boxes.length; j++) {
-      var b2 = boxes[j], sr = 0, sg = 0, sb = 0, sn = 0;
-      for (k = 0; k < b2.list.length; k++) {
-        q = b2.list[k];
-        sr += q.r * q.n; sg += q.g * q.n; sb += q.b * q.n; sn += q.n;
-      }
-      if (!sn) continue;
-      out.push([Math.round(sr / sn), Math.round(sg / sn), Math.round(sb / sn)]);
-    }
-    return out.length ? out : [[255, 255, 255]];
-  }
-
-  /* every pixel → its nearest palette entry, memoised on a 15-bit key so the
-     same colour is only searched once for the whole animation */
-  function gifQuantizer(palette) {
-    var cache = new Int32Array(32768), i;
-    for (i = 0; i < cache.length; i++) cache[i] = -1;
-    var n = palette.length;
-    return function (r, g, b) {
-      var key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
-      var hit = cache[key];
-      if (hit >= 0) return hit;
-      var best = 0, bd = 1e9, j, dr, dg, db, d;
-      for (j = 0; j < n; j++) {
-        dr = r - palette[j][0]; dg = g - palette[j][1]; db = b - palette[j][2];
-        d = dr * dr * 3 + dg * dg * 6 + db * db;   /* 사람 눈에 가까운 가중치 */
-        if (d < bd) { bd = d; best = j; }
-      }
-      cache[key] = best;
-      return best;
-    };
-  }
-
-  /* ---------------- LZW (the squeeze inside every GIF frame) ---------------- */
-  var GIF_DICT = null, GIF_GEN = 0;
-  function gifNextGen() {
-    GIF_GEN++;
-    if (GIF_GEN > 400000) { GIF_DICT.fill(0); GIF_GEN = 1; }
-    return GIF_GEN;
-  }
-  function gifLZW(px, minCode, n) {
-    if (!GIF_DICT) GIF_DICT = new Int32Array(1 << 20);
-    var dict = GIF_DICT;
-    var gen = gifNextGen();
-    var clear = 1 << minCode, eoi = clear + 1;
-    var codeSize = minCode + 1, free = eoi + 1;
-    var out = new Uint8Array(n + (n >> 1) + 2048), o = 0;
-    var bitBuf = 0, bitCnt = 0;
-
-    function put(code) {
-      bitBuf |= code << bitCnt;
-      bitCnt += codeSize;
-      while (bitCnt >= 8) {
-        out[o++] = bitBuf & 255;
-        bitBuf >>>= 8;
-        bitCnt -= 8;
-      }
-    }
-
-    put(clear);
-    if (!n) { put(eoi); if (bitCnt > 0) out[o++] = bitBuf & 255; return out.subarray(0, o); }
-    var cur = px[0], i, k, key, e;
-    for (i = 1; i < n; i++) {
-      k = px[i];
-      key = (cur << 8) | k;
-      e = dict[key];
-      if ((e >>> 12) === gen) {
-        cur = e & 4095;
-        continue;
-      }
-      put(cur);
-      if (free < 4096) {
-        dict[key] = (gen << 12) | free;
-        free++;
-        /* GIF 규칙: 다음에 만들 코드가 이 비트 폭을 넘어가면 한 비트씩 넓힌다 */
-        if (free > (1 << codeSize) && codeSize < 12) codeSize++;
-      } else {
-        put(clear);
-        gen = gifNextGen();
-        codeSize = minCode + 1;
-        free = eoi + 1;
-      }
-      cur = k;
-    }
-    put(cur);
-    put(eoi);
-    if (bitCnt > 0) out[o++] = bitBuf & 255;
-    return out.subarray(0, o);
-  }
-
-  /* ---------------- the GIF file itself ---------------- */
-  function gifWriteHeader(gb, bits, palette) {
-    var i, n = 1 << bits, c;
-    gb.str('GIF89a');
-    gb.u16(GIF_W); gb.u16(GIF_H);
-    gb.u8(0xF0 | (bits - 1));   /* 전역 색상표 있음 · 8비트 색 해상도 */
-    gb.u8(0x00);                /* 배경 색 인덱스 */
-    gb.u8(0x00);                /* 픽셀 비율 */
-    for (i = 0; i < n; i++) {
-      c = palette[i] || [0, 0, 0];
-      gb.u8(c[0]); gb.u8(c[1]); gb.u8(c[2]);
-    }
-    /* NETSCAPE2.0: 끝없이 반복 */
-    gb.u8(0x21); gb.u8(0xFF); gb.u8(0x0B);
-    gb.str('NETSCAPE2.0');
-    gb.u8(0x03); gb.u8(0x01); gb.u16(0); gb.u8(0x00);
-  }
-  function gifWriteFrame(gb, idx, bits) {
-    var minCode = Math.max(2, bits), w = GIF_W, h = GIF_H;
-    gb.u8(0x21); gb.u8(0xF9); gb.u8(0x04);
-    gb.u8(0x04);                /* disposal 1: 다음 프레임 위에 그대로 */
-    gb.u16(GIF_DELAY);
-    gb.u8(0x00);                /* 투명색 없음 */
-    gb.u8(0x00);
-    gb.u8(0x2C);
-    gb.u16(0); gb.u16(0); gb.u16(w); gb.u16(h);
-    gb.u8(0x00);                /* 지역 색상표 없음 · 인터레이스 없음 */
-    gb.u8(minCode);
-    var data = gifLZW(idx, minCode, w * h), off = 0, len;
-    while (off < data.length) {
-      len = Math.min(255, data.length - off);
-      gb.u8(len);
-      gb.raw(data, off, len);
-      off += len;
-    }
-    gb.u8(0x00);
-  }
+  var VID_W = 720, VID_H = 900, VID_FPS = 30, VID_MS = 2200;
+  var VID_SHAKE = 10.5;            /* 라디안/초 — 1초에 약 1.7번 흔들려요 */
+  var VID_BITRATE = 8000000;       /* 8Mbps — 파스텔 그라데이션이 뭉개지지 않게 */
+  var vidTint = null;              /* 목업 모드에서 넘어왔다면 그 팔레트 색을 입혀요 */
+  var vidHoloPainted = false;
 
   /* ---------------- the picture the frames are painted on ---------------- */
-  function gifPaintBg(g) {
-    var bgHex = shotBgHex || (gifTint ? gifTint.tint : autoShotBg()), i;
-    var gr = g.createLinearGradient(0, -GIF_H * 0.08, GIF_W * 0.22, GIF_H * 1.05);
+  function vidPaintBg(g) {
+    var bgHex = shotBgHex || (vidTint ? vidTint.tint : autoShotBg()), i;
+    var gr = g.createLinearGradient(0, -VID_H * 0.08, VID_W * 0.22, VID_H * 1.05);
     gr.addColorStop(0, '#ffffff');
     gr.addColorStop(0.40, hexMix(bgHex, '#ffffff', 0.60));
     gr.addColorStop(1, hexMix(bgHex, '#ffffff', 0.10));
     g.fillStyle = gr;
-    g.fillRect(0, 0, GIF_W, GIF_H);
+    g.fillRect(0, 0, VID_W, VID_H);
     var blobs = [
-      [GIF_W * 0.02, GIF_H * 0.05, GIF_W * 0.62, theme.accent, 0.28],
-      [GIF_W * 1.00, GIF_H * 0.10, GIF_W * 0.50, theme.gold, 0.30 * (theme.clear ? 1.2 : 1)],
-      [GIF_W * 0.94, GIF_H * 0.96, GIF_W * 0.60, theme.accent, 0.20 * (theme.clear ? 1.7 : 1)]
+      [VID_W * 0.02, VID_H * 0.05, VID_W * 0.62, theme.accent, 0.28],
+      [VID_W * 1.00, VID_H * 0.10, VID_W * 0.50, theme.gold, 0.30 * (theme.clear ? 1.2 : 1)],
+      [VID_W * 0.94, VID_H * 0.96, VID_W * 0.60, theme.accent, 0.20 * (theme.clear ? 1.7 : 1)]
     ];
     for (i = 0; i < blobs.length; i++) {
       var b = blobs[i];
@@ -9454,31 +9205,31 @@ input[type=range]::-webkit-slider-thumb{
       rg.addColorStop(0, hexA(b[3], b[4]));
       rg.addColorStop(1, hexA(b[3], 0));
       g.fillStyle = rg;
-      g.fillRect(0, 0, GIF_W, GIF_H);
+      g.fillRect(0, 0, VID_W, VID_H);
     }
   }
 
-  var gifSparkCache = null;
-  function gifSparks() {
-    if (gifSparkCache) return gifSparkCache;
+  var vidSparkCache = null;
+  function vidSparks() {
+    if (vidSparkCache) return vidSparkCache;
     var rnd = mulberry32(3331), out = [], i;
-    for (i = 0; i < 15; i++) {
+    for (i = 0; i < 19; i++) {
       out.push({
         x: 0.03 + rnd() * 0.94, y: 0.03 + rnd() * 0.94,
         r: 0.010 + rnd() * 0.020, ph: rnd() * TAU, sp: 0.55 + rnd() * 1.15
       });
     }
-    gifSparkCache = out;
+    vidSparkCache = out;
     return out;
   }
-  function gifPaintSparks(g, ph) {
-    var sp = gifSparks(), i, q, tw, r, x, y;
+  function vidPaintSparks(g, ph) {
+    var sp = vidSparks(), i, q, tw, r, x, y;
     for (i = 0; i < sp.length; i++) {
       q = sp[i];
       tw = Math.pow(Math.max(0, Math.sin(ph * q.sp + q.ph)), 2);
       if (tw < 0.05) continue;
-      r = q.r * GIF_W * (0.55 + tw * 1.15);
-      x = q.x * GIF_W; y = q.y * GIF_H;
+      r = q.r * VID_W * (0.55 + tw * 1.15);
+      x = q.x * VID_W; y = q.y * VID_H;
       g.globalAlpha = 0.2 + tw * 0.78;
       g.fillStyle = (i % 3 === 0) ? '#fff0ac' : '#ffffff';
       g.beginPath();
@@ -9492,30 +9243,31 @@ input[type=range]::-webkit-slider-thumb{
     g.globalAlpha = 1;
   }
 
-  function gifCase() {
+  function vidCase() {
     var fit = caseFit();
-    var k = Math.min((GIF_W - 30) / (VIEW.S * fit.w), (GIF_H * 0.82) / (VIEW.S * fit.h));
+    var k = Math.min((VID_W - 56) / (VIEW.S * fit.w), (VID_H * 0.82) / (VIEW.S * fit.h));
     return { k: k, cx: VIEW.cx + fit.uMid * VIEW.S, cy: VIEW.cy + fit.vMid * VIEW.S };
   }
 
-  function gifPaintFrame(g, bg, list, f) {
-    var ph = f * GIF_SHAKE;
+  /* one painted frame at phase ph (radians) */
+  function vidPaintFrame(g, bg, list, ph) {
     var tilt = Math.sin(ph + 0.45) * 0.048;
-    var bx = Math.sin(ph) * 5;
-    var by = -Math.abs(Math.sin(ph)) * 3.5;
-    var F = gifCase(), saveAng;
+    var bx = Math.sin(ph) * 10;
+    var by = -Math.abs(Math.sin(ph)) * 7;
+    var F = vidCase(), saveAng;
     g.setTransform(1, 0, 0, 1, 0, 0);
-    g.clearRect(0, 0, GIF_W, GIF_H);
+    g.imageSmoothingQuality = 'high';
+    g.clearRect(0, 0, VID_W, VID_H);
     if (bg) g.drawImage(bg, 0, 0);
     g.save();
-    g.translate(GIF_W / 2 + bx, GIF_H * 0.5 + by);
+    g.translate(VID_W / 2 + bx, VID_H * 0.5 + by);
     g.rotate(tilt);
     g.scale(F.k, F.k);
     g.translate(-F.cx, -F.cy);
     g.drawImage(layerBack, 0, 0, VIEW.w, VIEW.h);
     if (holoOn) {
       /* 홀로그램 막은 한 번만 그려 두고 모든 프레임이 같이 써요 */
-      if (!gifHoloPainted) { paintHolo(); gifHoloPainted = true; }
+      if (!vidHoloPainted) { paintHolo(); vidHoloPainted = true; }
       if (holoLayer) g.drawImage(holoLayer, 0, 0, VIEW.w, VIEW.h);
     }
     renderParts(g, list);
@@ -9527,16 +9279,16 @@ input[type=range]::-webkit-slider-thumb{
     ringAng = saveAng;
     drawDeco(g);
     g.restore();
-    gifPaintSparks(g, f * 0.55 + 0.6);
+    vidPaintSparks(g, ph * 0.52 + 0.6);
   }
 
-  /* one frame of shake: the same kind of kick the live shaker gets from her
-     hand — every charm flies in its own direction, then falls back and piles up
-     again before the next shake, so the loop keeps the case alive */
-  function gifAdvance(list, f, rnd) {
-    var ph = f * GIF_SHAKE;
-    var kick = Math.sin(ph), prev = Math.sin(ph - GIF_SHAKE);
-    var gx = kick * 4.2, gy = GRAV * 1.3, i, p, s, a, power;
+  /* one step of the shake: the same kick the live shaker gets from her hand —
+     every charm flies in its own direction, then falls back and piles up again,
+     so the loop keeps the case alive. Stepped by real time, so 30fps and 60fps
+     screens shake at the same speed. */
+  function vidAdvance(list, ph, prevPh, dt, rnd) {
+    var kick = Math.sin(ph), prev = Math.sin(prevPh);
+    var gx = kick * 4.2, gy = GRAV * 1.3, i, p, a, power, s;
     if (kick > 0.86 && prev <= 0.86) {
       for (i = 0; i < list.length; i++) {
         p = list[i];
@@ -9547,63 +9299,209 @@ input[type=range]::-webkit-slider-thumb{
         p.vr += (rnd() - 0.5) * 7;
       }
     }
-    for (s = 0; s < 2; s++) stillStep(list, GIF_DELAY / 200, gx, gy, 0.42, false);
+    for (s = 0; s < 2; s++) stillStep(list, dt / 2, gx, gy, 0.42, false);
   }
 
-  function gifHistogram(g, hist) {
-    var d = g.getImageData(0, 0, GIF_W, GIF_H).data, i;
-    for (i = 0; i < d.length; i += 8) {
-      hist[((d[i] >> 3) << 10) | ((d[i + 1] >> 3) << 5) | (d[i + 2] >> 3)]++;
+  /* ---------------- which container will this browser write? ---------------- */
+  var VID_MIMES = [
+    ['video/mp4;codecs=avc1.42E01E', 'mp4'],
+    ['video/mp4;codecs=avc1', 'mp4'],
+    ['video/mp4', 'mp4'],
+    ['video/webm;codecs=vp9', 'webm'],
+    ['video/webm;codecs=vp8', 'webm'],
+    ['video/webm', 'webm']
+  ];
+  function vidCanRecord() {
+    if (typeof MediaRecorder === 'undefined') return false;
+    try {
+      return !!(document.createElement('canvas').captureStream);
+    } catch (e) { return false; }
+  }
+  function vidPickMime() {
+    if (!vidCanRecord()) return null;
+    var i, t;
+    for (i = 0; i < VID_MIMES.length; i++) {
+      t = VID_MIMES[i][0];
+      try {
+        if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) {
+          return { type: t, ext: VID_MIMES[i][1] };
+        }
+      } catch (e) { /* keep looking */ }
     }
+    /* 아주 옛 사파리는 isTypeSupported가 없어요 — 그때는 기본값(MP4)이 맞아요 */
+    if (!MediaRecorder.isTypeSupported) return { type: '', ext: 'mp4' };
+    return null;
   }
 
-  /* the whole animation, painted and squeezed, as one image/gif Blob */
-  function encodeShakeGif() {
-    gifHoloPainted = false;
-    var cv = document.createElement('canvas');
-    cv.width = GIF_W; cv.height = GIF_H;
-    var g = null;
-    try { g = cv.getContext('2d', { willReadFrequently: true }); } catch (e) { g = null; }
-    if (!g) g = cv.getContext('2d');
+  var vidURL = '', vidBlob = null, vidExt = '', vidBuildSeq = 0, vidRaf = 0;
+  var vidRec = null, vidStream = null, vidUnsupported = false;
 
-    var bg = cutCanvas(GIF_W, GIF_H);
-    gifPaintBg(bg.getContext('2d'));
+  /* what this browser would write right now — for the file name and the copy */
+  function vidPlannedExt() {
+    var m = vidPickMime();
+    return m ? m.ext : 'mp4';
+  }
 
-    /* ① 세 프레임 중 하나만 그려서 이 움짤이 쓰는 색을 먼저 배운다 */
-    var hist = new Uint32Array(32768);
-    var rnd = mulberry32(9001);
-    var list = settleStillParts(), f;
-    for (f = 0; f < GIF_FRAMES; f++) {
-      if (f) gifAdvance(list, f, rnd);
-      if (f % 3) continue;
-      gifPaintFrame(g, bg, list, f);
-      gifHistogram(g, hist);
+  function stopVideoBuild() {
+    vidBuildSeq++;
+    if (vidRaf) { try { cancelAnimationFrame(vidRaf); } catch (e) { /* gone */ } vidRaf = 0; }
+    if (vidRec) {
+      try { if (vidRec.state !== 'inactive') vidRec.stop(); } catch (e) { /* already done */ }
+      vidRec = null;
     }
+    if (vidStream) {
+      try { vidStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* gone */ }
+      vidStream = null;
+    }
+    var busy = $('#vidBusy');
+    if (busy) busy.hidden = true;
+  }
 
-    var palette = gifPalette(hist, 256);
-    var bits = 2, i;
-    while ((1 << bits) < palette.length && bits < 8) bits++;
-    var quant = gifQuantizer(palette);
+  function clearVideoPreview() {
+    stopVideoBuild();
+    var vd = $('#shotVideo');
+    if (vd) {
+      try { vd.pause(); } catch (e) { /* ignore */ }
+      vd.hidden = true;
+      try { vd.removeAttribute('src'); vd.load(); } catch (e2) { /* ignore */ }
+    }
+    if (vidURL) { try { URL.revokeObjectURL(vidURL); } catch (e3) { /* gone */ } }
+    vidURL = '';
+    vidBlob = null;
+  }
 
-    /* ② 이번엔 모든 프레임을 진짜로 그려서 압축한다 */
-    rnd = mulberry32(9001);
-    list = settleStillParts();
-    var gb = new gifBuf(1 << 20);
-    gifWriteHeader(gb, bits, palette);
-    var idx = new Uint8Array(GIF_W * GIF_H);
-    for (f = 0; f < GIF_FRAMES; f++) {
-      if (f) gifAdvance(list, f, rnd);
-      gifPaintFrame(g, bg, list, f);
-      var d = g.getImageData(0, 0, GIF_W, GIF_H).data;
-      var o = 0, n = GIF_W * GIF_H;
-      for (i = 0; i < n; i++) {
-        idx[i] = quant(d[o], d[o + 1], d[o + 2]);
-        o += 4;
+  /* paint the sheet first, then record: the “영상 만드는 중…” note is on screen
+     for the ~2.2 seconds the canvas plays the shake */
+  function buildVideo() {
+    if (shotMode !== 'video') return;
+    stopVideoBuild();
+    var mine = ++vidBuildSeq;
+
+    var busy = $('#vidBusy'), vd = $('#shotVideo');
+    if (vd) vd.hidden = true;
+    var im = $('#shotImg');
+    if (im) im.hidden = false;
+    if (busy) { busy.hidden = false; busy.textContent = '영상 만드는 중… 0%'; }
+    /* a still of this very shaker stays on screen while the video bakes */
+    makeShotImage();
+
+    var mime = vidPickMime();
+    vidUnsupported = !mime;
+    if (!mime) {
+      if (busy) {
+        busy.hidden = false;
+        busy.textContent = '이 브라우저에선 영상 저장이 안 돼요 · 사진으로 저장해 주세요';
       }
-      gifWriteFrame(gb, idx, bits);
+      syncShotModeUI();
+      return;
     }
-    gb.u8(0x3B);
-    return new Blob([gb.out()], { type: 'image/gif' });
+
+    var cv = cutCanvas(VID_W, VID_H), g = null, bg, i;
+    try { g = cv.getContext('2d', { alpha: false }); } catch (e) { g = null; }
+    if (!g) g = cv.getContext('2d');
+    bg = cutCanvas(VID_W, VID_H);
+    vidPaintBg(bg.getContext('2d'));
+    vidHoloPainted = false;
+
+    var stream = null, rec = null, chunks = [];
+    try {
+      stream = cv.captureStream(VID_FPS);
+      var tracks = stream.getVideoTracks ? stream.getVideoTracks() : [];
+      if (!tracks.length) throw new Error('no video track');
+      try {
+        rec = new MediaRecorder(stream, { mimeType: mime.type, videoBitsPerSecond: VID_BITRATE });
+      } catch (e1) {
+        rec = new MediaRecorder(stream);   /* some browsers want the bare stream */
+      }
+    } catch (e2) {
+      try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e3) { /* gone */ }
+      if (busy) busy.hidden = true;
+      vidUnsupported = true;
+      toast('영상을 만들지 못했어요 · 사진으로 저장해 주세요');
+      syncShotModeUI();
+      return;
+    }
+
+    var started = performance.now(), list = settleStillParts(), rnd = mulberry32(9001);
+    var prevPh = 0, last = started, done = false;
+    vidRec = rec;
+    vidStream = stream;
+
+    function finish(blob) {
+      if (done) return;
+      done = true;
+      if (mine !== vidBuildSeq) return;
+      if (vidRaf) { try { cancelAnimationFrame(vidRaf); } catch (e) { /* gone */ } vidRaf = 0; }
+      try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* gone */ }
+      vidRec = null;
+      vidStream = null;
+      if (busy) busy.hidden = true;
+      if (!blob || !blob.size) { toast('영상을 만들지 못했어요 · 사진으로 저장해 주세요'); return; }
+      if (vidURL) { try { URL.revokeObjectURL(vidURL); } catch (e) { /* gone */ } }
+      vidBlob = blob;
+      vidExt = (blob.type && blob.type.indexOf('webm') >= 0) ? 'webm' : (mime.ext || 'mp4');
+      vidURL = URL.createObjectURL(blob);
+      var img = $('#shotImg');
+      if (img) img.hidden = true;
+      var v = $('#shotVideo');
+      if (v) {
+        v.hidden = false;
+        v.src = vidURL;
+        try { v.currentTime = 0; } catch (e4) { /* ignore */ }
+        var pr = v.play();
+        if (pr && pr.catch) pr.catch(function () { /* tap to play */ });
+      }
+      syncShotModeUI();
+    }
+
+    rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onerror = function () { finish(null); };
+    rec.onstop = function () {
+      var blob = null;
+      try {
+        blob = new Blob(chunks, { type: (rec.mimeType || mime.type || 'video/mp4').split(';')[0] });
+      } catch (e) { blob = null; }
+      finish(blob);
+    };
+
+    function step(now) {
+      if (mine !== vidBuildSeq) return;
+      var t = now - started;
+      if (t < 0) t = 0;
+      if (t > VID_MS) t = VID_MS;
+      var dt = (now - last) / 1000;
+      last = now;
+      if (dt < 0) dt = 0;
+      if (dt > 0.25) dt = 0.25;
+      var ph = (t / 1000) * VID_SHAKE;
+      if (dt > 0) vidAdvance(list, ph, prevPh, dt, rnd);
+      prevPh = ph;
+      vidPaintFrame(g, bg, list, ph);
+      if (busy) {
+        var pct = Math.round((t / VID_MS) * 100);
+        if (pct > 99) pct = 99;
+        busy.textContent = '영상 만드는 중… ' + pct + '%';
+      }
+      if (t >= VID_MS) {
+        vidRaf = 0;
+        try { rec.stop(); } catch (e) { finish(null); }
+        return;
+      }
+      vidRaf = requestAnimationFrame(step);
+    }
+
+    /* the first frame goes in before the recorder starts, so the video never
+       opens on a blank canvas */
+    vidPaintFrame(g, bg, list, 0);
+    try {
+      rec.start();
+    } catch (e) {
+      finish(null);
+      return;
+    }
+    started = performance.now();
+    last = started;
+    vidRaf = requestAnimationFrame(step);
   }
 
   /* ---------------- 6메뉴 시트 ---------------- */
@@ -9680,24 +9578,34 @@ input[type=range]::-webkit-slider-thumb{
     if (inp && mockColor !== 'custom') inp.value = mockCustomHex;
     var sub = $('#shotSub');
     if (sub) {
-      sub.textContent = shotMode === 'gif'
-        ? '짧게 흔들리는 움짤 · 사진첩에 GIF로 저장돼요'
+      sub.textContent = shotMode === 'video'
+        ? (vidUnsupported ? '이 브라우저에선 영상 저장이 안 돼요'
+          : '짧게 흔들리는 2초 영상 · 고화질 ' + ((vidExt || vidPlannedExt()) === 'webm' ? 'WebM' : 'MP4') + '로 저장돼요')
         : (shotMode === 'product'
           ? (MOCK_SUB[mockStyle] || MOCK_SUB.blister)
           : (ENV.ios ? '길게 눌러 ‘사진에 저장’도 돼요' : '저장하면 PNG로 받아요'));
     }
     var nt = $('#shotNotice');
     if (nt) {
-      nt.innerHTML = shotMode === 'gif'
-        ? '약 2초 · 움직이는 GIF예요 · 배경색을 바꾸면 다시 만들어요'
+      nt.innerHTML = shotMode === 'video'
+        ? '약 2초 · 720×900 고화질 영상 · 배경색을 바꾸면 다시 만들어요'
         : (shotMode === 'product'
           ? (MOCK_NOTICE[mockStyle] || MOCK_NOTICE.blister)
           : '사진 아래 이름과 저장 파일 이름에 쓰여요 · 최대 16자');
     }
     /* 버튼도 모드에 맞게 */
     var dl = $('#shotDownload'), sv = $('#shotSave');
-    if (dl) dl.textContent = shotMode === 'gif' ? 'GIF 다운로드' : '다운로드';
-    if (sv) sv.textContent = shotMode === 'gif' ? '움짤 저장' : '사진에 저장';
+    if (dl) dl.textContent = shotMode === 'video' ? '영상 다운로드' : '다운로드';
+    if (sv) sv.textContent = shotMode === 'video' ? '영상 저장' : '사진에 저장';
+    /* 미리보기: 영상이 준비되면 <video>, 그 전엔 인증샷 <img> */
+    var ready = shotMode === 'video' && !!vidBlob && !!vidURL;
+    var vd = $('#shotVideo');
+    if (vd) {
+      if (!ready) { try { vd.pause(); } catch (e) { /* ignore */ } }
+      vd.hidden = !ready;
+    }
+    var im2 = $('#shotImg');
+    if (im2) im2.hidden = ready;
   }
 
   function buildMockUI() {
@@ -9783,15 +9691,15 @@ input[type=range]::-webkit-slider-thumb{
   }
 
   function setShotMode(m) {
-    if (m !== 'shot' && m !== 'product' && m !== 'gif') return;
+    if (m !== 'shot' && m !== 'product' && m !== 'video') return;
     if (shotMode === m) return;
     var was = shotMode;
     shotMode = m;
-    gifTint = (m === 'gif' && was === 'product') ? mockPalette() : null;
+    vidTint = (m === 'video' && was === 'product') ? mockPalette() : null;
     syncShotModeUI();
     Sound.unlock(); Sound.pop(m === 'product');
-    if (m === 'gif') { buildGif(); return; }
-    clearGifPreview();
+    if (m === 'video') { buildVideo(); return; }
+    clearVideoPreview();
     if (!makeShotImage()) toast('사진을 만들지 못했어요');
   }
 
