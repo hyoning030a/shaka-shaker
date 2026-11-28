@@ -603,7 +603,7 @@ input[type=range]::-webkit-slider-thumb{
 
   <nav id="menuGrid" aria-label="꾸미기 메뉴">
     <button class="menu-btn" type="button" data-menu="case"><em>📦</em><span>케이스</span></button>
-    <button class="menu-btn" type="button" data-menu="look"><em>🔑</em><span>외형</span></button>
+    <button class="menu-btn" type="button" data-menu="look"><em>🎨</em><span>색상</span></button>
     <button class="menu-btn" type="button" data-menu="parts"><em>🧩</em><span>파츠</span></button>
     <button class="menu-btn" type="button" data-menu="deco"><em>🎨</em><span>데코</span></button>
     <button class="menu-btn" type="button" data-menu="fx"><em>🎵</em><span>효과</span></button>
@@ -1079,16 +1079,19 @@ input[type=range]::-webkit-slider-thumb{
     ]),
     /* 💗 하트: 둥근 꼭지 · 부드러운 홈 · 통통한 아래 끝 */
     heart: HEART_PATH,
-    /* 🐱 고양이: 둥근 귀끝 · 부드러운 이마 골 · 넓고 통통한 볼
-       (a clean symmetric bezier — no metaball bumps on the ear's outer edge) */
-    cat: halfBody([0, -0.330], [
-      { c: [0.055, -0.334, 0.240, -0.474, 0.380, -0.520] },
-      { c: [0.398, -0.530, 0.416, -0.535, 0.430, -0.535] },
-      { c: [0.448, -0.535, 0.461, -0.520, 0.465, -0.500] },
-      { c: [0.458, -0.455, 0.446, -0.380, 0.443, -0.330] },
-      { c: [0.441, -0.240, 0.475, -0.130, 0.484, -0.040] },
-      { c: [0.489, 0.090, 0.450, 0.310, 0.380, 0.395] },
-      { c: [0.310, 0.462, 0.150, 0.502, 0, 0.502] }
+    /* 🐱 고양이: IMG_0454를 픽셀 단위로 따라 그린 통통한 실루엣 —
+       넓고 낮은 몸통(가로:세로 = 1.32:1), 귀 사이의 완만하게 볼록한 이마,
+       위 모서리에 짧고 넓게 앉은 둥근 귀, 이마 아래로 살짝 잘록한 볼.
+       (IMG_0454 실루엣에 베지어를 겹쳐 최적화했고, RMS 0.56px / 최대 2.1px) */
+    cat: halfBody([0, -0.3447], [
+      { c: [0.1622, -0.3447, 0.2274, -0.3039, 0.2310, -0.3065] },
+      { c: [0.3492, -0.3926, 0.3798, -0.4149, 0.4418, -0.4166] },
+      { c: [0.4512, -0.4169, 0.4941, -0.4180, 0.5042, -0.3144] },
+      { c: [0.5089, -0.2655, 0.5119, -0.2291, 0.5006, -0.1094] },
+      { c: [0.4999, -0.1022, 0.5502, -0.0283, 0.5498, 0.0810] },
+      { c: [0.5495, 0.1337, 0.5348, 0.2024, 0.5119, 0.2379] },
+      { c: [0.4777, 0.2909, 0.5001, 0.2770, 0.4329, 0.3238] },
+      { c: [0.3592, 0.3753, 0.2448, 0.4173, 0, 0.4173] }
     ]),
     /* 🐻 곰돌이: 동그란 머리에 동글동글한 귀 두 개 */
     bear: closed(
@@ -3001,28 +3004,16 @@ input[type=range]::-webkit-slider-thumb{
         vRad(g, -12, -14, 3, 52, [[0, '#ffffff'], [0.4, '#fdf4ff'], [0.75, '#f2e0f7'], [1, '#dcc4ec']]), { bw: 4, edge: 'rgba(210,186,228,0.8)' });
       vGloss(g, -14, -16, 12, 7, -0.7, 0.9);
     },
-    pearl_heart: function (g) {
-      var n = 16, i;
-      function hpt(t) {
-        /* the same heart the charms use, sampled by arc length roughly */
-        var s0 = 52, x, y;
-        var u = t;
-        if (u < 0.5) {
-          var k = u / 0.5;
-          /* left half of the cubic pair */
-          var p0 = [0, s0 * 0.86], p1 = [-s0 * 1.34, -s0 * 0.04], p2 = [-s0 * 0.78, -s0 * 1.08], p3 = [0, -s0 * 0.44];
-          return bez(p0, p1, p2, p3, k);
-        }
-        var k2 = (u - 0.5) / 0.5;
-        var q0 = [0, -s0 * 0.44], q1 = [s0 * 0.78, -s0 * 1.08], q2 = [s0 * 1.34, -s0 * 0.04], q3 = [0, s0 * 0.86];
-        return bez(q0, q1, q2, q3, k2);
-      }
-      for (i = 0; i < n; i++) {
-        var p = hpt(i / n);
-        vBody(g, (function (x0, y0) { return function (gg) { vCircle(gg, x0, y0, 9.5); }; })(p[0], p[1] + 2),
-          vRad(g, p[0] - 3, p[1] - 2, 1, 12, [[0, '#ffffff'], [0.55, '#fdf3ff'], [1, '#e4cdf1']]),
-          { bw: 3, edge: 'rgba(212,190,230,0.85)' });
-      }
+    /* 🩷 하트: 진주하트 자리에 들어온 통통한 파스텔 데코덴 하트 —
+       넓은 두 봉우리와 둥근 아래끝, 도톰한 흰 테두리, 젖은 듯한 광택 */
+    heart_deco: function (g) {
+      vBody(g, function (gg) { vHeart(gg, 0, 2, 70, 0.34, 0.92, 0.98); },
+        vLin(g, 0, -72, 0, 66, [[0, '#fff2f8'], [0.30, '#ffcfe4'], [0.66, '#ffa3c8'], [1, '#ff82b4']]),
+        { round: 16, edge: 'rgba(255,178,210,0.62)', ew: 2.2 });
+      /* 몽글한 봉우리에 하나씩, 아래쪽에 작은 광택 — 다른 데코덴과 같은 광 */
+      vGloss(g, -26, -28, 20, 11, -0.62, 0.86);
+      vGloss(g, 24, -32, 9, 6, -0.5, 0.52);
+      vGloss(g, 28, 24, 8.5, 5, 0.5, 0.34);
     }
   };
 
@@ -6215,7 +6206,7 @@ input[type=range]::-webkit-slider-thumb{
     { id: 'tiara', name: '티아라', s: 0.26 },
     { id: 'bandaid', name: '반창고', s: 0.24 },
     { id: 'pearl', name: '진주', s: 0.12 },
-    { id: 'pearl_heart', name: '진주하트', s: 0.26 }
+    { id: 'heart_deco', name: '하트', s: 0.26 }
   ];
   var DECO_BY_ID = {};
   DECO_TYPES.forEach(function (t) { DECO_BY_ID[t.id] = t; });
@@ -6235,10 +6226,13 @@ input[type=range]::-webkit-slider-thumb{
     band_bear: 'face_bear', bear_band: 'face_bear',
     bandaid_pink: 'bandaid', bandaid_star: 'bandaid', bandaid_cloud: 'bandaid',
     pearl_star: 'pearl', pearl_trio: 'pearl', pearl_chain: 'pearl',
-    big_heart: 'pearl_heart', lace: 'pearl_heart',
+    /* 진주하트 was retired in v7: a saved case that wore one now wears the
+       glossy pastel heart in the same spot instead of losing its charm */
+    big_heart: 'heart_deco', lace: 'heart_deco', gem_heart: 'heart_deco',
+    pearl_heart: 'heart_deco',
     big_star: 'crown', big_sparkle: 'halo', snowflake: 'halo',
     cherry: 'bow_mini', clover: 'bow_mini', cream: 'wing',
-    gem_heart: 'pearl_heart', gem_star: 'tiara'
+    gem_star: 'tiara'
   };
   Object.keys(DECO_ALIAS).forEach(function (k) {
     if (!DECO_BY_ID[k] && DECO_BY_ID[DECO_ALIAS[k]]) DECO_BY_ID[k] = DECO_BY_ID[DECO_ALIAS[k]];
@@ -7729,17 +7723,17 @@ input[type=range]::-webkit-slider-thumb{
         { k: 'bow', u: 0, v: -0.315, r: 0 },
         { k: 'crown', u: 0, v: 0.335, r: 0 },
         { k: 'face_bear', u: -0.285, v: 0.02, r: -0.08 },
-        { k: 'pearl_heart', u: 0.285, v: 0.02, r: 0.08 }
+        { k: 'heart_deco', u: 0.285, v: 0.02, r: 0.08 }
       ]
     },
     {
-      /* 🍑 하트 · 피치 · 도트 · 미니리본 + 진주하트 */
+      /* 🍑 하트 · 피치 · 도트 · 미니리본 + 하트 */
       id: 'peach', name: '복숭아', em: '🍑', shape: 'heart', theme: 'peach', fin: 'gloss', holo: false,
       pat: 'dot', ring: 'heart', outer: '#fff1ea',
       parts: ['peach', 'cherry', 'flower', 'heart', 'peach', 'cherry', 'flower', 'heart'],
       deco: [
         { k: 'bow_mini', u: 0, v: -0.30, r: 0 },
-        { k: 'pearl_heart', u: 0.245, v: 0.18, r: 0.12 }
+        { k: 'heart_deco', u: 0.245, v: 0.18, r: 0.12 }
       ]
     }
   ];
@@ -9137,7 +9131,7 @@ input[type=range]::-webkit-slider-thumb{
   /* ---------------- 6메뉴 시트 ---------------- */
   var MENU_META = {
     case: { t: '📦 케이스', s: '모양 · 테마 프리셋 · 안쪽 배경 · 키링' },
-    look: { t: '🔑 외형', s: '아크릴 색 · 표면 마감 · 바깥 배경' },
+    look: { t: '🎨 색상', s: '아크릴 색 · 표면 마감 · 바깥 배경' },
     parts: { t: '🧩 파츠', s: '기본 파츠 · 사진 누끼 · 글자 비즈 · 보관함' },
     deco: { t: '🎨 데코', s: '케이스 겉면 데코덴 꾸미기' },
     fx: { t: '🎵 효과', s: '오일·워터 모드 · 소리 테마' }
