@@ -3187,6 +3187,8 @@ input[type=range]::-webkit-slider-thumb{
   ];
   var PART_BY_ID = {};
   PART_TYPES.forEach(function (t) { t.spr = PART_SPR; t.art = PART_SPR * 0.31; PART_BY_ID[t.id] = t; });
+  /* 🐾 발바닥 left the picker, but a shaker saved with one keeps its paw */
+  PART_BY_ID.paw = { id: 'paw', name: '발바닥', r: 0.064, spr: PART_SPR, art: PART_SPR * 0.31 };
   /* shakers saved with an older set of charms keep their look */
   var PART_ALIAS = {
     heart_pink: 'heart', heart_lilac: 'heart', heart_sky: 'heart', heart_mini: 'heart',
