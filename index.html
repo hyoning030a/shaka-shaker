@@ -9396,7 +9396,7 @@ input[type=range]::-webkit-slider-thumb{
       return;
     }
 
-    var cv = cutCanvas(VID_W, VID_H), g = null, bg, i;
+    var cv = cutCanvas(VID_W, VID_H), g = null, bg;
     try { g = cv.getContext('2d', { alpha: false }); } catch (e) { g = null; }
     if (!g) g = cv.getContext('2d');
     bg = cutCanvas(VID_W, VID_H);
@@ -9416,8 +9416,9 @@ input[type=range]::-webkit-slider-thumb{
     } catch (e2) {
       try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e3) { /* gone */ }
       if (busy) busy.hidden = true;
-      vidUnsupported = true;
-      toast('영상을 만들지 못했어요 · 사진으로 저장해 주세요');
+      /* a transient failure (a stream still closing, an encoder busy) is not a
+         verdict on the browser — let her tap again */
+      toast('영상을 만들지 못했어요 · 다시 한 번 눌러 주세요');
       syncShotModeUI();
       return;
     }
