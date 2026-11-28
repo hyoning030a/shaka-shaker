@@ -8975,32 +8975,18 @@ input[type=range]::-webkit-slider-thumb{
     g.fillText('Pocket Shaker', 0, -cardH / 2 + 166);
     g.restore();
 
-    /* the shaker in its window */
-    var domeCx = 0, domeCy = 44, domeW = 410, domeH = 648;
-    g.save();
-    roundRectPath(g, domeCx - domeW / 2, domeCy - domeH / 2, domeW, domeH, domeW / 2);
-    var ig = g.createLinearGradient(0, domeCy - domeH / 2, 0, domeCy + domeH / 2);
-    ig.addColorStop(0, hexMix(P.card2, '#ffffff', 0.62));
-    ig.addColorStop(0.45, hexMix(P.card2, '#ffffff', 0.74));
-    ig.addColorStop(1, hexMix(P.card2, '#ffffff', 0.68));
-    g.fillStyle = ig;
-    g.fill();
-    g.restore();
-    /* the printed window the blister sits in */
-    g.save();
-    g.strokeStyle = hexA(P.accent, 0.18);
-    g.lineWidth = 3;
-    roundRectPath(g, domeCx - domeW / 2 - 15, domeCy - domeH / 2 - 15, domeW + 30, domeH + 30, (domeW + 30) / 2);
-    g.stroke();
-    g.restore();
-    mockDrawShaker(g, domeCx, domeCy, mockCaseHForDome(domeW, domeH, 0.88), 0.01);
-    mockBlisterDome(g, domeCx, domeCy, domeW, domeH, P);
+    /* the shaker, laid straight on the bare card — no window, no blister dome:
+       the slot is only used to size the case, big and centred between the
+       printed name and the label, so it never crowds either of them */
+    var slotCx = 0, slotCy = 34, slotW = 496, slotH = 700;
+    mockDrawShaker(g, slotCx, slotCy, mockCaseHForDome(slotW, slotH, 0.93), 0.01);
 
-    /* a gingham bow at the foot of the card, a heart tag and two stickers */
-    mockBowMotif(g, -272, 300, 116, -0.12, P);
-    mockHeartTag(g, 296, -158, 110, 0.13, P, 'Groovy Days');
-    mockHeartMotif(g, 266, 296, 54, P, 0.2, 1);
-    mockStarMotif(g, -286, -104, 50, P, -0.2, 0.95);
+    /* the small accents keep out to the very corners so the wide cases
+       (bear, cat, puppy) have the middle of the card all to themselves */
+    mockBowMotif(g, -300, 332, 100, -0.12, P);
+    mockHeartTag(g, 304, -204, 92, 0.13, P, 'Groovy Days');
+    mockHeartMotif(g, 300, 306, 46, P, 0.2, 1);
+    mockStarMotif(g, -304, -136, 44, P, -0.2, 0.95);
 
     /* the name on an oval label */
     var label = shotCaption(), lw = Math.min(cardW - 120, Math.max(300, 26 * label.length + 150));
